@@ -1,0 +1,52 @@
+diff --git a/src/matrix/Makefile b/src/matrix/Makefile
+index 398179a35..c903fbfd4 100644
+--- a/src/matrix/Makefile
++++ b/src/matrix/Makefile
+@@ -10,7 +10,6 @@ include ../kaldi.mk
+ 
+ # you can uncomment matrix-lib-speed-test if you want to do the speed tests.
+ 
+-TESTFILES = matrix-lib-test sparse-matrix-test numpy-array-test #matrix-lib-speed-test
+ 
+ OBJFILES = kaldi-matrix.o kaldi-vector.o packed-matrix.o sp-matrix.o tp-matrix.o \
+            matrix-functions.o qr.o srfft.o compressed-matrix.o \
+
+
+diff --git a/src/util/kaldi-thread.cc b/src/util/kaldi-thread.cc
+index 4573e24f1..4af4e73ea 100644
+--- a/src/util/kaldi-thread.cc
++++ b/src/util/kaldi-thread.cc
+@@ -22,7 +22,7 @@
+ #include "util/kaldi-thread.h"
+ 
+ namespace kaldi {
+-int32 g_num_threads = 4;  // Initialize this global variable.
++int32 g_num_threads = 1;  // Initialize this global variable.
+ 
+ MultiThreadable::~MultiThreadable() {
+   // default implementation does nothing
+diff --git a/src/base/kaldi-types.h b/src/base/kaldi-types.h
+index 7ebf4f853..2f5979e42 100644
+--- a/src/base/kaldi-types.h
++++ b/src/base/kaldi-types.h
+@@ -20,6 +20,7 @@
+ 
+ #ifndef KALDI_BASE_KALDI_TYPES_H_
+ #define KALDI_BASE_KALDI_TYPES_H_ 1
++#define KALDI_DOUBLEPRECISION 1
+ 
+ namespace kaldi {
+ // TYPEDEFS ..................................................................
+diff --git a/src/ivector/ivector-extractor.cc b/src/ivector/ivector-extractor.cc
+index c3a122281..71d37256d 100644
+--- a/src/ivector/ivector-extractor.cc
++++ b/src/ivector/ivector-extractor.cc
+@@ -195,7 +195,7 @@ void IvectorExtractor::ComputeDerivedVars() {
+   // could because some tasks finish before others.
+   {
+     TaskSequencerConfig sequencer_opts;
+-    sequencer_opts.num_threads = g_num_threads;
++    sequencer_opts.num_threads = 0;
+     TaskSequencer<IvectorExtractorComputeDerivedVarsClass> sequencer(
+         sequencer_opts);
+     for (int32 i = 0; i < NumGauss(); i++)

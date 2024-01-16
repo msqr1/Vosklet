@@ -1,0 +1,1 @@
+class __GenericObj__ {static objects =  []}

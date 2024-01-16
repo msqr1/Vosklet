@@ -1,0 +1,9 @@
+.vscode
+test.sh
+index.html
+model.tzst
+clapack-wasm
+kaldi
+libarchive
+vosk-api
+zstd
