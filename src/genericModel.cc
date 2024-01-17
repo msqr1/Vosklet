@@ -34,7 +34,7 @@ bool genericModel::loadModel() {
       fireEv("error", "Unable to fetch model");
       return false;
     }
-    if(!extractModel("opfs/model.tzst", ".")) {
+    if(!extractModel(".")) {
       fireEv("error", "Unable to extract model");
     }
     fs::remove("opfs/model.tzst");
@@ -51,17 +51,17 @@ bool genericModel::loadModel() {
   }
   return true;
 }
-bool genericModel::extractModel(const char* target, const std::string& dest) {
+bool genericModel::extractModel() {
   std::string path{};
   archive* src {archive_read_new()};
   archive_entry* entry {};
   archive_read_support_filter_all(src);
   archive_read_support_format_all(src);
-  archive_read_open_filename(src, ".",10240);
+  archive_read_open_filename(src, "opfs/model.tzst",10240);
   if(archive_errno(src) != 0) return false;
   while (archive_read_next_header(src, &entry) == ARCHIVE_OK) {
     path = archive_entry_pathname(entry);
-    archive_entry_set_pathname(entry, (dest + path.substr(path.find("/"))).c_str());
+    archive_entry_set_pathname(entry, path.substr(path.find("/")).c_str());
     if(archive_errno(src) != 0) return false;
     archive_read_extract(src, entry, ARCHIVE_EXTRACT_UNLINK);
   }
