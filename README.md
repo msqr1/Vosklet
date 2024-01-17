@@ -11,13 +11,13 @@
     - 3: Debug
 ### Model and SpkModel
 ```
-new Model(url, storepath, uid)
-new SpkModel(url, storepath, uid)
+new Model(url, storepath, id)
+new SpkModel(url, storepath, id)
 ```
 #### Functions
-- ***constructor*** : Construct a model from an URL, storage path, and an UID.
-    - If **storepath** contains valid model files and **uid** is the same, there will not be a fetch from **url**.
-    - If **storepath** doesn't contain valid model files, or if it contains valid model files but **uid** is different, there will be a fetch from **url**, and the model is stored with **uid**.
+- ***constructor*** : Construct a model from an URL, storage path, and an ID.
+    - If **storepath** contains valid model files and **id** is the same, there will not be a fetch from **url**.
+    - If **storepath** doesn't contain valid model files, or if it contains valid model files but **id** is different, there will be a fetch from **url**, and the model is stored with **id**.
 - ***delete***: Delete self and free resources
 #### Events
 - ***ready***: The model is ready to be put into a recognizer via the constructor, or setSpkModel() for SpkModel.
