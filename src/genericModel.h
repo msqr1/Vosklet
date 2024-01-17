@@ -17,7 +17,7 @@ struct genericModel : genericObj {
   static bool first;
   const std::string url{};
   const std::string id{};
-  static bool extractModel(const char* target, const std::string& dest);
+  static bool extractModel();
   static bool checkId(const std::string& id);
   virtual bool checkModel() = 0;
   bool loadModel();
