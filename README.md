@@ -1,6 +1,6 @@
 # Browser-recognizer
 - A from-microphone speech recognizer built on Vosk that can be run on the browser, inspired by [vosk-browser](https://github.com/ccoreilly/vosk-browser), but built from scratch and no code taken!
-- Browser-recognizer can run on the main thread, as well as a web worker, see the "Important" section below for more information
+- Browser-recognizer can run on the main browser thread or worker.
 ## Interface
 - setLogLevel: set Kaldi's log level (default: -1)
     - -2: Error
@@ -16,18 +16,18 @@ new SpkModel(url, storepath, uid)
 ```
 #### Functions
 - ***constructor*** : Construct a model from an URL, storage path, and an UID.
-    - If **storepath** contains valid model files and **uid** is the same, there will not be a fetch from **url**
-    - If **storepath** doesn't contain valid model files, or if it contains valid model files, but **uid** is different, there will be a fetch from **url**, and the model is stored with **uid**
+    - If **storepath** contains valid model files and **uid** is the same, there will not be a fetch from **url**.
+    - If **storepath** doesn't contain valid model files, or if it contains valid model files but **uid** is different, there will be a fetch from **url**, and the model is stored with **uid**.
 - ***delete***: Delete self and free resources
 #### Events
-- ***ready***: The model is ready to be put into a recognizer via the constructor for Model, or setSpkModel() for SpkModel
-- ***error***: An error occured, check the event's **details** property for more information
+- ***ready***: The model is ready to be put into a recognizer via the constructor, or setSpkModel() for SpkModel.
+- ***error***: An error occured, check the event's **details** property.
 ### Recognizer
 ```
 new Recognizer(model)
 ```
 #### Functions
-- ***constructor***: Construct a recognizer from a model object
+- ***constructor***: Construct a recognizer from a model object.
 - ***start***: Start recognizing
 - ***stop***: Stop recognizing
 - ***setWords***: Return words' information in a result event (default: false)
@@ -36,11 +36,11 @@ new Recognizer(model)
 - ***setMaxAlternatives***: Set the max number of alternatives for result event (default: false)
 - ***setGrm***: Add grammar to the recognizer (default: none)
 - ***setSpkModel***: Set the speaker model of the recognizer (default: none)
+- ***delete***: Delete self and free resources
 #### Events
 - ***partialResult***: There is a partial recognition result, check the event's **details** property
 - ***result***: There is a full recognition result, check the event's **details** property
-- ***error***: An error occured, check the event's **details** property for more information
-- ***delete***: Delete self and free resources
+- ***error***: An error occured, check the event's **details** property.
 ## Other key points
 ### IMPORTANT 
 - You MUST call delete() on objects at the end of its usage. Or put: 
@@ -49,7 +49,8 @@ new Recognizer(model)
     __genericObj__.objects.forEach(obj => obj.delete())
     ```
     at the end of your program to automatically do that. We have to do this because Emscripten doesn't call destructors. See [here](https://emscripten.org/docs/getting_started/FAQ.html#what-does-exiting-the-runtime-mean-why-don-t-atexit-s-run).
-- If you choose to use this on the main thread, always handle the API through events
+- After calling the constructor, event listener s can be added right away while things are still loading. Calling an interface function at this time though, will block until loading is finished.
+- To be safe, always handle the API through  emitted events.
 ### Guarantees
 - If an error occurs (error event is fired), no changes was made, and no other dependent events will fire. For example, if an error occur while loading the model, the "ready" event won't fire in order to prevent executing code on a nonexistent model.
 ### Limitations compared to vosk-browser:
