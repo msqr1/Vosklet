@@ -3,7 +3,6 @@
 if(typeof window === 'undefined') {
     self.addEventListener("install", () => self.skipWaiting());
     self.addEventListener("activate", e => e.waitUntil(self.clients.claim()));
-  
     async function handleFetch(request) {
       if(request.cache === "only-if-cached" && request.mode !== "same-origin") {
         return;

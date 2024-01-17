@@ -1,5 +1,6 @@
 # Browser-recognizer
-A from-microphone speech recognizer built on Vosk that can be run on the browser, inspired by [vosk-browser](https://github.com/ccoreilly/vosk-browser), but built from scratch and no code taken!
+- A from-microphone speech recognizer built on Vosk that can be run on the browser, inspired by [vosk-browser](https://github.com/ccoreilly/vosk-browser), but built from scratch and no code taken!
+- Browser-recognizer can run on the main thread, as well as a web worker, see the "Important" section below for more information
 ## Interface
 - setLogLevel: set Kaldi's log level (default: -1)
     - -2: Error
@@ -39,19 +40,19 @@ new Recognizer(model)
 - ***partialResult***: There is a partial recognition result, check the event's **details** property
 - ***result***: There is a full recognition result, check the event's **details** property
 - ***error***: An error occured, check the event's **details** property for more information
-***delete***: Delete self and free resources
+- ***delete***: Delete self and free resources
 ## Other key points
 ### IMPORTANT 
-You MUST call delete() on objects at the end of its usage. Or put: 
-```
-__GenericObj__.objects.forEach(obj => obj.delete())
-```
-at the end of your program to automatically do that. We have to do this because Emscripten doesn't call destructors. See [here](https://emscripten.org/docs/getting_started/FAQ.html#what-does-exiting-the-runtime-mean-why-don-t-atexit-s-run).
+- You MUST call delete() on objects at the end of its usage. Or put: 
+
+    ```
+    __genericObj__.objects.forEach(obj => obj.delete())
+    ```
+    at the end of your program to automatically do that. We have to do this because Emscripten doesn't call destructors. See [here](https://emscripten.org/docs/getting_started/FAQ.html#what-does-exiting-the-runtime-mean-why-don-t-atexit-s-run).
+- If you choose to use this on the main thread, always handle the API through events
 ### Guarantees
-If an error occurs (error event is fired), no changes was made, and no other dependent events will fire. 
-For example, if an error occur while loading the model, the "ready" event won't fire in order to prevent executing code on a nonexistent model.
+- If an error occurs (error event is fired), no changes was made, and no other dependent events will fire. For example, if an error occur while loading the model, the "ready" event won't fire in order to prevent executing code on a nonexistent model.
 ### Limitations compared to vosk-browser:
-- Only works on main thread
 - Microphone only
 - Fixed memory size at 300MB, changing it require recompilation 
 ### Additions to vosk-browser:
@@ -67,5 +68,5 @@ For example, if an error occur while loading the model, the "ready" event won't 
 ## Usage 
 ```
 <!--Load this from a script tag-->
-<script src="BrowserRecognizer.js">
+
 ```

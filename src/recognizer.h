@@ -16,18 +16,17 @@
 #include <archive_entry.h>
 namespace fs = std::filesystem;
 
-class Recognizer : public GenericObj {
-  VoskRecognizer* recognizer{};
+struct recognizer : genericObj {
+  VoskRecognizer* rec{};
   ALCdevice* mic{};
   std::atomic_flag done {false};
   std::atomic_flag controller{false};
   void main();
-public:
-  Recognizer(Model* model, int sampleRate, int index);
+  recognizer(model* model, int sampleRate, int index);
   void start();
   void stop();
   void deinit();
-  void setSpkModel(SpkModel* model);
+  void setSpkModel(spkModel* model);
   void setGrm(const std::string& grm);
   void setWords(bool words);
   void setPartialWords(bool partialWords);

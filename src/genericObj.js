@@ -1,1 +1,1 @@
-class __GenericObj__ {static objects =  []}
+class __genericObj__ {static objects =  []}

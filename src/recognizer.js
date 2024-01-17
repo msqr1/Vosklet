@@ -1,36 +1,57 @@
 class Recognizer extends EventTarget {
   constructor(model) {
     ctx = new (AudioContext || webkitAudioContext)()
-    this.obj = new Module.__Recognizer__(model.obj,ctx.sampleRate,__GenericObj__.objects.length)
-    __GenericObj__.objects.push(this)
+    this.obj = (async () => {
+      new Module.__recognizer__(model.obj,ctx.sampleRate,__genericObj__.objects.length)
+    })()
+    __genericObj__.objects.push(this)
     ctx.close()
+    return this;
   }
   start() {
-    this.obj.start()
+    this.obj.then(() => {
+      this.obj.start()
+    })
   }
   stop() {
-    this.obj.stop()
+    this.obj.then(() => {
+      this.obj.stop()
+    })
   }
   delete() {
-    this.obj.deinit()
-    this.obj.delete()
+    this.obj.then(() => {
+      this.obj.deinit()
+      this.obj.delete()
+    })
   }
   setWords(words) {
-    this.obj.setWords(words)
+    this.obj.then(() => {
+      this.obj.setWords(words)
+    })
   }
   setPartialWords(partialWords) {
-    this.obj.setPartialWords(words)
+    this.obj.then(() => {
+      this.obj.setPartialWords(partialWords)
+    })
   }
   setGrm(grm) {
-    this.obj.setGrm(grm)
+    this.obj.then(() => {
+      this.obj.setGrm(grm)
+    })
   }
   setSpkModel(model) {
-    this.obj.setSpkModel(model.obj)
+    this.obj.then(() => {
+      this.obj.setSpkModel(model.obj)
+    })
   }
   setNLSML(nlsml) {
-    this.obj.setNLSML(nlsml)
+    this.obj.then(() => {
+      this.obj.setNLSML(nlsml)
+    })
   }
   setMaxAlternatives(alts) {
-    this.obj.setMaxAlternatives(alts)
+    this.obj.then(() => {
+      this.obj.setMaxAlternatives(alts)
+    })
   }
 }

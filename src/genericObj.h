@@ -1,10 +1,11 @@
 #pragma once
-#include <emscripten.h>
 
-class GenericObj {
+#include <emscripten.h>
+#include <emscripten/console.h>
+
+struct genericObj {
   const int index{};
-public:
-  GenericObj(int index) : index(index) {};
+  genericObj(int index) : index(index) {};
   void fireEv(const char *type, const char *content = nullptr);
 };
 

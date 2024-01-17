@@ -1,15 +1,15 @@
 #include "spkModel.h"
-SpkModel::SpkModel(const std::string &url, const std::string& storepath, const std::string& id, int index) : GenericModel(url, storepath, id, index) {
+spkModel::spkModel(const std::string &url, const std::string& storepath, const std::string& id, int index) : genericModel(url, storepath, id, index) {
   if(!loadModel()) return;
-  model = vosk_spk_model_new(this->storepath.c_str());
-  if(model == nullptr) {
+  mdl = vosk_spk_model_new(".");
+  if(mdl == nullptr) {
     fireEv("error", "Unable to initialize speaker model");
   }
   fireEv("ready");
 };
-bool SpkModel::checkModel(const std::string& path) {
-  return fs::exists((path + "/mfcc.conf")) && 
-    fs::exists((path + "/final.ext.raw")) && 
-    fs::exists((path + "/mean.vec")) && 
-    fs::exists((path + "/transform.mat"));
+bool spkModel::checkModel() {
+  return fs::exists("mfcc.conf") && 
+    fs::exists("final.ext.raw") && 
+    fs::exists("mean.vec") && 
+    fs::exists("transform.mat");
 }
