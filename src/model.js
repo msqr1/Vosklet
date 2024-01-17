@@ -1,9 +1,9 @@
 class Model extends EventTarget{
-  constructor(url, storepath, id) {
+  constructor() {
     super()
-    this.obj = (async () => {
-      return new Module.__model__(url, storepath, id, __genericObj__.objects.length)
-    })()
+  }
+  init(url, storepath, id) {
+    this.obj = new Module.__model__(url, storepath, id, __genericObj__.objects.length);
     __genericObj__.objects.push(this)
   }
   delete() {

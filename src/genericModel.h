@@ -4,6 +4,7 @@
 #include <string>
 #include <filesystem>
 #include <fstream>
+#include <thread>
 
 #include <vosk_api.h>
 #include <archive.h>

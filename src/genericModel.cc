@@ -34,12 +34,15 @@ bool genericModel::loadModel() {
       fireEv("error", "Unable to fetch model");
       return false;
     }
-    if(!extractModel(".")) {
+    if(!extractModel()) {
       fireEv("error", "Unable to extract model");
+      return false;
     }
     fs::remove("opfs/model.tzst");
     if(!checkModel()) {
       fireEv("error", "Model URL contains invalid model files");
+      fs::remove_all(".");
+      return false;
     }
     std::ofstream idFile("id");
     if(!idFile.is_open()) {

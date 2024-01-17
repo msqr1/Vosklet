@@ -4,13 +4,13 @@
 using namespace emscripten;
 EMSCRIPTEN_BINDINGS() {
   function("setLogLevel", &vosk_set_log_level, allow_raw_pointers());
-  class_<model, base<genericModel>>("__model__")
+  class_<model>("__model__")
   .constructor<std::string, std::string, std::string, int>(allow_raw_pointers());
 
-  class_<spkModel, base<genericModel>>("__spkModel__")
+  class_<spkModel>("__spkModel__")
   .constructor<std::string, std::string, std::string, const int>(allow_raw_pointers());
   
-  class_<recognizer, base<genericObj>>("__recognizer__") 
+  class_<recognizer>("__recognizer__") 
   .constructor<model*, int, int>(allow_raw_pointers())
   .function("start", &recognizer::start, allow_raw_pointers())
   .function("stop", &recognizer::stop, allow_raw_pointers())

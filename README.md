@@ -1,6 +1,6 @@
 # Browser-recognizer
 - A from-microphone speech recognizer built on Vosk that can be run on the browser, inspired by [vosk-browser](https://github.com/ccoreilly/vosk-browser), but built from scratch and no code taken!
-- Browser-recognizer can run on the main browser thread or worker.
+- Browser-recognizer can run both in the browser main thread and web workers.
 ## Interface
 - setLogLevel: set Kaldi's log level (default: -1)
     - -2: Error
@@ -11,11 +11,15 @@
     - 3: Debug
 ### Model and SpkModel
 ```
-new Model(url, storepath, id)
-new SpkModel(url, storepath, id)
+model = new Model()
+spkModel = new SpkModel()
+// Add events listeners
+model.init(url, storepath, id)
+spkModel.init(url, storepath, id)
 ```
 #### Functions
-- ***constructor*** : Construct a model from an URL, storage path, and an ID.
+- ***constructor***: Construct the EventTarget part to enable addEventListener
+- ***init*** : Initialize the internal object with an URL, storage path, and an ID.
     - If **storepath** contains valid model files and **id** is the same, there will not be a fetch from **url**.
     - If **storepath** doesn't contain valid model files, or if it contains valid model files but **id** is different, there will be a fetch from **url**, and the model is stored with **id**.
 - ***delete***: Delete self and free resources
@@ -24,10 +28,13 @@ new SpkModel(url, storepath, id)
 - ***error***: An error occured, check the event's **details** property.
 ### Recognizer
 ```
-new Recognizer(model)
+recognizer = new Recognizer()
+// Add event listeners
+recognizer.init(model)
 ```
 #### Functions
-- ***constructor***: Construct a recognizer from a model object.
+- ***constructor***: Construct the EventTarget part to enable addEventListener
+- ***init***: Construct the real internal object from a model
 - ***start***: Start recognizing
 - ***stop***: Stop recognizing
 - ***setWords***: Return words' information in a result event (default: false)
@@ -49,8 +56,7 @@ new Recognizer(model)
     __genericObj__.objects.forEach(obj => obj.delete())
     ```
     at the end of your program to automatically do that. We have to do this because Emscripten doesn't call destructors. See [here](https://emscripten.org/docs/getting_started/FAQ.html#what-does-exiting-the-runtime-mean-why-don-t-atexit-s-run).
-- After calling the constructor, event listener s can be added right away while things are still loading. Calling an interface function at this time though, will block until loading is finished.
-- To be safe, always handle the API through  emitted events.
+- To be safe, always handle the API through events by adding all event listener before calling init().
 ### Guarantees
 - If an error occurs (error event is fired), no changes was made, and no other dependent events will fire. For example, if an error occur while loading the model, the "ready" event won't fire in order to prevent executing code on a nonexistent model.
 ### Limitations compared to vosk-browser:
@@ -69,5 +75,9 @@ new Recognizer(model)
 ## Usage 
 ```
 <!--Load this from a script tag-->
+<script src="BrowserRecognizer.js"></script>
+<!-->
+<script>
 
+</script>
 ```
