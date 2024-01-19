@@ -12,34 +12,6 @@
 
 var Module = {};
 
-// Node.js support
-var ENVIRONMENT_IS_NODE = typeof process == 'object' && typeof process.versions == 'object' && typeof process.versions.node == 'string';
-if (ENVIRONMENT_IS_NODE) {
-  // Create as web-worker-like an environment as we can.
-
-  var nodeWorkerThreads = require('worker_threads');
-
-  var parentPort = nodeWorkerThreads.parentPort;
-
-  parentPort.on('message', (data) => onmessage({ data: data }));
-
-  var fs = require('fs');
-  var vm = require('vm');
-
-  Object.assign(global, {
-    self: global,
-    require,
-    Module,
-    location: {
-      href: __filename
-    },
-    Worker: nodeWorkerThreads.Worker,
-    importScripts: (f) => vm.runInThisContext(fs.readFileSync(f, 'utf8'), {filename: f}),
-    postMessage: (msg) => parentPort.postMessage(msg),
-    performance: global.performance || { now: Date.now },
-  });
-}
-
 // Thread-local guard variable for one-time init of the JS state
 var initializedJS = false;
 
@@ -49,11 +21,6 @@ function assert(condition, text) {
 
 function threadPrintErr() {
   var text = Array.prototype.slice.call(arguments).join(' ');
-  // See https://github.com/emscripten-core/emscripten/issues/14804
-  if (ENVIRONMENT_IS_NODE) {
-    fs.writeSync(2, text + '\n');
-    return;
-  }
   console.error(text);
 }
 function threadAlert() {
@@ -97,6 +64,7 @@ function handleMessage(e) {
 
     // And add a callback for when the runtime is initialized.
     self.startWorker = (instance) => {
+      Module = instance;
       // Notify the main thread that this thread has loaded.
       postMessage({ 'cmd': 'loaded' });
       // Process any messages that were queued before the thread was ready.
@@ -133,6 +101,7 @@ function handleMessage(e) {
         importScripts(objectUrl);
         URL.revokeObjectURL(objectUrl);
       }
+      loadBR(Module);
     } else if (e.data.cmd === 'run') {
       // Pass the thread address to wasm to store it for fast access.
       Module['__emscripten_thread_init'](e.data.pthread_ptr, /*is_main=*/0, /*is_runtime=*/0, /*can_block=*/1);

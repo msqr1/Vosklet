@@ -3,7 +3,7 @@ class SpkModel extends EventTarget{
     super()
   }
   init(url, storepath, id) {
-    this.obj = new Module.__spkModel__(url, storepath, id, __genericObj__.objects.length)
+    this.obj = new BrowserRecognizer.__spkModel__(url, storepath, id, __genericObj__.objects.length)
     __genericObj__.objects.push(this)
   }
   delete() {

@@ -25,18 +25,7 @@ index 4573e24f1..4af4e73ea 100644
  
  MultiThreadable::~MultiThreadable() {
    // default implementation does nothing
-diff --git a/src/base/kaldi-types.h b/src/base/kaldi-types.h
-index 7ebf4f853..2f5979e42 100644
---- a/src/base/kaldi-types.h
-+++ b/src/base/kaldi-types.h
-@@ -20,6 +20,7 @@
- 
- #ifndef KALDI_BASE_KALDI_TYPES_H_
- #define KALDI_BASE_KALDI_TYPES_H_ 1
-+#define KALDI_DOUBLEPRECISION 1
- 
- namespace kaldi {
- // TYPEDEFS ..................................................................
+
 diff --git a/src/ivector/ivector-extractor.cc b/src/ivector/ivector-extractor.cc
 index c3a122281..71d37256d 100644
 --- a/src/ivector/ivector-extractor.cc

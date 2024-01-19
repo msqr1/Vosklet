@@ -1,21 +1,9 @@
 #include "genericModel.h"
 
-bool genericModel::first = true;
 genericModel::genericModel(const std::string &url, const std::string& storepath, const std::string &id, int index) : url(url), id(id), genericObj(index) {
+  fs::current_path("/opfs");
+  fs::create_directories(storepath);
   fs::current_path(storepath);
-  if(first) {
-    vosk_set_log_level(0);
-    int res{};
-    std::thread t{[&res](){
-      res = wasmfs_create_directory("opfs",0777,wasmfs_create_opfs_backend());
-    }};
-    t.join();
-    if(res == 1){
-      fireEv("error", "Unable to create OPFS directory");
-      return;
-    }
-    first = false;
-  }
 }
 bool genericModel::checkId(const std::string& id) {
   std::ifstream file {"id", std::ifstream::binary}; 
@@ -28,42 +16,46 @@ bool genericModel::checkId(const std::string& id) {
   file.read(&oldid[0], size);
   return id.compare(oldid) == 0 ? true : false;
 }
-bool genericModel::loadModel() {
+bool genericModel::loadModel(const std::string& storepath) {
   if(!checkModel() || !checkId(id)) {
-    if(emscripten_wget(url.c_str(),"opfs/model.tzst") == 1) {
+    char filename[] {"/opfs/XXXXXX.tzst"};
+    close(mkostemps(filename, 5, O_PATH));
+    if(emscripten_wget(url.c_str(),filename) == 1) {
       fireEv("error", "Unable to fetch model");
       return false;
     }
-    if(!extractModel()) {
+    if(!extractModel(filename)) {
       fireEv("error", "Unable to extract model");
       return false;
     }
-    fs::remove("opfs/model.tzst");
+    fs::remove(filename);
     if(!checkModel()) {
       fireEv("error", "Model URL contains invalid model files");
-      fs::remove_all(".");
+      fs::current_path("/opfs");
+      fs::remove_all(storepath);
       return false;
     }
     std::ofstream idFile("id");
     if(!idFile.is_open()) {
       fireEv("error", "Unable to write new id");
-      fs::remove_all(".");
+      fs::remove_all(storepath);
       return false;
     }
     idFile << id;
   }
   return true;
 }
-bool genericModel::extractModel() {
+bool genericModel::extractModel(char* name) {
   std::string path{};
   archive* src {archive_read_new()};
   archive_entry* entry {};
   archive_read_support_filter_all(src);
   archive_read_support_format_all(src);
-  archive_read_open_filename(src, "opfs/model.tzst",10240);
+  archive_read_open_filename(src, name,10240);
   if(archive_errno(src) != 0) return false;
   while (archive_read_next_header(src, &entry) == ARCHIVE_OK) {
     path = archive_entry_pathname(entry);
+    // Strip first component
     archive_entry_set_pathname(entry, path.substr(path.find("/")).c_str());
     if(archive_errno(src) != 0) return false;
     archive_read_extract(src, entry, ARCHIVE_EXTRACT_UNLINK);

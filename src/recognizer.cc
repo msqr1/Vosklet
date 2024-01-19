@@ -7,11 +7,6 @@ void recognizer::stop() {
   controller.clear(std::memory_order_relaxed);
   controller.notify_all();
 }
-void recognizer::deinit() {
-  done.test_and_set(std::memory_order_relaxed);
-  done.notify_all();
-  stop();
-}
 recognizer::recognizer(model* mdl, int sampleRate, int index) : genericObj(index) {
   mic = alcCaptureOpenDevice("Emscripten OpenAL capture",sampleRate, AL_FORMAT_MONO16, 22480);
   if(alcGetError(mic) != 0) {
@@ -25,31 +20,14 @@ recognizer::recognizer(model* mdl, int sampleRate, int index) : genericObj(index
   } 
   main();
 }
-void recognizer::main() {
-  char buffer[22480];
-  int sample{};
-  fireEv("ready");
-  while(!done.test()) {
-    controller.wait(done.test(std::memory_order_relaxed), std::memory_order_relaxed);
-    alcCaptureStart(mic);
-    while(controller.test()) {
-      alcGetIntegerv(mic, ALC_CAPTURE_SAMPLES, sizeof(int), &sample);
-      alcCaptureSamples(mic, buffer, sample);
-      switch(vosk_recognizer_accept_waveform(rec, buffer, 22480)) {
-        case 0: 
-          fireEv("result", vosk_recognizer_result(rec));
-          break;
-        case 1: 
-          fireEv("partialResult", vosk_recognizer_partial_result(rec));
-          break;
-        default:
-          fireEv("error", "Recognition result error");
-      }
-    }
-    alcCaptureStop(mic);
-  }
+recognizer::~recognizer() {
+  done.test_and_set(std::memory_order_relaxed);
+  done.notify_all();
+  stop();
   vosk_recognizer_free(rec);
   alcCaptureCloseDevice(mic);
+}
+void recognizer::acceptWaveForm() {
 }
 void recognizer::setGrm(const std::string& grm) {
   vosk_recognizer_set_grm(rec, grm.c_str());

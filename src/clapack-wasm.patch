@@ -1,0 +1,16 @@
+diff --git a/libf2c/main.c b/libf2c/main.c
+index d95fdc9..ac82f68 100644
+--- a/libf2c/main.c
++++ b/libf2c/main.c
+@@ -105,9 +105,9 @@ char **xargv;
+ 
+  int
+ #ifdef KR_headers
+-main(argc, argv) int argc; char **argv;
++m(argc, argv) int argc; char **argv;
+ #else
+-main(int argc, char **argv)
++m(int argc, char **argv)
+ #endif
+ {
+ xargc = argc;

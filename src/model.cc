@@ -1,7 +1,7 @@
 #include "model.h"
 
 model::model(const std::string &url, const std::string& storepath, const std::string& id, int index) : genericModel(url, id, storepath, index) {
-  if(!loadModel()) return;
+  if(!loadModel(storepath)) return;
   mdl = vosk_model_new(".");
   if(mdl == nullptr) {
     fireEv("error", "Unable to initialize model");
@@ -9,7 +9,9 @@ model::model(const std::string &url, const std::string& storepath, const std::st
   }
   fireEv("ready");
 };
-
+model::~model() {
+  vosk_model_free(mdl);
+}
 bool model::checkModel() { 
   return fs::exists("am/final.mdl") &&
     fs::exists("conf/mfcc.conf") &&

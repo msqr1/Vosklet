@@ -4,7 +4,7 @@ class Recognizer extends EventTarget {
   }
   init(model) {
     ctx = new (AudioContext || webkitAudioContext)()
-    new Module.__recognizer__(model.obj,ctx.sampleRate,__genericObj__.objects.length)
+    new BrowserRecognizer.__recognizer__(model.obj,ctx.sampleRate,__genericObj__.objects.length)
     ctx.close()
     __genericObj__.objects.push(this)
   }
@@ -15,7 +15,6 @@ class Recognizer extends EventTarget {
       this.obj.stop()
   }
   delete() {
-      this.obj.deinit()
       this.obj.delete()
   }
   setWords(words) {

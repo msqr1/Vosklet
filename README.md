@@ -25,7 +25,7 @@ spkModel.init(url, storepath, id)
 - ***delete***: Delete self and free resources
 #### Events
 - ***ready***: The model is ready to be put into a recognizer via the constructor, or setSpkModel() for SpkModel.
-- ***error***: An error occured, check the event's **details** property.
+- ***error***: An error occured, check the event's "details" property.
 ### Recognizer
 ```
 recognizer = new Recognizer()
@@ -43,11 +43,11 @@ recognizer.init(model)
 - ***setMaxAlternatives***: Set the max number of alternatives for result event (default: false)
 - ***setGrm***: Add grammar to the recognizer (default: none)
 - ***setSpkModel***: Set the speaker model of the recognizer (default: none)
-- ***delete***: Delete self and free resources
+- ***delete***: Call stop, delete self and free all resource
 #### Events
-- ***partialResult***: There is a partial recognition result, check the event's **details** property
-- ***result***: There is a full recognition result, check the event's **details** property
-- ***error***: An error occured, check the event's **details** property.
+- ***partialResult***: There is a partial recognition result, check the event's "details" property
+- ***result***: There is a full recognition result, check the event's "details" property
+- ***error***: An error occured, check the event's "details" property.
 ## Other key points
 ### IMPORTANT 
 - You MUST call delete() on objects at the end of its usage. Or put: 
@@ -56,7 +56,8 @@ recognizer.init(model)
     __genericObj__.objects.forEach(obj => obj.delete())
     ```
     at the end of your program to automatically do that. We have to do this because Emscripten doesn't call destructors. See [here](https://emscripten.org/docs/getting_started/FAQ.html#what-does-exiting-the-runtime-mean-why-don-t-atexit-s-run).
-- To be safe, always handle the API through events by adding all event listener before calling init().
+- To be safe, always handle the API through events by adding all event listener before calling init() on objects. 
+- Always call init on the regular Model object before calling init on the recognizer. SpkModel can be init and set later.
 ### Guarantees
 - If an error occurs (error event is fired), no changes was made, and no other dependent events will fire. For example, if an error occur while loading the model, the "ready" event won't fire in order to prevent executing code on a nonexistent model.
 ### Limitations compared to vosk-browser:

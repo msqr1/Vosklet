@@ -8,6 +8,8 @@
 # Total build time is around 45 minutes, mostly from building Kaldi
 
 sudo apt install shtool libtool autogen autotools-dev pkg-config make &&
+wget -qO- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash &&
+nvm install 20.11.0 &&
 
 SRC=$(realpath src) &&
 KALDI=$(realpath kaldi) &&
@@ -52,7 +54,7 @@ echo "PACKAGE_VERSION = 1.8.0" >> $OPENFST/Makefile &&
 
 cd $KALDI/src &&
 git apply $SRC/kaldi.patch &&
-CXXFLAGS="-O3 -msse3 -mssse3 -msse4.1 -msse4.2 -mavx -msimd128 -UHAVE_EXECINFO_H -pthread -flto" LDFLAGS="-O3 -sERROR_ON_UNDEFINED_SYMBOLS=0 -lembind -pthread -flto" emconfigure ./configure --use-cuda=no --with-cudadecoder=no --static --static-math=yes --static-fst=yes --double-precision=yes --debug-level=0 --clapack-root=$CLAPACK_WASM --host=WASM && 
+CXXFLAGS="-O3 -msimd128 -UHAVE_EXECINFO_H -pthread -flto" LDFLAGS="-O3 -sERROR_ON_UNDEFINED_SYMBOLS=0 -lembind -pthread -flto" emconfigure ./configure --use-cuda=no --with-cudadecoder=no --static --static-math=yes --static-fst=yes  --debug-level=0 --clapack-root=$CLAPACK_WASM --host=WASM && 
 emmake make online2 lm rnnlm &&
 
 cd $VOSK/src &&
@@ -61,4 +63,4 @@ em++ -pthread -O3 -flto -I. -I$KALDI/src -I$OPENFST/include $VOSK_FILES -c &&
 emar -rcs vosk.a ${VOSK_FILES//.cc/.o} &&
 
 cd $SRC
-em++ -O3 genericObj.cc genericModel.cc model.cc spkModel.cc recognizer.cc bindings.cc -sWASMFS -sWASM_BIGINT -sSUPPORT_BIG_ENDIAN -sSINGLE_FILE -sINITIAL_MEMORY=300mb -sASYNCIFY -sPTHREAD_POOL_SIZE=2 -pthread --no-entry -flto --post-js genericObj.js --post-js model.js --post-js spkModel.js --post-js recognizer.js -I. -I$LIBARCHIVE/include -I$VOSK/src -L$LIBARCHIVE/lib -larchive -L$ZSTD/lib -lzstd -L$KALDI/src -l:online2/kaldi-online2.a -l:decoder/kaldi-decoder.a -l:ivector/kaldi-ivector.a -l:gmm/kaldi-gmm.a -l:tree/kaldi-tree.a -l:feat/kaldi-feat.a -l:cudamatrix/kaldi-cudamatrix.a -l:lat/kaldi-lat.a -l:lm/kaldi-lm.a -l:rnnlm/kaldi-rnnlm.a -l:hmm/kaldi-hmm.a -l:nnet3/kaldi-nnet3.a -l:transform/kaldi-transform.a -l:matrix/kaldi-matrix.a -l:fstext/kaldi-fstext.a -l:util/kaldi-util.a -l:base/kaldi-base.a -L$OPENFST/lib -l:libfst.a -l:libfstngram.a -L$CLAPACK_WASM -l:CBLAS/lib/cblas.a -l:CLAPACK-3.2.1/lapack.a -l:CLAPACK-3.2.1/libcblaswr.a -l:f2c_BLAS-3.8.0/blas.a -l:libf2c/libf2c.a -L$VOSK/src -l:vosk.a -lopfs.js -lembind -lopenal -o BrowserRecognizer.js
+em++ -O3 genericObj.cc genericModel.cc model.cc spkModel.cc recognizer.cc bindings.cc -sWASMFS -sWASM_BIGINT -sSUPPORT_BIG_ENDIAN -sSINGLE_FILE -sMODULARIZE -sASYNCIFY -sEXPORT_NAME=loadBR -sENVIRONMENT=web,worker -sINITIAL_MEMORY=300mb -sPTHREAD_POOL_SIZE=2 -pthread -flto -I. -I$LIBARCHIVE/include -I$VOSK/src -L$LIBARCHIVE/lib -larchive -L$ZSTD/lib -lzstd -L$KALDI/src -l:online2/kaldi-online2.a -l:decoder/kaldi-decoder.a -l:ivector/kaldi-ivector.a -l:gmm/kaldi-gmm.a -l:tree/kaldi-tree.a -l:feat/kaldi-feat.a -l:cudamatrix/kaldi-cudamatrix.a -l:lat/kaldi-lat.a -l:lm/kaldi-lm.a -l:rnnlm/kaldi-rnnlm.a -l:hmm/kaldi-hmm.a -l:nnet3/kaldi-nnet3.a -l:transform/kaldi-transform.a -l:matrix/kaldi-matrix.a -l:fstext/kaldi-fstext.a -l:util/kaldi-util.a -l:base/kaldi-base.a -L$OPENFST/lib -l:libfst.a -l:libfstngram.a -L$CLAPACK_WASM -l:CBLAS/lib/cblas.a -l:CLAPACK-3.2.1/lapack.a -l:CLAPACK-3.2.1/libcblaswr.a -l:f2c_BLAS-3.8.0/blas.a -l:libf2c/libf2c.a -L$VOSK/src -l:vosk.a -lopfs.js -lembind -lopenal -o ../BrowserRecognizer.js  

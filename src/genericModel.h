@@ -6,6 +6,7 @@
 #include <fstream>
 #include <thread>
 
+#include <fcntl.h>
 #include <vosk_api.h>
 #include <archive.h>
 #include <archive_entry.h>
@@ -15,12 +16,11 @@
 namespace fs = std::filesystem;
 
 struct genericModel : genericObj {
-  static bool first;
   const std::string url{};
   const std::string id{};
-  static bool extractModel();
+  static bool extractModel(char *name);
   static bool checkId(const std::string& id);
   virtual bool checkModel() = 0;
-  bool loadModel();
-  genericModel(const std::string& url, const std::string& storepath, const std::string& id, int index);
+  bool loadModel(const std::string& storepath);
+  genericModel(const std::string &url, const std::string &storepath, const std::string &id, int index);
 };
