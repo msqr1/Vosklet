@@ -39,17 +39,36 @@
 - ***Cross-Origin-Opener-Policy*** ---> ***same-origin***
 ### If you can't set these headers, you can use a VERY HACKY workaround at *src/addCOI.js*.
 
-## Usage 
+## Demo
 ```
 <!--Load this from a script tag-->
-<script src="BrowserRecognizer.js"></script>
+<script src="BrowserRecognizer.js" type="module"></script>
 <!-->
 <script>
-// Choose a nice, non-conflicting name for the module
+// Select name
 const BrRec = await loadBR()
 
 // Prepare 
-const model = BrRec.makeModel()
-const spkmodel = BrRec.
+const model = await BrRec.makeModel(")
+const recognizer = await BrRec.makeRecognizer(model)
+recognizer.addEventListener("result", e => {
+  console.log("Result: ",e.details)
+}
+recognizer.addEventListener("partialResult", e => {
+  console.log("Partial result: ",e.details)
+}
+
+// Recognize
+media = await navigator.mediaDevices.getUserMedia({
+    video: false,
+    audio: {
+        echoCancellation: true,
+        noiseSuppression: true,
+        channelCount: 1,
+        sampleRate: 16000
+    },
+});
+
+
 </script>
 ```
