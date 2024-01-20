@@ -1,13 +1,12 @@
 #include "model.h"
 
-model::model(const std::string &url, const std::string& storepath, const std::string& id, int index) : genericModel(url, id, storepath, index) {
+model::model(const std::string &url, const std::string& storepath, const std::string& id, int index) : genericModel(url, id, storepath) {
   if(!loadModel(storepath)) return;
   mdl = vosk_model_new(".");
   if(mdl == nullptr) {
-    fireEv("error", "Unable to initialize model");
+    throwErr("Unable to initialize model");
     return;
   }
-  fireEv("ready");
 };
 model::~model() {
   vosk_model_free(mdl);

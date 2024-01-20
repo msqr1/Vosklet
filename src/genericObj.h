@@ -2,11 +2,11 @@
 
 #include <emscripten.h>
 #include <emscripten/console.h>
+void throwErr(const char* msg) {
+  EM_ASM({
+    throw Error(UTF8ToString($0))
+  },msg);
+}
 
-struct genericObj {
-  const int index{};
-  genericObj(int index) : index(index) {};
-  void fireEv(const char *type, const char *content = nullptr);
-};
 
 

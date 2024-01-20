@@ -16,14 +16,13 @@
 #include <archive_entry.h>
 namespace fs = std::filesystem;
 
-struct recognizer : genericObj {
+struct recognizer {
+  int index{};
   VoskRecognizer* rec{};
-  ALCdevice* mic{};
-  void acceptWaveForm();
-  recognizer(model* model, int sampleRate, int index);
+  void acceptWaveForm(float* data, int len);
+  recognizer(model* model, float sampleRate, int index);
   ~recognizer();
-  void start();
-  void stop();
+  void fireEv(const char* type, const char* content);
   void setSpkModel(spkModel* model);
   void setGrm(const std::string& grm);
   void setWords(bool words);

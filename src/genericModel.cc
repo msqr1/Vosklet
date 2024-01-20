@@ -1,6 +1,6 @@
 #include "genericModel.h"
 
-genericModel::genericModel(const std::string &url, const std::string& storepath, const std::string &id, int index) : url(url), id(id), genericObj(index) {
+genericModel::genericModel(const std::string &url, const std::string& storepath, const std::string &id) : url(url), id(id) {
   fs::current_path("/opfs");
   fs::create_directories(storepath);
   fs::current_path(storepath);
@@ -21,23 +21,23 @@ bool genericModel::loadModel(const std::string& storepath) {
     char filename[] {"/opfs/XXXXXX.tzst"};
     close(mkostemps(filename, 5, O_PATH));
     if(emscripten_wget(url.c_str(),filename) == 1) {
-      fireEv("error", "Unable to fetch model");
+      throwErr("Unable to fetch model");
       return false;
     }
     if(!extractModel(filename)) {
-      fireEv("error", "Unable to extract model");
+      throwErr("Unable to extract model");
       return false;
     }
     fs::remove(filename);
     if(!checkModel()) {
-      fireEv("error", "Model URL contains invalid model files");
+      throwErr("Model URL contains invalid model files");
       fs::current_path("/opfs");
       fs::remove_all(storepath);
       return false;
     }
     std::ofstream idFile("id");
     if(!idFile.is_open()) {
-      fireEv("error", "Unable to write new id");
+      throwErr("Unable to write new id");
       fs::remove_all(storepath);
       return false;
     }

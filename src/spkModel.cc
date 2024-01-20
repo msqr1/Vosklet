@@ -1,11 +1,11 @@
 #include "spkModel.h"
-spkModel::spkModel(const std::string &url, const std::string& storepath, const std::string& id, int index) : genericModel(url, storepath, id, index) {
+spkModel::spkModel(const std::string &url, const std::string& storepath, const std::string& id) : genericModel(url, storepath, id) {
   if(!loadModel(storepath)) return;
   mdl = vosk_spk_model_new(".");
   if(mdl == nullptr) {
-    fireEv("error", "Unable to initialize speaker model");
+    throwErr("Unable to initialize speaker model");
+    return;
   }
-  fireEv("ready");
 };
 spkModel::~spkModel() {
   vosk_spk_model_free(mdl);

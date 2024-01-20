@@ -11,20 +11,19 @@ int main() {
 }
 EMSCRIPTEN_BINDINGS() {
   function("setLogLevel", &vosk_set_log_level, allow_raw_pointers());
-  class_<model>("__model__")
+  class_<model>("model")
   .constructor<std::string, std::string, std::string, int>(allow_raw_pointers());
 
-  class_<spkModel>("__spkModel__")
-  .constructor<std::string, std::string, std::string, const int>(allow_raw_pointers());
+  class_<spkModel>("spkModel")
+  .constructor<std::string, std::string, std::string, int>(allow_raw_pointers());
   
-  class_<recognizer>("__recognizer__") 
+  class_<recognizer>("recognizer") 
   .constructor<model*, int, int>(allow_raw_pointers())
-  .function("start", &recognizer::start, allow_raw_pointers())
-  .function("stop", &recognizer::stop, allow_raw_pointers())
   .function("setWords", &recognizer::setWords, allow_raw_pointers())
   .function("setPartialWords", &recognizer::setPartialWords, allow_raw_pointers())
   .function("setGrm", &recognizer::setGrm, allow_raw_pointers())
   .function("setNLSML", &recognizer::setNLSML, allow_raw_pointers())
   .function("setSpkModel", &recognizer::setSpkModel, allow_raw_pointers())
-  .function("setMaxAlternatives", &recognizer::setMaxAlternatives, allow_raw_pointers());
+  .function("setMaxAlternatives", &recognizer::setMaxAlternatives, allow_raw_pointers())
+  .function("acceptWaveForm", &recognizer::acceptWaveForm, allow_raw_pointers());
 };

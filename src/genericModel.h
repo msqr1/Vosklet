@@ -15,12 +15,12 @@
 
 namespace fs = std::filesystem;
 
-struct genericModel : genericObj {
+struct genericModel {
   const std::string url{};
   const std::string id{};
   static bool extractModel(char *name);
   static bool checkId(const std::string& id);
   virtual bool checkModel() = 0;
   bool loadModel(const std::string& storepath);
-  genericModel(const std::string &url, const std::string &storepath, const std::string &id, int index);
+  genericModel(const std::string &url, const std::string &storepath, const std::string &id);
 };

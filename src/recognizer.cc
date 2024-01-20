@@ -1,33 +1,30 @@
 #include "./recognizer.h" 
-void recognizer::start() {
-  controller.test_and_set(std::memory_order_relaxed);
-  controller.notify_all();
-}
-void recognizer::stop() {
-  controller.clear(std::memory_order_relaxed);
-  controller.notify_all();
-}
-recognizer::recognizer(model* mdl, int sampleRate, int index) : genericObj(index) {
-  mic = alcCaptureOpenDevice("Emscripten OpenAL capture",sampleRate, AL_FORMAT_MONO16, 22480);
-  if(alcGetError(mic) != 0) {
-    fireEv("error", "Unable to initialize microphone");
-    return;
-  }
-  rec = vosk_recognizer_new(mdl->mdl,static_cast<float>(sampleRate));
+recognizer::recognizer(model* mdl, float sampleRate, int index) : index(index) {
+  rec = vosk_recognizer_new(mdl->mdl,sampleRate);
   if(rec == nullptr) {
-    fireEv("error", "Unable to construct recognizer");
+    throwErr("Unable to initialize recognizer");
     return;
   } 
-  main();
+}
+void recognizer::fireEv(const char *type, const char *content) {
+  EM_ASM({
+    recognizers[$0].dispatchEvent(new CustomEvent(UTF8ToString($1), {"details" : UTF8ToString($2)}));
+  },this->index, type, content);
 }
 recognizer::~recognizer() {
-  done.test_and_set(std::memory_order_relaxed);
-  done.notify_all();
-  stop();
   vosk_recognizer_free(rec);
-  alcCaptureCloseDevice(mic);
 }
-void recognizer::acceptWaveForm() {
+void recognizer::acceptWaveForm(float* data, int len) {
+  switch(vosk_recognizer_accept_waveform_f(rec, data, len)) {
+    case 0:
+    fireEv("result", vosk_recognizer_result(rec));
+    break;
+    case 1:
+    fireEv("partialResult", vosk_recognizer_partial_result(rec));
+    break;
+    default:
+    fireEv("_error", "Recognition error, unable to recognize");
+  }
 }
 void recognizer::setGrm(const std::string& grm) {
   vosk_recognizer_set_grm(rec, grm.c_str());

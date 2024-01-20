@@ -1,0 +1,1 @@
+window.loadBR = loadBR
