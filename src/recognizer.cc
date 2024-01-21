@@ -1,18 +1,17 @@
-#include "./recognizer.h" 
+#include "recognizer.h" 
 recognizer::recognizer(model* mdl, float sampleRate, int index) : index(index) {
   rec = vosk_recognizer_new(mdl->mdl,sampleRate);
   if(rec == nullptr) {
-    throwErr("Unable to initialize recognizer");
-    return;
+    throwJS("Unable to initialize recognizer");
   } 
+}
+recognizer::~recognizer() {
+  vosk_recognizer_free(rec);
 }
 void recognizer::fireEv(const char *type, const char *content) {
   EM_ASM({
     recognizers[$0].dispatchEvent(new CustomEvent(UTF8ToString($1), {"details" : UTF8ToString($2)}));
   },this->index, type, content);
-}
-recognizer::~recognizer() {
-  vosk_recognizer_free(rec);
 }
 void recognizer::acceptWaveForm(float* data, int len) {
   switch(vosk_recognizer_accept_waveform_f(rec, data, len)) {
@@ -23,7 +22,7 @@ void recognizer::acceptWaveForm(float* data, int len) {
     fireEv("partialResult", vosk_recognizer_partial_result(rec));
     break;
     default:
-    fireEv("_error", "Recognition error, unable to recognize");
+    throwJS("acceptWaveForm error (from C++)", true);
   }
 }
 void recognizer::setGrm(const std::string& grm) {

@@ -3,8 +3,7 @@ spkModel::spkModel(const std::string &url, const std::string& storepath, const s
   if(!loadModel(storepath)) return;
   mdl = vosk_spk_model_new(".");
   if(mdl == nullptr) {
-    throwErr("Unable to initialize speaker model");
-    return;
+    throwJS("Unable to initialize speaker model");
   }
 };
 spkModel::~spkModel() {

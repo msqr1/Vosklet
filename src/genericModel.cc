@@ -21,23 +21,23 @@ bool genericModel::loadModel(const std::string& storepath) {
     char filename[] {"/opfs/XXXXXX.tzst"};
     close(mkostemps(filename, 5, O_PATH));
     if(emscripten_wget(url.c_str(),filename) == 1) {
-      throwErr("Unable to fetch model");
+      throwJS("Unable to fetch model");
       return false;
     }
     if(!extractModel(filename)) {
-      throwErr("Unable to extract model");
+      throwJS("Unable to extract model");
       return false;
     }
     fs::remove(filename);
     if(!checkModel()) {
-      throwErr("Model URL contains invalid model files");
+      throwJS("Model URL contains invalid model files");
       fs::current_path("/opfs");
       fs::remove_all(storepath);
       return false;
     }
     std::ofstream idFile("id");
     if(!idFile.is_open()) {
-      throwErr("Unable to write new id");
+      throwJS("Unable to write new id");
       fs::remove_all(storepath);
       return false;
     }

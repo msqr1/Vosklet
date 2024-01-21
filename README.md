@@ -1,12 +1,12 @@
-# Browser-recognizer
+# Browser-recognizer- 
 - A speech recognizer built on Vosk that can be run on the browser, inspired by [vosk-browser](https://github.com/ccoreilly/vosk-browser), but built from scratch and no code taken!
 - Browser-recognizer can run both in the browser main thread and web workers.
 ## Global and all objects' common interface 
 | Function signature (global) | Description |
 |---|---|
-| ```Promise makeModel(url, path, id)```<br>```Promise makeSpkModel(url, storepath, id)``` | - If **path** contains valid model files and **id** is the same, there will not be a fetch from **url**.<br>- If **path** doesn't contain valid model files, or if it contains valid model files but **id** is different, there will be a fetch from **url**, and the model is stored with **id**. |
-| ```setLogLevel(level)``` | Set Vosk's log level (default: -1) <br>- 2: Error<br>- 1: Warning<br>- 0: Info <br>- 1: Verbose<br>- 2: More verbose<br>- 3: Debug |
-| ```deleteAll()``` | Call ```delete()``` on all objects, it is recommended to put this at the end of the program to automatically clean up. See [here](https://emscripten.org/docs/getting_started/FAQ.html#what-does-exiting-the-runtime-mean-why-don-t-atexit-s-run).|
+| ```Promise makeModel(path: string, url: string, id: string)```<br><br>```Promise makeSpkModel(path: string, url: string, id: string)``` | - If **path** contains valid model files and **id** is the same, there will not be a fetch from **url**.<br>- If **path** doesn't contain valid model files, or if it contains valid model files but **id** is different, there will be a fetch from **url**, and the model is stored with **id**. |
+| ```setLogLevel(lvl: int)``` | Set Vosk's log level (default: -1) <br>- 2: Error<br>- 1: Warning<br>- 0: Info <br>- 1: Verbose<br>- 2: More verbose<br>- 3: Debug |
+| ```deleteAll()``` | Call ```delete()``` on all objects, it is recommended to put this at the end of the program to automatically clean up. See [why](https://emscripten.org/docs/getting_started/FAQ.html#what-does-exiting-the-runtime-mean-why-don-t-atexit-s-run).|
 
 | Function signature (all objects) | Description
 |---|---|
@@ -14,18 +14,18 @@
 ## ```Recognizer``` object
 | Function signature | Description |
 |---|---|
-| ```setPartialWords(partialWords)``` | Return words' information in a partialResult event (default: false) |
-| ```setWords(words)``` | Return words' information in a result event (default: false) |
-| ```setNLSML(nlsml)``` | Return result and partialResult in NLSML form (default: false) |
-| ```setMaxAlternatives(alts)``` | Set the max number of alternatives for result event (default: false) |
-| ```setGrm(grm)``` | Add grammar to the recognizer (default: none) |
-| ```setSpkModel(spkmodel)``` | Set the speaker model of the recognizer (default: none) |
+| ```processAudio(audio: AudioBuffer)``` | Recognize an audio chunk, 
+| ```setPartialWords(partialWords: bool)``` | Return words' information in a partialResult event (default: false) |
+| ```setWords(words: bool)``` | Return words' information in a result event (default: false) |
+| ```setNLSML(nlsml: bool)``` | Return result and partialResult in NLSML form (default: false) |
+| ```setMaxAlternatives(alts: int)``` | Set the max number of alternatives for result event (default: false) |
+| ```setGrm(grm: string)``` | Add grammar to the recognizer (default: none) |
+| ```setSpkModel(mdl: spkmodel)``` | Set the speaker model of the recognizer (default: none) |
 
 | Event | Description |
 |---|---|
 | ```partialResult``` | There is a partial recognition result, check the event's "details" property |
 | ```result``` | There is a full recognition result, check the event's "details" property |
-| ```error``` | An recognition occurred, check the event's "details" property |
 ## Other key points
 - If an error occurs, no changes was made.
 - Fixed memory size at 300MB, changing it require recompilation (because the use of pthread will lead)
@@ -45,29 +45,29 @@
 <script src="BrowserRecognizer.js" type="module"></script>
 <!-->
 <script>
-// Select name
-const BrRec = await loadBR()
+  // Select name
+  const BrRec = await loadBR()
 
-// Prepare 
-const model = await BrRec.makeModel(")
-const recognizer = await BrRec.makeRecognizer(model)
-recognizer.addEventListener("result", e => {
-  console.log("Result: ",e.details)
-}
-recognizer.addEventListener("partialResult", e => {
-  console.log("Partial result: ",e.details)
-}
+  // Prepare 
+  const model = await BrRec.makeModel(")
+  const recognizer = await BrRec.makeRecognizer(model)
+  recognizer.addEventListener("result", e => {
+    console.log("Result: ",e.details)
+  })
+  recognizer.addEventListener("partialResult", e => {
+    console.log("Partial result: ",e.details)
+  })
 
-// Recognize
-media = await navigator.mediaDevices.getUserMedia({
+  // Recognize
+  media = await navigator.mediaDevices.getUserMedia({
     video: false,
     audio: {
-        echoCancellation: true,
-        noiseSuppression: true,
-        channelCount: 1,
-        sampleRate: 16000
+      echoCancellation: true,
+      noiseSuppression: true,
+      channelCount: 1,
+      sampleRate: 16000
     },
-});
+  });
 
 
 </script>

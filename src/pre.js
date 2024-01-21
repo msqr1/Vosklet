@@ -5,6 +5,11 @@ class recognizer extends EventTarget {
     this.obj = rec
     objs.push(this)
   }
+  processAudio(buffer) {
+    if(buffer.numberOfChannels < 1) throw Error("Buffer has ",buffer.numberOfChannels, " channel")
+    let data = buffer.getChannelData(0);
+    if(!(data instanceof Float32Array)) throw Error("Channel data isn't a Float32Array");
+  }
   delete() {
     this.obj.delete()
   }
@@ -32,31 +37,34 @@ Module.makeModel = async (url, path, id) => {
   let mdl
   try {
     mdl = new Module.model(url, path, id)
-    objs.push(mdl)
   }
   catch(e) {
-    return Promise.reject(e.message)
+    mdl.delete()
+    return Promise.reject(e)
   }
+  objs.push(mdl)
   return mdl
 }
 Module.makeSpkModel = async (url, path, id) => {
   let mdl
   try {
     mdl = new Module.spkModel(url, path, id)
-    objs.push(mdl)
   }
   catch(e) {
-    return Promise.reject(e.message)
+    mdl.delete()
+    return Promise.reject(e)
   }
+  objs.push(mdl)
   return mdl
 }
-Module.makeRecognizer = async (model, sampleRate) => {
+Module.makeRecognizer = async (model, sampleRate, ctx) => {
   let rec
   try {
-    rec = recognizer(new Module.recognizer(model,sampleRate, objs.length))
+    rec = new Module.recognizer(model,sampleRate, objs.length)
   }
   catch(e) {
-    return Promise.reject(e.message)
+    rec.delete()
+    return Promise.reject(e)
   }
-  return rec
+  return new recognizer(rec)
 }

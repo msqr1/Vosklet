@@ -1,6 +1,4 @@
 #pragma once
-#include "genericObj.h"
-
 #include <string>
 #include <filesystem>
 #include <fstream>
@@ -11,8 +9,8 @@
 #include <archive.h>
 #include <archive_entry.h>
 #include <emscripten/wasmfs.h>
-#include <emscripten/bind.h>
-
+#include <emscripten.h>
+extern void throwJS(const char* msg, bool err = false);
 namespace fs = std::filesystem;
 
 struct genericModel {
