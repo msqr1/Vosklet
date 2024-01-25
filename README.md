@@ -32,7 +32,7 @@ Changing any setting to non-default values requires recompilation
 ```
 git clone --depth=1 https://github.com/msqr1/Browser-recognizer &&
 cd Browser-recognizer &&
-[Name]=[Value]... ./install.sh
+[Name]=[Value]... ./compile.sh
 ```
 | Name | Description | Default value |
 |---|---|---|
@@ -79,7 +79,6 @@ If you can't set them, you may use a VERY HACKY workaround at *src/addCOI.js*.
       sampleRate: 16000
     },
   });
-
 
 </script>
 ```

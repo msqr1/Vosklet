@@ -6,6 +6,4 @@ test.sh
 libarchive
 .vscode
 clapack-wasm
-node_modules
-package.json
-package-lock.json
+index.html
