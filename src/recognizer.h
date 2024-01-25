@@ -5,7 +5,6 @@
 #include <filesystem>
 #include <atomic>
 #include <thread>
-#include <queue>
 
 #include <emscripten/wasmfs.h>
 #include <emscripten/webaudio.h>
@@ -16,17 +15,15 @@
 extern void throwJS(const char* msg, bool err = false);
 namespace fs = std::filesystem;
 
-struct audioData {
-  float* addr{};
-  int len{};
-  audioData(int addr, int len);
-};
 struct recognizer {
+  std::atomic_flag done{};
+  std::mutex controller{};
+  float* dataPtr{};
   int index{};
   VoskRecognizer* rec{};
   recognizer(model* model, float sampleRate, int index);
   ~recognizer();
-  void acceptWaveForm(int addr, int len);
+  void acceptWaveForm();
   void fireEv(const char* type, const char* content);
   void setSpkModel(spkModel* model);
   void setGrm(const std::string& grm);

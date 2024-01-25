@@ -1,17 +1,21 @@
 let objs =  []
 class recognizer extends EventTarget {
-  constructor(rec) {
+  constructor(rec,ctx) {
     super()
     this.obj = rec
+    this.ptr = Module._malloc(512)
+    let channel = new MessageChannel()
+    this.copier = new AudioWorkletNode(ctx, 'BRCopier', { channelCount: 1, numberOfInputs: 1, numberOfOutputs: 0 })
+    this.copier.port.postMessage({cmd : "init", ptr: this.ptr},[channel.port1])
+    channel.port1.onmessage = (ev) => {
+      this.obj.acceptWaveForm(this.ptr, 512)
+    } 
     objs.push(this)
-  }
-  processAudio(ctx) {
-    let ptr = Module._malloc(512);
-
-    this.obj.acceptWaveForm(ptr)
   }
   delete() {
     this.obj.delete()
+    this.copier.port.postMessage({cmd : "deinit"})
+    Module.free(this.ptr)
   }
   setWords(words) {
     this.obj.setWords(words)
@@ -59,15 +63,14 @@ Module.makeSpkModel = async (url, path, id) => {
   }
   objs.push(mdl)
   return mdl
-}
-Module.makeRecognizer = async (model, sampleRate, ctx) => {
+}, ctx.AudioWorklet
+Module.makeRecognizer = async (model, ctx) => {
   let rec
   try {
-    rec = new Module.recognizer(model,sampleRate, objs.length)
+    rec = new Module.recognizer(model, ctx.sampleRate, objs.length)
   }
   catch(e) {
     rec.delete()
     return Promise.reject(e)
   }
-  return new recognizer(rec)
-}
+  await ctx.AudioWorklet.addModule(URL.createObjectURL(new Blob([`

@@ -1,27 +1,30 @@
 #include "recognizer.h" 
-audioData::audioData(int addr, int len) : addr(reinterpret_cast<float*>(addr)), len(len) {}
 recognizer::recognizer(model* mdl, float sampleRate, int index) : index(index) {
   rec = vosk_recognizer_new(mdl->mdl,sampleRate);
   if(rec == nullptr) {
     throwJS("Unable to initialize recognizer");
     return;
   }
+  controller.lock();
   std::thread t{[this](){
-    while(!queue.empty()) {
-      audioData data {queue.front()};
-      queue.pop();
-      switch(vosk_recognizer_accept_waveform_f(rec, data.addr, data.len)) {
-      case 0:
-      fireEv("result", vosk_recognizer_result(rec));
-      break;
-      case 1:
-      fireEv("partialResult", vosk_recognizer_partial_result(rec));
+    while(!done.test()) {
+      controller.lock();
+      if(!done.test()) {
+        switch(vosk_recognizer_accept_waveform_f(rec, dataPtr, 512)) {
+        case 0:
+        fireEv("result", vosk_recognizer_result(rec));
+        break;
+        case 1:
+        fireEv("partialResult", vosk_recognizer_partial_result(rec));
+        }
       }
     }
   }};
   t.detach();
 }
 recognizer::~recognizer() {
+  done.test_and_set(std::memory_order_relaxed);
+  controller.unlock();
   vosk_recognizer_free(rec);
 }
 void recognizer::fireEv(const char *type, const char *content) {
@@ -29,8 +32,9 @@ void recognizer::fireEv(const char *type, const char *content) {
     recognizers[$0].dispatchEvent(new CustomEvent(UTF8ToString($1), {"details" : UTF8ToString($2)}));
   },this->index, type, content);
 }
-void recognizer::acceptWaveForm(int addr, int len) {
-  queue.emplace(addr, len);
+void recognizer::acceptWaveForm() {
+  controller.unlock();
+  controller.lock();
 }
 void recognizer::setGrm(const std::string& grm) {
   vosk_recognizer_set_grm(rec, grm.c_str());
