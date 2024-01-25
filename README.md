@@ -1,6 +1,7 @@
-# Browser-recognizer- 
+# Browser-recognizer
 - A speech recognizer built on Vosk that can be run on the browser, inspired by [vosk-browser](https://github.com/ccoreilly/vosk-browser), but built from scratch and no code taken!
-- Browser-recognizer can run both in the browser main thread and web workers.
+- Browser-recognizer can run both in the browser main thread and web workers
+- The API also designed to have strong exception safety
 ## Global and all objects' common interface 
 | Function signature (global) | Description |
 |---|---|
@@ -10,11 +11,11 @@
 
 | Function signature (all objects) | Description
 |---|---|
-| ```delete()``` | Delete this Object
+| ```delete()``` | Delete (call C++ destructor on) this object
 ## ```Recognizer``` object
 | Function signature | Description |
 |---|---|
-| ```processAudio(audio: AudioBuffer)``` | Recognize an audio chunk, 
+| ```processAudio(ctx: AudioContext)``` | Recognize an audio chunk 
 | ```setPartialWords(partialWords: bool)``` | Return words' information in a partialResult event (default: false) |
 | ```setWords(words: bool)``` | Return words' information in a result event (default: false) |
 | ```setNLSML(nlsml: bool)``` | Return result and partialResult in NLSML form (default: false) |
@@ -26,23 +27,33 @@
 |---|---|
 | ```partialResult``` | There is a partial recognition result, check the event's "details" property |
 | ```result``` | There is a full recognition result, check the event's "details" property |
-## Other key points
-- If an error occurs, no changes was made.
-- Fixed memory size at 300MB, changing it require recompilation (because the use of pthread will lead)
-### Additions to vosk-browser:
-- Multiple models support
-- Speaker model (SpkModel) support
-- Storage path management (when many models are required)
-- Model ID management (when model updates are required)
-### This requires SharedArrayBuffer, so set the response headers:
+## Compilation
+Changing any setting to non-default values requires recompilation
+```
+git clone --depth=1 https://github.com/msqr1/Browser-recognizer &&
+cd Browser-recognizer &&
+[Name]=[Value]... ./install.sh
+```
+| Name | Description | Default value |
+|---|---|---|
+| MAX_MEMORY | Set max memory (suffix mb, gb, or none for bytes) | 300mb, as [recommended](https://alphacephei.com/vosk/models) |
+| MAX_THREAD | Set the max number of thread (min: 2) | 2 (1 OPFS thread + 1 recognizer thread) |
+| EMSDK | Set EMSDK's path (will install EMSDK in root folder if unset) | **.** |
+## Response headers
+Browser-recognizer require SharedArrayBuffer, so these response headers must be set:
 - ***Cross-Origin-Embedder-Policy*** ---> ***require-corp***
 - ***Cross-Origin-Opener-Policy*** ---> ***same-origin***
-### If you can't set these headers, you can use a VERY HACKY workaround at *src/addCOI.js*.
 
-## Demo
+If you can't set them, you may use a VERY HACKY workaround at *src/addCOI.js*.
+## Additions to vosk-browser:
+- Can download multiple models
+- Model storage path management (when many models are required)
+- Model ID management (when model updates are required)
+
+## Usage
 ```
 <!--Load this from a script tag-->
-<script src="BrowserRecognizer.js" type="module"></script>
+<script src="BrowserRecognizer.js"></script>
 <!-->
 <script>
   // Select name
@@ -58,7 +69,7 @@
     console.log("Partial result: ",e.details)
   })
 
-  // Recognize
+  // Process audio
   media = await navigator.mediaDevices.getUserMedia({
     video: false,
     audio: {

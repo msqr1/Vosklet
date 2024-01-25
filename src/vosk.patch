@@ -1,0 +1,16 @@
+diff --git a/src/recognizer.cc b/src/recognizer.cc
+index 1da6e6b..5e0652a 100644
+--- a/src/recognizer.cc
++++ b/src/recognizer.cc
+@@ -384,8 +384,10 @@ bool Recognizer::AcceptWaveform(const float *fdata, int len)
+ {
+     Vector<BaseFloat> wave;
+     wave.Resize(len, kUndefined);
+-    for (int i = 0; i < len; i++)
++    for (int i = 0; i < len; i++) {
+         wave(i) = fdata[i];
++        wave(i) *= 32768;
++    }
+     return AcceptWaveform(wave);
+ }
+ 

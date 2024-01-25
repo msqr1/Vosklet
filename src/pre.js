@@ -1,14 +1,14 @@
-var objs =  []
+let objs =  []
 class recognizer extends EventTarget {
   constructor(rec) {
     super()
     this.obj = rec
     objs.push(this)
   }
-  processAudio(buffer) {
-    if(buffer.numberOfChannels < 1) throw Error("Buffer has ",buffer.numberOfChannels, " channel")
-    let data = buffer.getChannelData(0);
-    if(!(data instanceof Float32Array)) throw Error("Channel data isn't a Float32Array");
+  processAudio(ctx) {
+    let ptr = Module._malloc(512);
+
+    this.obj.acceptWaveForm(ptr)
   }
   delete() {
     this.obj.delete()
@@ -32,7 +32,10 @@ class recognizer extends EventTarget {
     this.obj.setMaxAlternatives(alts)
   }
 }
-Module.deleteAll = () => objs.forEach(obj => obj.delete())
+Module.deleteAll = () => {
+  objs.forEach(obj => obj.delete())
+  ctx.close()
+}
 Module.makeModel = async (url, path, id) => {
   let mdl
   try {

@@ -39,3 +39,15 @@ index c3a122281..71d37256d 100644
      TaskSequencer<IvectorExtractorComputeDerivedVarsClass> sequencer(
          sequencer_opts);
      for (int32 i = 0; i < NumGauss(); i++)
+diff --git a/src/base/kaldi-types.h b/src/base/kaldi-types.h
+index 7ebf4f8..2f5979e 100644
+--- a/src/base/kaldi-types.h
++++ b/src/base/kaldi-types.h
+@@ -20,6 +20,7 @@
+ 
+ #ifndef KALDI_BASE_KALDI_TYPES_H_
+ #define KALDI_BASE_KALDI_TYPES_H_ 1
++#define KALDI_DOUBLEPRECISION 1
+ 
+ namespace kaldi {
+ // TYPEDEFS ..................................................................

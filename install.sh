@@ -8,9 +8,10 @@
 # Total build time is around 45 minutes, mostly from building Kaldi
 
 sudo apt install shtool libtool autogen autotools-dev pkg-config make &&
-wget -qO- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash &&
-nvm install 20.11.0 &&
 
+MAX_MEMORY?=300mb &&
+MAX_THREAD?=2 &&
+EMSDK?=$(realpath .) &&
 SRC=$(realpath src) &&
 KALDI=$(realpath kaldi) &&
 VOSK=$(realpath vosk-api) &&
@@ -19,13 +20,29 @@ LIBARCHIVE=$(realpath libarchive) &&
 ZSTD=$(realpath zstd) && 
 CLAPACK_WASM=$(realpath clapack-wasm) &&
 
-source ../../emsdk/emsdk_env.sh &&
-export PATH=:$PATH:$(realpath ../../emsdk/upstream/bin) &&
+if [[! -d $EMSDK_PATH] ]
+  echo "Invalid EMSDK path"
+  exit 1
+if [[! $MAX_MEMORY =~ [0-9]+(mb|gb)* ]]
+  echo "Invalid MAX_MEMORY value"
+  exit 1
+if [ $MAX_THREAD < 2 ] 
+  echo "MAX_THREAD is less than 2"
+  exit 1
+if [$(realpath $EMSDK) = $(realpath .)]; then
+  git clone --depth=1 https://github.com/emscripten-core/emsdk.git &&
+  cd emsdk &&
+  ./emsdk install 3.1.51 &&
+  ./emsdk activate 3.1.51 &&
+
+source $EMSDK/emsdk_env.sh &&
+export PATH=:$PATH:$EMSDK/upstream/bin &&
 
 rm -rf /tmp/zstd &&
 rm -rf /tmp/libarchive &&
 rm -rf /tmp/openfst &&
 
+cd $SRC &&
 git clone -b v1.5.5 --depth=1 https://github.com/facebook/zstd /tmp/zstd &&
 git clone -b v3.7.2 --depth=1 https://github.com/libarchive/libarchive /tmp/libarchive &&
 git clone --depth=1 https://gitlab.inria.fr/multispeech/kaldi.web/clapack-wasm.git &&
@@ -54,13 +71,14 @@ echo "PACKAGE_VERSION = 1.8.0" >> $OPENFST/Makefile &&
 
 cd $KALDI/src &&
 git apply $SRC/kaldi.patch &&
-CXXFLAGS="-O3 -msimd128 -UHAVE_EXECINFO_H -pthread -flto" LDFLAGS="-O3 -sERROR_ON_UNDEFINED_SYMBOLS=0 -lembind -pthread -flto" emconfigure ./configure --use-cuda=no --with-cudadecoder=no --static --static-math=yes --static-fst=yes  --debug-level=0 --clapack-root=$CLAPACK_WASM --host=WASM && 
+CXXFLAGS="-O3 -msimd128 -UHAVE_EXECINFO_H -pthread -flto" LDFLAGS="-O3 -sERROR_ON_UNDEFINED_SYMBOLS=0 -lembind -pthread -flto" emconfigure ./configure --use-cuda=no --with-cudadecoder=no --static --static-math=yes --static-fst=yes  --debug-level=0 --double-precision=yes --clapack-root=$CLAPACK_WASM --host=WASM && 
 emmake make online2 lm rnnlm &&
 
 cd $VOSK/src &&
+git apply $SRC/vosk.patch &&
 VOSK_FILES="recognizer.cc language_model.cc model.cc spk_model.cc vosk_api.cc" &&
-em++ -pthread -O3 -flto -I. -I$KALDI/src -I$OPENFST/include $VOSK_FILES -c &&
+em++ -pthread -O3 -flto -Wno-deprecated -I. -I$KALDI/src -I$OPENFST/include $VOSK_FILES -c &&
 emar -rcs vosk.a ${VOSK_FILES//.cc/.o} &&
 
 cd $SRC &&
-em++ -O3 genericModel.cc model.cc spkModel.cc recognizer.cc bindings.cc -sWASMFS -sWASM_BIGINT -sSUPPORT_BIG_ENDIAN -sSINGLE_FILE -sEMBIND_AOT -sWASM_WORKER -sAUDIO_WORKLET -sEMBIND_STD_STRING_IS_UTF8 -sSUPPORT_LONGJMP=0 -sMODULARIZE -sEXPORT_NAME=loadBR -sEXPORT_ES6 -sENVIRONMENT=web,worker -sINITIAL_MEMORY=300mb -sASYNCIFY -sPTHREAD_POOL_SIZE=2 --pre-js pre.js --extern-post-js post.js -pthread -flto -I. -I$LIBARCHIVE/include -I$VOSK/src -L$LIBARCHIVE/lib -larchive -L$ZSTD/lib -lzstd -L$KALDI/src -l:online2/kaldi-online2.a -l:decoder/kaldi-decoder.a -l:ivector/kaldi-ivector.a -l:gmm/kaldi-gmm.a -l:tree/kaldi-tree.a -l:feat/kaldi-feat.a -l:cudamatrix/kaldi-cudamatrix.a -l:lat/kaldi-lat.a -l:lm/kaldi-lm.a -l:rnnlm/kaldi-rnnlm.a -l:hmm/kaldi-hmm.a -l:nnet3/kaldi-nnet3.a -l:transform/kaldi-transform.a -l:matrix/kaldi-matrix.a -l:fstext/kaldi-fstext.a -l:util/kaldi-util.a -l:base/kaldi-base.a -L$OPENFST/lib -l:libfst.a -l:libfstngram.a -L$CLAPACK_WASM -l:CBLAS/lib/cblas.a -l:CLAPACK-3.2.1/lapack.a -l:CLAPACK-3.2.1/libcblaswr.a -l:f2c_BLAS-3.8.0/blas.a -l:libf2c/libf2c.a -L$VOSK/src -l:vosk.a -lopfs.js -lembind -lopenal -o ../BrowserRecognizer.js  
+em++ -O3 genericModel.cc model.cc spkModel.cc recognizer.cc bindings.cc -sWASMFS -sWASM_BIGINT -sSINGLE_FILE -sEMBIND_STD_STRING_IS_UTF8 -sSUPPORT_LONGJMP=0 -sMODULARIZE -sEXPORT_NAME=loadBR -sENVIRONMENT=web,worker -sINITIAL_MAX_MEMORY=$MAX_MEMORY -sASYNCIFY -sPTHREAD_POOL_SIZE=$MAX_THREAD -sPTHREAD_POOL_SIZE_STRICT -sPTHREAD_POOL_DELAY_LOAD -sASYNCIFY_ONLY=['emscripten_wget'] -sALLOW_BLOCKING_ON_MAIN_THREAD=0 -sPOLYFILL=0 --pre-js pre.js  -I. -I$LIBARCHIVE/include -I$VOSK/src -L$LIBARCHIVE/lib -larchive -L$ZSTD/lib -lzstd -L$KALDI/src -l:online2/kaldi-online2.a -l:decoder/kaldi-decoder.a -l:ivector/kaldi-ivector.a -l:gmm/kaldi-gmm.a -l:tree/kaldi-tree.a -l:feat/kaldi-feat.a -l:cudamatrix/kaldi-cudamatrix.a -l:lat/kaldi-lat.a -l:lm/kaldi-lm.a -l:rnnlm/kaldi-rnnlm.a -l:hmm/kaldi-hmm.a -l:nnet3/kaldi-nnet3.a -l:transform/kaldi-transform.a -l:matrix/kaldi-matrix.a -l:fstext/kaldi-fstext.a -l:util/kaldi-util.a -l:base/kaldi-base.a -L$OPENFST/lib -l:libfst.a -l:libfstngram.a -L$CLAPACK_WASM -l:CBLAS/lib/cblas.a -l:CLAPACK-3.2.1/lapack.a -l:CLAPACK-3.2.1/libcblaswr.a -l:f2c_BLAS-3.8.0/blas.a -l:libf2c/libf2c.a -L$VOSK/src -l:vosk.a -lopfs.js -lembind -pthread -flto -o BrowserRecognizer.js  
