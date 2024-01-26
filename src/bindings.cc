@@ -21,10 +21,10 @@ int main() {
 }
 EMSCRIPTEN_BINDINGS() {
   function("setLogLevel", &vosk_set_log_level, allow_raw_pointers());
-  class_<model>("model")
+  class_<model>("Model")
   .constructor<std::string, std::string, std::string>(allow_raw_pointers());
 
-  class_<spkModel>("spkModel")
+  class_<spkModel>("SpkModel")
   .constructor<std::string, std::string, std::string>(allow_raw_pointers());
   
   class_<recognizer>("recognizer") 

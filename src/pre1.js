@@ -1,20 +1,28 @@
 let objs =  []
-class recognizer extends EventTarget {
-  constructor(rec,ctx) {
+class Recognizer extends EventTarget {
+  constructor(rec) {
     super()
     this.obj = rec
-    this.ptr = Module._malloc(512)
+    objs.push(this)
+  }
+  getNode(ctx) {
     let channel = new MessageChannel()
-    this.copier = new AudioWorkletNode(ctx, 'BRCopier', { channelCount: 1, numberOfInputs: 1, numberOfOutputs: 0 })
-    this.copier.port.postMessage({cmd : "init", ptr: this.ptr},[channel.port1])
+    this.node = new AudioWorkletNode(ctx, 'BRProcessor', { channelCount: 1, numberOfInputs: 1, numberOfOutputs: 1 })
+    node.port.postMessage({cmd : "init", ptr: this.ptr},[channel.port1])
     channel.port1.onmessage = (ev) => {
       this.obj.acceptWaveForm(this.ptr, 512)
     } 
-    objs.push(this)
+    return this.node
+  }
+  recognize(buf) {
+    buf.copyFromChannel()
+    this.obj.acceptWaveForm(this.ptr, 512)
   }
   delete() {
     this.obj.delete()
-    this.copier.port.postMessage({cmd : "deinit"})
+    if(typeof this.node !== "undefined") {
+      this.node.port.postMessage({cmd : "deinit"})
+    }
     Module.free(this.ptr)
   }
   setWords(words) {
@@ -43,7 +51,7 @@ Module.deleteAll = () => {
 Module.makeModel = async (url, path, id) => {
   let mdl
   try {
-    mdl = new Module.model(url, path, id)
+    mdl = new Module.Model(url, path, id)
   }
   catch(e) {
     mdl.delete()
@@ -55,7 +63,7 @@ Module.makeModel = async (url, path, id) => {
 Module.makeSpkModel = async (url, path, id) => {
   let mdl
   try {
-    mdl = new Module.spkModel(url, path, id)
+    mdl = new Module.SpkModel(url, path, id)
   }
   catch(e) {
     mdl.delete()
@@ -64,7 +72,7 @@ Module.makeSpkModel = async (url, path, id) => {
   objs.push(mdl)
   return mdl
 }, ctx.AudioWorklet
-Module.makeRecognizer = async (model, ctx) => {
+Module.makeRecognizer = async (model) => {
   let rec
   try {
     rec = new Module.recognizer(model, ctx.sampleRate, objs.length)
@@ -73,4 +81,5 @@ Module.makeRecognizer = async (model, ctx) => {
     rec.delete()
     return Promise.reject(e)
   }
-  await ctx.AudioWorklet.addModule(URL.createObjectURL(new Blob([`
+  return new Recognizer(rec)
+}
