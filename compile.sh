@@ -9,7 +9,7 @@ sudo apt install shtool libtool autogen autotools-dev pkg-config make &&
 
 MAX_MEMORY=${MAX_MEMORY:-300mb} &&
 MAX_THREADS=${MAX_THREADS:-2} &&
-EMSDK=${EMSDK:-$(realpath .)} &&
+EMSDK=${EMSDK:-$(realpath emsdk)} &&
 COMPILE_JOBS=${COMPILE_JOBS:-$(nproc)} &&
 
 SRC=$(realpath src) &&
@@ -25,9 +25,11 @@ if [ ! -d $EMSDK_PATH ]; then
   exit 1
 fi
 if [ $MAX_THREAD -lt 2 ]; then
-  echo "MAX_THREAD be greater or equal to 2" &&
+  echo "MAX_THREADS must be greater than or equal to 2" &&
   exit 1
 fi
+if [ $COMPILE_JOBS -lt 1 ]; then
+  echo "COMPILE_JOBS must be greater than or equal to 1" &&
 if ! [[ $MAX_MEMORY =~ ^[0-9]+([kmgt]b)?$ ]]; then
   echo "MAX_MEMORY valid suffixes are kb, mb, gb, tb, none (bytes)" &&
   exit 1
@@ -86,4 +88,4 @@ em++ -pthread -O3 -flto -Wno-deprecated -I. -I$KALDI/src -I$OPENFST/include $VOS
 emar -rcs vosk.a ${VOSK_FILES//.cc/.o} &&
 
 cd $SRC &&
-em++ -O3 genericModel.cc model.cc spkModel.cc recognizer.cc bindings.cc -sWASMFS -sWASM_BIGINT -sSINGLE_FILE -sEMBIND_STD_STRING_IS_UTF8 -sSUPPORT_LONGJMP=0 -sMODULARIZE -sEXPORT_NAME=loadBR -sENVIRONMENT=web,worker -sINITIAL_MEMORY=32pf -sASYNCIFY -sPTHREAD_POOL_SIZE=$MAX_THREAD -sPTHREAD_POOL_SIZE_STRICT -sPTHREAD_POOL_DELAY_LOAD -sASYNCIFY_ONLY=['emscripten_wget'] -sALLOW_BLOCKING_ON_MAIN_THREAD=0 -sPOLYFILL=0 --pre-js pre1.js --pre-js pre2.js --pre-js pre3.js -I. -I$LIBARCHIVE/include -I$VOSK/src -L$LIBARCHIVE/lib -larchive -L$ZSTD/lib -lzstd -L$KALDI/src -l:online2/kaldi-online2.a -l:decoder/kaldi-decoder.a -l:ivector/kaldi-ivector.a -l:gmm/kaldi-gmm.a -l:tree/kaldi-tree.a -l:feat/kaldi-feat.a -l:cudamatrix/kaldi-cudamatrix.a -l:lat/kaldi-lat.a -l:lm/kaldi-lm.a -l:rnnlm/kaldi-rnnlm.a -l:hmm/kaldi-hmm.a -l:nnet3/kaldi-nnet3.a -l:transform/kaldi-transform.a -l:matrix/kaldi-matrix.a -l:fstext/kaldi-fstext.a -l:util/kaldi-util.a -l:base/kaldi-base.a -L$OPENFST/lib -l:libfst.a -l:libfstngram.a -L$CLAPACK_WASM -l:CBLAS/lib/cblas.a -l:CLAPACK-3.2.1/lapack.a -l:CLAPACK-3.2.1/libcblaswr.a -l:f2c_BLAS-3.8.0/blas.a -l:libf2c/libf2c.a -L$VOSK/src -l:vosk.a -lopfs.js -lembind -pthread -flto -o BrowserRecognizer.js
+em++ -O3 genericModel.cc model.cc spkModel.cc recognizer.cc bindings.cc -sWASMFS -sWASM_BIGINT -sSINGLE_FILE -sEMBIND_STD_STRING_IS_UTF8 -sSUPPORT_LONGJMP=0 -sMODULARIZE -sEXPORT_NAME=loadBR -sENVIRONMENT=web,worker -sINITIAL_MEMORY=32pf -sASYNCIFY -sPTHREAD_POOL_SIZE=$MAX_THREADS -sPTHREAD_POOL_SIZE_STRICT -sPTHREAD_POOL_DELAY_LOAD -sASYNCIFY_ONLY=['emscripten_wget'] -sALLOW_BLOCKING_ON_MAIN_THREAD=0 -sPOLYFILL=0 --pre-js pre.js -I. -I$LIBARCHIVE/include -I$VOSK/src -L$LIBARCHIVE/lib -larchive -L$ZSTD/lib -lzstd -L$KALDI/src -l:online2/kaldi-online2.a -l:decoder/kaldi-decoder.a -l:ivector/kaldi-ivector.a -l:gmm/kaldi-gmm.a -l:tree/kaldi-tree.a -l:feat/kaldi-feat.a -l:cudamatrix/kaldi-cudamatrix.a -l:lat/kaldi-lat.a -l:lm/kaldi-lm.a -l:rnnlm/kaldi-rnnlm.a -l:hmm/kaldi-hmm.a -l:nnet3/kaldi-nnet3.a -l:transform/kaldi-transform.a -l:matrix/kaldi-matrix.a -l:fstext/kaldi-fstext.a -l:util/kaldi-util.a -l:base/kaldi-base.a -L$OPENFST/lib -l:libfst.a -l:libfstngram.a -L$CLAPACK_WASM -l:CBLAS/lib/cblas.a -l:CLAPACK-3.2.1/lapack.a -l:CLAPACK-3.2.1/libcblaswr.a -l:f2c_BLAS-3.8.0/blas.a -l:libf2c/libf2c.a -L$VOSK/src -l:vosk.a -lopfs.js -lembind -pthread -flto -o BrowserRecognizer.js

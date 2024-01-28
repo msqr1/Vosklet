@@ -1,9 +1,7 @@
 zstd
 vosk-api
 kaldi
-test
-test.sh
+minitest
 libarchive
 .vscode
 clapack-wasm
-index.html

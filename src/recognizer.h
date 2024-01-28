@@ -1,20 +1,17 @@
 #pragma once
 #include "model.h"
 #include "spkModel.h"
+#include "global.h"
 
 #include <filesystem>
-#include <atomic>
-#include <thread>
 
-#include <emscripten/wasmfs.h>
-#include <emscripten/webaudio.h>
 #include <AL/al.h>
 #include <AL/alc.h>
 #include <archive.h>
 #include <archive_entry.h>
-extern void throwJS(const char* msg, bool err = false);
+#include <emscripten/proxying.h>
 namespace fs = std::filesystem;
-
+using namespace emscripten;
 struct recognizer {
   std::atomic_flag done{};
   std::mutex controller{};
@@ -24,7 +21,7 @@ struct recognizer {
   recognizer(model* model, float sampleRate, int index);
   ~recognizer();
   void acceptWaveForm();
-  void fireEv(const char* type, const char* content);
+  void fireEv(const char* type, const char* content, const pthread_t& caller);
   void setSpkModel(spkModel* model);
   void setGrm(const std::string& grm);
   void setWords(bool words);

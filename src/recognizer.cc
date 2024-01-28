@@ -6,31 +6,35 @@ recognizer::recognizer(model* mdl, float sampleRate, int index) : index(index) {
     return;
   }
   controller.lock();
-  std::thread t{[this](){
+  std::thread t{[this](const pthread_t& caller){
     while(!done.test()) {
       controller.lock();
       if(!done.test()) {
         switch(vosk_recognizer_accept_waveform_f(rec, dataPtr, 512)) {
         case 0:
-        fireEv("result", vosk_recognizer_result(rec));
+        fireEv("result", vosk_recognizer_result(rec), caller);
         break;
         case 1:
-        fireEv("partialResult", vosk_recognizer_partial_result(rec));
+        fireEv("partialResult", vosk_recognizer_partial_result(rec), caller);
         }
       }
     }
-  }};
+  },pthread_self()};
   t.detach();
 }
 recognizer::~recognizer() {
   done.test_and_set(std::memory_order_relaxed);
   controller.unlock();
   vosk_recognizer_free(rec);
+  free(dataPtr);
 }
-void recognizer::fireEv(const char *type, const char *content) {
-  EM_ASM({
-    recognizers[$0].dispatchEvent(new CustomEvent(UTF8ToString($1), {"details" : UTF8ToString($2)}));
-  },this->index, type, content);
+void recognizer::fireEv(const char *type, const char *content, const pthread_t& caller) {
+  static ProxyingQueue pq{};
+  pq.proxyAsync(caller, [&](){
+    EM_ASM({
+      objs[$0].dispatchEvent(new CustomEvent(UTF8ToString($1), {"details" : UTF8ToString($2)}));
+    },index, type, content);
+  });
 }
 void recognizer::acceptWaveForm() {
   controller.unlock();

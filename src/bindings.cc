@@ -3,22 +3,6 @@
 #include "recognizer.h"
 #include <emscripten/bind.h>
 using namespace emscripten;
-void throwJS(const char* msg, bool err = false) {
-  EM_ASM({
-    if($1) {
-      throw Error(UTF8ToString)
-      return
-    }
-    throw UTF8ToString($0)
-  },msg, err);
-}
-int main() {
-  //vosk_set_log_level(-1);
-  std::thread t{[](){
-    wasmfs_create_directory("/opfs",0777,wasmfs_create_opfs_backend());
-  }};
-  t.detach();
-}
 EMSCRIPTEN_BINDINGS() {
   function("setLogLevel", &vosk_set_log_level, allow_raw_pointers());
   class_<model>("Model")

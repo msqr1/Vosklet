@@ -6,7 +6,7 @@
 | Function signature (global) | Description |
 |---|---|
 | ```Promise<Model> makeModel(path: string, url: string, id: string)```<br><br>```Promise<SpkModel> makeSpkModel(path: string, url: string, id: string)``` | Make a ```Model``` or ```SpkModel```<br>- If **path** contains valid model files and **id** is the same, there will not be a fetch from **url**.<br>- If **path** doesn't contain valid model files, or if it contains valid model files but **id** is different, there will be a fetch from **url**, and the model is stored with **id**. |
-| ```Promise<Recognizer> makeRecognizer(model: Model)``` | Make a ```Recognizer```, it will use a separate thread for recognition
+| ```Promise<Recognizer> makeRecognizer(model: Model, sampleRate: float)``` | Make a ```Recognizer```, it will use a separate thread for recognition
 | ```setLogLevel(lvl: int)``` | Set Vosk's log level (default: -1) <br>- 2: Error<br>- 1: Warning<br>- 0: Info <br>- 1: Verbose<br>- 2: More verbose<br>- 3: Debug |
 | ```deleteAll()``` | Call ```delete()``` on all objects, it is recommended to run this at the API usage end to automatically clean up everything. See [why](https://emscripten.org/docs/getting_started/FAQ.html#what-does-exiting-the-runtime-mean-why-don-t-atexit-s-run).|
 
@@ -16,8 +16,8 @@
 ## ```Recognizer``` object
 | Function signature | Description |
 |---|---|
-| ```Promise<AudioWorkletNode> getNode(ctx: AudioContext)``` | Get a pass-through node that recognize audio and is connectable to a processing graph |
-| ```recognize(buf: AudioBuffer)``` | Recognize an AudioBuffer, usually from something like ```BaseAudioContext.decodeAudioData()```
+| ```Promise<AudioWorkletNode> getNode(ctx: AudioContext, channelIndex = 0: int)``` | Get a pass-through node that recognize audio and is connectable to a processing graph. It has 1 input and 1 output, **channelIndex** must point to a 16-bit mono channel of the input |
+| ```recognize(buf: AudioBuffer, channelIndex = 0: int)``` | Recognize an AudioBuffer, usually from something like ```BaseAudioContext.decodeAudioData()```, **channelIndex** must point to a 16-bit mono channel of **buf**
 | ```setPartialWords(partialWords: bool)``` | Return words' information in a partialResult event (default: false) |
 | ```setWords(words: bool)``` | Return words' information in a result event (default: false) |
 | ```setNLSML(nlsml: bool)``` | Return result and partialResult in NLSML form (default: false) |
