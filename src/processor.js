@@ -9,6 +9,7 @@ if(typeof BRProcessor === "undefined") {
           case "init":
             this.recognizerPort = ev.ports[0]
             this.wasmMem = new Float32Array(WebAssembly.Memory.buffer).subarray(ev.ptr, ev.ptr+512)
+            this.channel = ev.channel;
             break
           case "deinit":
             this.done = true
@@ -18,7 +19,7 @@ if(typeof BRProcessor === "undefined") {
     }
     process(inputs, outputs, params) {
       if(this.done) return false;
-      inputs[0].copyFromChannel(this.wasmMem, this.channel)
+      this.wasmMem.set(inputs[0].getChannelData(this.channel));
       this.recognizerPort.postMessage(".") // Basically an empty message
       outputs = inputs
       return true

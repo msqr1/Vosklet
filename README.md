@@ -6,7 +6,7 @@
 | Function signature (global) | Description |
 |---|---|
 | ```Promise<Model> makeModel(path: string, url: string, id: string)```<br><br>```Promise<SpkModel> makeSpkModel(path: string, url: string, id: string)``` | Make a ```Model``` or ```SpkModel```<br>- If **path** contains valid model files and **id** is the same, there will not be a fetch from **url**.<br>- If **path** doesn't contain valid model files, or if it contains valid model files but **id** is different, there will be a fetch from **url**, and the model is stored with **id**. |
-| ```Promise<Recognizer> makeRecognizer(model: Model, sampleRate: float)``` | Make a ```Recognizer```, it will use a separate thread for recognition
+| ```Promise<Recognizer> makeRecognizer(model: Model, sampleRate: float)``` | Make a ```Recognizer```, it will use **model**'s thread if it's the first to use **model**, else it will use a new thread.
 | ```setLogLevel(lvl: int)``` | Set Vosk's log level (default: -1) <br>- 2: Error<br>- 1: Warning<br>- 0: Info <br>- 1: Verbose<br>- 2: More verbose<br>- 3: Debug |
 | ```deleteAll()``` | Call ```delete()``` on all objects, it is recommended to run this at the API usage end to automatically clean up everything. See [why](https://emscripten.org/docs/getting_started/FAQ.html#what-does-exiting-the-runtime-mean-why-don-t-atexit-s-run).|
 
@@ -39,7 +39,7 @@ cd Browser-recognizer &&
 | Option | Description | Default value |
 |---|---|---|
 | MAX_MEMORY | Set max memory, valid suffixes: kb, mb, gb, tb or none (bytes) | ```300mb```, as [recommended](https://alphacephei.com/vosk/models) |
-| MAX_THREADS | Set the max number of thread (2 min) | ```2``` (1 OPFS thread + 1 recognizer thread) |
+| MAX_THREADS | Set the max number of thread (2 min) | ```2``` (1 OPFS thread + 1 model/recognizer thread) |
 | COMPILE_JOBS | Set the number of jobs (threads) when compiling | ```$(nproc)```   |
 | EMSDK | Set EMSDK's path (will install EMSDK in root folder if unset) | ```.``` |
 ## Response headers

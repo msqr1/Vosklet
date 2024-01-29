@@ -1,12 +1,33 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <script src="BrowserRecognizer.js" async defer>
+    <script src="BrowserRecognizer.js"></script>
+    <script>
+      /*(async () => {
+        const BrRec = await loadBR()
+
+        const model = await BrRec.makeModel("en-model.tzst","model","en0.0.1")
+        let ctx = new AudioContext()
+
+        const recognizer = await BrRec.makeRecognizer(model, ctx.sampleRate)
+        recognizer.addEventListener("result", e => {
+          console.log("Result: ",e.details)
+        })
+        recognizer.addEventListener("partialResult", e => {
+          console.log("Partial result: ",e.details)
+        })
+
+        let micNode = ctx.createMediaStreamSource(await navigator.mediaDevices.getUserMedia({
+          video: false,
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            channelCount: 1,
+            sampleRate: 16000
+          },
+        }));
+        let recNode = recognizer.getNode(ctx)
+      })()*/
     </script>
-    <!--
-    <script src="src/genericObj.js"></script>
-    <script src="src/model.js"></script>
-    <script src="src/spkModel.js"></script>
-    <script src="src/recognizer.js"></script>-->
   </head>
 </html>

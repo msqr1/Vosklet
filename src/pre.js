@@ -1,4 +1,3 @@
-// @externs
 let objs =  []
 class Recognizer extends EventTarget {
   constructor(rec) {
@@ -6,7 +5,6 @@ class Recognizer extends EventTarget {
     this.obj = rec
     objs.push(this)
     this.ptr = Module._malloc(512)
-    this.arr = Module.HEAPF32.subarray(this.ptr, this.ptr+512)
   }
   async getNode(ctx, channelIndex = 0) {
     if(typeof this.node === "undefined") {
@@ -17,11 +15,11 @@ class Recognizer extends EventTarget {
       msgChannel.port1.onmessage = (ev) => {
         this.obj.acceptWaveForm()
       } 
-      return this.node
     }
+    return this.node
   }
   recognize(buf, channelIndex = 0) {
-    buf.copyFromChannel(this.arr, channelIndex)
+    Module.HEAPF32.set(buf.getChannelData(channelIndex).subarray(0, 512), this.ptr);
     this.obj.acceptWaveForm()
   }
   delete() {
@@ -52,26 +50,54 @@ class Recognizer extends EventTarget {
 Module.deleteAll = () => {
   objs.forEach(obj => obj.delete())
 }
-Module.makeModel = async (url, path, id) => {
-  let mdl
+Module.makeModel = async (url, storepath, id) => {
+  let mdl = new Module.Model(storepath, id)
+  let mdlMem;
+  if(mdl.checkModelFiles() && mdl.checkModelId()) {
+    objs.push(mdl)
+    return mdl
+  }
   try {
-    mdl = new Module.Model(url, path, id)
+    let res = await fetch(url)
+    if(!res.ok) throw res.statusText
+    let arr = await res.arrayBuffer()
+    mdlMem = Module._malloc(arr.byteLength)
+    Module.HEAP8.set(new Int8Array(arr), mdlMem)
+    if(!mdl.afterFetch(mdlMem, arr.byteLength)) throw "Unable to extract model and write ID"
+    if(!mdl.checkModelFiles()) throw "Model contains invalid model files"
   }
   catch(e) {
     mdl.delete()
-    return Promise.reject(e)
+    return Promise.reject(e.message || e)
+  }
+  finally {
+    Module._free(mdlMem)
   }
   objs.push(mdl)
   return mdl
 }
-Module.makeSpkModel = async (url, path, id) => {
-  let mdl
+Module.makeSpkModel = async (url, storepath, id) => {
+  let mdl = new Module.SpkModel(storepath, id)
+  let mdlMem;
+  if(mdl.checkModelFiles() && mdl.checkModelId()) {
+    objs.push(mdl)
+    return mdl
+  }
   try {
-    mdl = new Module.SpkModel(url, path, id)
+    let res = await fetch(url)
+    if(!res.ok) throw res.statusText
+    let arr = await res.arrayBuffer()
+    mdlMem = Module._malloc(arr.byteLength)
+    Module.HEAP8.set(new Int8Array(arr), mdlMem)
+    if(!mdl.afterFetch(mdlMem, arr.byteLength)) throw "Unable to extract model and write ID"
+    if(!mdl.checkModelFiles()) throw "Model contains invalid model files"
   }
   catch(e) {
     mdl.delete()
-    return Promise.reject(e)
+    return Promise.reject(e.message || e)
+  }
+  finally {
+    Module._free(mdlMem)
   }
   objs.push(mdl)
   return mdl

@@ -2,9 +2,11 @@
 #include "genericModel.h"
 
 struct spkModel : genericModel {
-  bool checkModel();
+  bool checkModelFiles();
   VoskSpkModel* mdl{};
-  spkModel(const std::string &url, const std::string& storepath, const std::string& id);
+  spkModel(const std::string& storepath, const std::string& id);
+  bool checkModelId();
+  bool afterFetch(int addr, size_t size);
   ~spkModel();
 };
 
