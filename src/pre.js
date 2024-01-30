@@ -50,72 +50,77 @@ class Recognizer extends EventTarget {
   }
 }
 class Model extends EventTarget {
-  constructor() {
+  constructor(url, storepath) {
     super()
-  }
-  _init(url, storepath) {
     this.obj = new Module.model(url, storepath, objs.length)
-    objs.push(this)
+  }
+  delete() {
+    this.obj.delete()
+  }
+}
+class SpkModel extends EventTarget {
+  constructor(url, storepath) {
+    super()
+    this.obj = new Module.spkModel(url, storepath, objs.length)
+  }
+  delete() {
+    this.obj.delete()
   }
 }
 Module.deleteAll = () => {
   objs.forEach(obj => obj.delete())
 }
-Module.makeModel = async (url, storepath, id) => {
-  let mdl = new Model()
-  mdl.obj(new Module.model(url, storepath, objs.length))
-  objs.push(mdl)
-  let retval = new Promise((resolve, reject) => {
-    rec.addEventListener("_continue", (ev) => {
-      if(mdl.checkModel()) {
-      
+Module.makeModel = async (url, storepath) => {
+  let mdl = new Model(url, storepath)
+  return new Promise((resolve, reject) => {
+    if(mdl.checkModel()) {
+      objs.push(mdl)
+      resolve(mdl)
+    }
+    (async () => {
+      let res = await fetch(url)
+      if(!res.ok) {
+        reject("Unable to download model")
       }
-      if(ev.details === ".") {
-        resolve(mdl)
-      }
-      reject(ev.details)
-    }, {once : true})
-    
+      let arr = await res.arrayBuffer()
+      let mdlMem = Module._malloc(arr.byteLength) // Will free in C++
+      Module.HEAP8.set(new Int8Array(arr), mdlMem)
+      mdl.addEventListener("_continue", (ev) => {
+        if(ev.details === ".") {
+          objs.push(mdl)
+          resolve(mdl)
+        }
+        reject(ev.details)
+      }, {once : true})
+      mdl.afterFetch(mdlMem, arr.byteLength)
+    })()
   })
-  let mdlMem
-  try {
-    
-    let res = await fetch(url)
-    if(!res.ok) throw res.statusText
-    let arr = await res.arrayBuffer()
-    mdlMem = Module._malloc(arr.byteLength) // Will free in C++
-    Module.HEAP8.set(new Int8Array(arr), mdlMem)
-    mdl.afterFetch(mdlMem, arr.byteLength)
-  }
-  catch(e) {
-    mdl.delete()
-    return Promise.reject(e.message || e)
-  }
-  objs.push(mdl)
-  return mdl
 }
 Module.makeSpkModel = async (url, storepath, id) => {
-  let mdl = new Module.SpkModel(storepath, id)
-  let mdlMem
-  try {
-    if(mdl.checkModelFiles() && mdl.checkModelId()) {
+  let mdl = new Model(url, storepath)
+  return new Promise((resolve, reject) => {
+    if(mdl.checkModel()) {
       objs.push(mdl)
-      return mdl
+      resolve(mdl)
     }
-    let res = await fetch(url)
-    if(!res.ok) throw res.statusText
-    let arr = await res.arrayBuffer()
-    mdlMem = Module._malloc(arr.byteLength)
-    Module.HEAP8.set(new Int8Array(arr), mdlMem) 
-    if(!mdl.afterFetch(mdlMem, arr.byteLength)) throw "Unable to extract model and write ID"
-    if(!mdl.checkModelFiles()) throw "Model contains invalid model files"
-  }
-  catch(e) {
-    mdl.delete()
-    return Promise.reject(e.message || e)
-  }
-  objs.push(mdl)
-  return mdl
+    (async () => {
+      let res = await fetch(url)
+      if(!res.ok) {
+        reject("Unable to download model")
+      }
+      let arr = await res.arrayBuffer()
+      let mdlMem = Module._malloc(arr.byteLength) // Will free in C++
+      Module.HEAP8.set(new Int8Array(arr), mdlMem)
+      mdl.addEventListener("_continue", (ev) => {
+        if(ev.details === ".") {
+          objs.push(mdl)
+          resolve(mdl)
+        }
+        reject(ev.details)
+      }, {once : true})
+      mdl.afterFetch(mdlMem, arr.byteLength)
+    })()
+  })
 }
 Module.makeRecognizer = (model, sampleRate) => {
   let rec = new Recognizer()
