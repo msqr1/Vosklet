@@ -5,16 +5,14 @@
 using namespace emscripten;
 EMSCRIPTEN_BINDINGS() {
   function("setLogLevel", &vosk_set_log_level, allow_raw_pointers());
-  class_<model>("Model")
-  .constructor<std::string, std::string>(allow_raw_pointers())
-  .function("checkModelFiles", &model::checkModelFiles, allow_raw_pointers())
-  .function("checkModelId", &model::checkModelId, allow_raw_pointers())
-  .function("afterFetch", &model::afterFetch, allow_raw_pointers());
+  class_<model>("model")
+  .constructor<std::string, std::string, int>(allow_raw_pointers())
+  .function("checkModel", &spkModel::checkModel, allow_raw_pointers())
+  .function("afterFetch", &spkModel::afterFetch, allow_raw_pointers());
 
-  class_<spkModel>("SpkModel")
-  .constructor<std::string, std::string>(allow_raw_pointers())
-  .function("checkModelFiles", &spkModel::checkModelFiles, allow_raw_pointers())
-  .function("checkModelId", &spkModel::checkModelId, allow_raw_pointers())
+  class_<spkModel>("spkModel")
+  .constructor<std::string, std::string, int>(allow_raw_pointers())
+  .function("checkModel", &spkModel::checkModel, allow_raw_pointers())
   .function("afterFetch", &spkModel::afterFetch, allow_raw_pointers());
   
   class_<recognizer>("recognizer") 

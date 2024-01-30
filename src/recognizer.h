@@ -13,14 +13,14 @@ namespace fs = std::filesystem;
 
 struct recognizer {
   std::atomic_flag done{};
-  std::atomic_flag controller{};
+  std::atomic_flag controller1{};
+  std::atomic_flag controller2{};
   float* dataPtr{};
   int index{};
   VoskRecognizer* rec{};
   recognizer(model* model, float sampleRate, int index);
   ~recognizer();
   void acceptWaveForm();
-  void fireEv(const char* type, const char* content);
   void setSpkModel(spkModel* model);
   void setGrm(const std::string& grm);
   void setWords(bool words);

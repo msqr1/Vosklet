@@ -1,10 +1,11 @@
 #include "genericModel.h"
-genericModel::genericModel(const std::string& storepath, const std::string &id) : storepath(storepath), id(id) {
+genericModel::genericModel(const std::string& storepath, const std::string &id, int index) : storepath(storepath), id(id), index(index) {
   fs::current_path("/opfs");
   fs::create_directories(storepath);
   fs::current_path(storepath);
 }
-bool genericModel::checkModelId() {
+bool genericModel::checkModel() {
+  if(!checkModelFiles()) return false;
   static std::error_code c{};
   if(!fs::exists("id", c)) return false;
   std::ifstream file {"id", std::ifstream::binary}; 
@@ -15,18 +16,28 @@ bool genericModel::checkModelId() {
   file.read(&oldid[0], size);
   return id.compare(oldid) == 0 ? true : false;
 }
-bool genericModel::afterFetch(int memAddr, size_t size) {
-  if(!extractModel(reinterpret_cast<char*>(memAddr), size)) {
-    return false;
-  }
-  std::ofstream idFile("id");
-  if(!idFile.is_open()) {
-    fs::current_path("/opfs");
-    fs::remove_all(storepath);
-    return false;
-  }
-  idFile << id;
-  return true;
+void genericModel::afterFetch(int memAddr, size_t size) {
+  // FIXME: Recognizer can reuse this thread to avoid respawning threads
+  std::thread t{[this, memAddr, size](){
+    char* modelData = reinterpret_cast<char*>(memAddr);
+    if(!extractModel(modelData, size)) {
+      free(modelData);
+      fireEv("_continue", "Unable to extract model", index);
+      return;
+    }
+    free(modelData);
+    std::ofstream idFile("id");
+    if(!idFile.is_open()) {
+      fs::current_path("/opfs");
+      fs::remove_all(storepath);
+      fireEv("_continue", "Unable to write model ID", index);
+      return;
+    }
+    idFile << id;
+    if(!load())
+    fireEv("_continue", ".", index);
+  }};
+  t.detach();
 }
 bool genericModel::extractModel(const char* fileBuf, size_t size) {
   std::string path{};

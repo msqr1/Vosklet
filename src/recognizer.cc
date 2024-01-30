@@ -1,30 +1,22 @@
 #include "recognizer.h" 
 recognizer::recognizer(model* mdl, float sampleRate, int index) : index(index) {
-  fs::current_path("/opfs");
-  fs::current_path(mdl->storepath);
   std::thread t{[this](VoskModel* mdl, VoskRecognizer* rec, float sampleRate){
-    if(mdl == nullptr) {
-      mdl = vosk_model_new(".");
-      if(mdl == nullptr) {
-        throwJS("Unable to load model");
-        return;
-      }
-    }
     rec = vosk_recognizer_new(mdl,sampleRate);
     if(rec == nullptr) {
-      throwJS("Unable to initialize recognizer");
+      fireEv("_continue", "Unable to initialize recognizer", this->index);
       return;
     }
     while(!done.test()) {
-      emscripten_console_log("In loop");
-      controller.wait(false, std::memory_order_relaxed);
+      fireEv("_continue", "." ,this->index);
+      controller1.wait(false, std::memory_order_relaxed);
+      controller2.wait(false, std::memory_order_relaxed);
       if(!done.test()) {
         switch(vosk_recognizer_accept_waveform_f(rec, dataPtr, 512)) {
         case 0:
-        fireEv("result", vosk_recognizer_result(rec));
+        fireEv("result", vosk_recognizer_result(rec), this->index);
         break;
         case 1:
-        fireEv("partialResult", vosk_recognizer_partial_result(rec));
+        fireEv("partialResult", vosk_recognizer_partial_result(rec), this->index);
         }
       }
     }
@@ -33,25 +25,22 @@ recognizer::recognizer(model* mdl, float sampleRate, int index) : index(index) {
 }
 recognizer::~recognizer() {
   done.test_and_set(std::memory_order_relaxed);
-  controller.notify_one();
+  controller1.notify_one();
   vosk_recognizer_free(rec);
   free(dataPtr);
 }
-void recognizer::fireEv(const char *type, const char *content) {
-  static pthread_t targetThrd{pthread_self()};
-  static ProxyingQueue pq{};
-  pq.proxyAsync(targetThrd, [&](){
-    EM_ASM({
-      let ev = new CustomEvent(UTF8ToString($1), {"details" : UTF8ToString($2)});
-      objs[$0].dispatchEvent(ev);
-      console.log(objs[$0], ev)
-    },index, type, content);
-  });
-}
+
 void recognizer::acceptWaveForm() {
-  controller.notify_one();
+  controller1.test_and_set(std::memory_order_relaxed);
+  controller1.notify_one();
+  controller1.clear(std::memory_order_relaxed);
+  controller1.notify_one(); //Make sure c1 is locked before unlocking c2
+  controller2.test_and_set(std::memory_order_relaxed);
+  controller2.notify_one();
+  controller2.clear(std::memory_order_relaxed);
+  controller2.notify_one();
   emscripten_console_log("Unblocked");
-  fireEv("result", "Test event");
+  fireEv("result", "Test event", index);
 }
 void recognizer::setGrm(const std::string& grm) {
   vosk_recognizer_set_grm(rec, grm.c_str());

@@ -1,14 +1,19 @@
 #include "model.h"
 
-model::model(const std::string& storepath, const std::string& id) : genericModel(storepath, id) {}
+model::model(const std::string& storepath, const std::string& id, int index) : genericModel(storepath, id, index) {}
 model::~model() {
   vosk_model_free(mdl);
 }
-bool model::checkModelId() {
-  return genericModel::checkModelId();
+void model::afterFetch(int addr, size_t size) {
+  genericModel::afterFetch(addr,size);
 }
-bool model::afterFetch(int addr, size_t size) {
-  return genericModel::afterFetch(addr,size);
+void model::checkModel() {
+  genericModel::checkModel();
+}
+bool model::load() {
+  mdl = vosk_model_new(storepath.c_str());
+  if(mdl == nullptr) return false;
+  return true;
 }
 bool model::checkModelFiles() { 
   static std::error_code c{};

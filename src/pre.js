@@ -1,8 +1,10 @@
 let objs =  []
 class Recognizer extends EventTarget {
-  constructor(rec) {
+  constructor() {
     super()
-    this.obj = rec
+  }
+  _init(model, sampleRate) {
+    this.obj  = new Module.recognizer(model, sampleRate, objs.length)
     objs.push(this)
     this.ptr = Module._malloc(512)
   }
@@ -47,48 +49,64 @@ class Recognizer extends EventTarget {
     this.obj.setMaxAlternatives(alts)
   }
 }
+class Model extends EventTarget {
+  constructor() {
+    super()
+  }
+  _init(url, storepath) {
+    this.obj = new Module.model(url, storepath, objs.length)
+    objs.push(this)
+  }
+}
 Module.deleteAll = () => {
   objs.forEach(obj => obj.delete())
 }
 Module.makeModel = async (url, storepath, id) => {
-  let mdl = new Module.Model(storepath, id)
-  let mdlMem;
-  if(mdl.checkModelFiles() && mdl.checkModelId()) {
-    objs.push(mdl)
-    return mdl
-  }
+  let mdl = new Model()
+  mdl.obj(new Module.model(url, storepath, objs.length))
+  objs.push(mdl)
+  let retval = new Promise((resolve, reject) => {
+    rec.addEventListener("_continue", (ev) => {
+      if(mdl.checkModel()) {
+      
+      }
+      if(ev.details === ".") {
+        resolve(mdl)
+      }
+      reject(ev.details)
+    }, {once : true})
+    
+  })
+  let mdlMem
   try {
+    
     let res = await fetch(url)
     if(!res.ok) throw res.statusText
     let arr = await res.arrayBuffer()
-    mdlMem = Module._malloc(arr.byteLength)
+    mdlMem = Module._malloc(arr.byteLength) // Will free in C++
     Module.HEAP8.set(new Int8Array(arr), mdlMem)
-    if(!mdl.afterFetch(mdlMem, arr.byteLength)) throw "Unable to extract model and write ID"
-    if(!mdl.checkModelFiles()) throw "Model contains invalid model files"
+    mdl.afterFetch(mdlMem, arr.byteLength)
   }
   catch(e) {
     mdl.delete()
     return Promise.reject(e.message || e)
-  }
-  finally {
-    Module._free(mdlMem)
   }
   objs.push(mdl)
   return mdl
 }
 Module.makeSpkModel = async (url, storepath, id) => {
   let mdl = new Module.SpkModel(storepath, id)
-  let mdlMem;
-  if(mdl.checkModelFiles() && mdl.checkModelId()) {
-    objs.push(mdl)
-    return mdl
-  }
+  let mdlMem
   try {
+    if(mdl.checkModelFiles() && mdl.checkModelId()) {
+      objs.push(mdl)
+      return mdl
+    }
     let res = await fetch(url)
     if(!res.ok) throw res.statusText
     let arr = await res.arrayBuffer()
     mdlMem = Module._malloc(arr.byteLength)
-    Module.HEAP8.set(new Int8Array(arr), mdlMem)
+    Module.HEAP8.set(new Int8Array(arr), mdlMem) 
     if(!mdl.afterFetch(mdlMem, arr.byteLength)) throw "Unable to extract model and write ID"
     if(!mdl.checkModelFiles()) throw "Model contains invalid model files"
   }
@@ -96,20 +114,19 @@ Module.makeSpkModel = async (url, storepath, id) => {
     mdl.delete()
     return Promise.reject(e.message || e)
   }
-  finally {
-    Module._free(mdlMem)
-  }
   objs.push(mdl)
   return mdl
 }
-Module.makeRecognizer = async (model, sampleRate) => {
-  let rec
-  try {
-    rec = new Module.recognizer(model, sampleRate, objs.length)
-  }
-  catch(e) {
-    rec.delete()
-    return Promise.reject(e)
-  }
-  return new Recognizer(rec)
+Module.makeRecognizer = (model, sampleRate) => {
+  let rec = new Recognizer()
+  let retval = new Promise((resolve, reject) => {
+    rec.addEventListener("_continue", (ev) => {
+      if(ev.details == ".") {
+        resolve(rec)
+      }
+      reject(ev.details)
+    }, {once : true})
+  })
+  rec._init(model.obj, sampleRate)
+  return retval
 }

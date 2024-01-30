@@ -1,27 +1,26 @@
 #include "global.h"
-// Throw error for user, or just throw the message for internal communication
+
 void throwJS(const char* msg, bool err) {
-  static pthread_t targetThrd{pthread_self()};
+  EM_ASM({
+    if($1) {
+      throw Error(UTF8ToString($0));
+      return;
+    }
+    throw UTF8ToString($0);
+  },msg, err);
+}
+void fireEv(const char *type, const char *content, int index) {
   static ProxyingQueue pq{};
-  if(pthread_self() == targetThrd) {
+  static pthread_t selfTID {pthread_self()};
+  pq.proxySync(selfTID, [&](){
     EM_ASM({
-      if($1) {
-        throw Error(UTF8ToString($0));
-        return;
-      }
-      throw UTF8ToString($0);
-    },msg, err);
-  }
-  pq.proxyAsync(targetThrd, [&](){
-    EM_ASM({
-      if($1) {
-        throw Error(UTF8ToString($0));
-        return;
-      }
-      throw UTF8ToString($0);
-    },msg, err);
+      let ev = new CustomEvent(UTF8ToString($1), {"details" : UTF8ToString($2)});
+      objs[$0].dispatchEvent(ev);
+      console.log(objs[$0], ev)
+    },index, type, content);
   });
 }
+  
 int main() {
   //vosk_set_log_level(-1);
   std::thread t{[](){

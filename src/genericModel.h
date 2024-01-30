@@ -14,10 +14,12 @@ namespace fs = std::filesystem;
 struct genericModel {
   const std::string storepath{};
   const std::string id{};
+  int index{};
   static bool extractModel(const char* fileBuf, size_t size);
   virtual bool checkModelFiles() = 0;
-  bool checkModelId();
-  bool afterFetch(int memAddr, size_t size);
-  genericModel(const std::string &storepath, const std::string &id);
+  virtual bool load() = 0;
+  bool checkModel();
+  void afterFetch(int memAddr, size_t size);
+  genericModel(const std::string &storepath, const std::string &id, int index);
 };
 
