@@ -1,3 +1,83 @@
+diff --git a/src/model.cc b/src/model.cc
+index 035ffee..9cb7e30 100644
+--- a/src/model.cc
++++ b/src/model.cc
+@@ -74,38 +74,48 @@ static void KaldiLogHandler(const LogMessageEnvelope &env, const char *message)
+ #else
+ static void KaldiLogHandler(const LogMessageEnvelope &env, const char *message)
+ {
+-  if (env.severity > GetVerboseLevel())
+-      return;
++    if (env.severity > GetVerboseLevel())
++        return;
+ 
+-  // Modified default Kaldi logging so we can disable LOG messages.
+-  std::stringstream full_message;
+-  if (env.severity > LogMessageEnvelope::kInfo) {
+-    full_message << "VLOG[" << env.severity << "] (";
+-  } else {
++    // Modified default Kaldi logging so we can disable LOG messages.
++    std::stringstream full_message;
++    if (env.severity > LogMessageEnvelope::kInfo) {
++        full_message << "VLOG[" << env.severity << "] (";
++    } else {
++        switch (env.severity) {
++        case LogMessageEnvelope::kInfo:
++        full_message << "LOG (";
++        break;
++        case LogMessageEnvelope::kWarning:
++        full_message << "WARNING (";
++        break;
++        case LogMessageEnvelope::kAssertFailed:
++        full_message << "ASSERTION_FAILED (";
++        break;
++        case LogMessageEnvelope::kError:
++        default: // If not the ERROR, it still an error!
++        full_message << "ERROR (";
++        break;
++        }
++    }
++    // Add other info from the envelope and the message text.
++    full_message << "VoskAPI" << ':'
++                << env.func << "():" << env.file << ':'
++                << env.line << ") " << message;
++    if(env.severity > LogMessageEnvelope::kInfo) {
++        emscripten_console_log(full_message.str().c_str());
++        return;
++    }
+     switch (env.severity) {
+     case LogMessageEnvelope::kInfo:
+-      full_message << "LOG (";
+-      break;
++        emscripten_console_log(full_message.str().c_str());
++        break;
+     case LogMessageEnvelope::kWarning:
+-      full_message << "WARNING (";
+-      break;
+-    case LogMessageEnvelope::kAssertFailed:
+-      full_message << "ASSERTION_FAILED (";
+-      break;
+-    case LogMessageEnvelope::kError:
+-    default: // If not the ERROR, it still an error!
+-      full_message << "ERROR (";
+-      break;
++        emscripten_console_warn(full_message.str().c_str());
++        break;
++    default:
++        emscripten_console_error(full_message.str().c_str());
+     }
+-  }
+-  // Add other info from the envelope and the message text.
+-  full_message << "VoskAPI" << ':'
+-               << env.func << "():" << env.file << ':'
+-               << env.line << ") " << message;
+-
+-  // Print the complete message to stderr.
+-  full_message << "\n";
+-  std::cerr << full_message.str();
+ }
+ #endif
+ 
 diff --git a/src/recognizer.cc b/src/recognizer.cc
 index 1da6e6b..5e0652a 100644
 --- a/src/recognizer.cc

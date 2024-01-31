@@ -7,13 +7,15 @@ EMSCRIPTEN_BINDINGS() {
   function("setLogLevel", &vosk_set_log_level, allow_raw_pointers());
   class_<model>("model")
   .constructor<std::string, std::string, int>(allow_raw_pointers())
-  .function("checkModel", &spkModel::checkModel, allow_raw_pointers())
-  .function("afterFetch", &spkModel::afterFetch, allow_raw_pointers());
+  .function("checkModel", &model::checkModel, allow_raw_pointers())
+  .function("afterFetch", &model::afterFetch, allow_raw_pointers())
+  .function("load", &model::load, allow_raw_pointers());
 
   class_<spkModel>("spkModel")
   .constructor<std::string, std::string, int>(allow_raw_pointers())
   .function("checkModel", &spkModel::checkModel, allow_raw_pointers())
-  .function("afterFetch", &spkModel::afterFetch, allow_raw_pointers());
+  .function("afterFetch", &spkModel::afterFetch, allow_raw_pointers())
+  .function("load", &spkModel::load, allow_raw_pointers());
   
   class_<recognizer>("recognizer") 
   .constructor<model*, float, int>(allow_raw_pointers())

@@ -13,14 +13,13 @@ if(typeof BRProcessor === "undefined") {
             break
           case "deinit":
             this.done = true
-            break
         }
       }
     }
     process(inputs, outputs, params) {
       if(this.done) return false;
       this.wasmMem.set(inputs[0].getChannelData(this.channel));
-      this.recognizerPort.postMessage(".") // Basically an empty message
+      this.recognizerPort.postMessage(".") 
       outputs = inputs
       return true
     }

@@ -17,7 +17,7 @@ bool genericModel::checkModel() {
   return id.compare(oldid) == 0 ? true : false;
 }
 void genericModel::afterFetch(int memAddr, size_t size) {
-  // FIXME: Recognizer can reuse this thread to avoid respawning threads
+  // FIXME: Recognizer reuse this thread if possible
   std::thread t{[this, memAddr, size](){
     char* modelData = reinterpret_cast<char*>(memAddr);
     if(!extractModel(modelData, size)) {
@@ -34,8 +34,8 @@ void genericModel::afterFetch(int memAddr, size_t size) {
       return;
     }
     idFile << id;
-    if(!load())
-    fireEv("_continue", ".", index);
+    idFile.close();
+    load(false);
   }};
   t.detach();
 }

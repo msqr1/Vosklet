@@ -7,13 +7,22 @@ model::~model() {
 void model::afterFetch(int addr, size_t size) {
   genericModel::afterFetch(addr,size);
 }
-void model::checkModel() {
-  genericModel::checkModel();
+bool model::checkModel() {
+  return genericModel::checkModel();
 }
-bool model::load() {
-  mdl = vosk_model_new(storepath.c_str());
-  if(mdl == nullptr) return false;
-  return true;
+void model::load(bool newThrd) {
+  static auto main{[this](){
+    mdl = vosk_model_new(".");
+    if(mdl == nullptr) fireEv("_continue", "Unable to load model for recognition", index);
+    fireEv("_continue", ".", index);
+  }};
+  if(!newThrd) {
+    main();
+    return;
+  }
+  // FIXME: Recognizer reuse this thread if possible
+  std::thread t{main};
+  t.detach();
 }
 bool model::checkModelFiles() { 
   static std::error_code c{};

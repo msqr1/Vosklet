@@ -8,16 +8,25 @@ spkModel::spkModel(const std::string& storepath, const std::string& id, int inde
 spkModel::~spkModel() {
   vosk_spk_model_free(mdl);
 }
-void spkModel::checkModel() {
-  genericModel::checkModel();
+bool spkModel::checkModel() {
+  return genericModel::checkModel();
 }
 void spkModel::afterFetch(int addr, size_t size) {
   genericModel::afterFetch(addr,size);
 }
-bool spkModel::load() {
-  mdl = vosk_spk_model_new(storepath.c_str());
-  if(mdl == nullptr) return false;
-  return true;
+void spkModel::load(bool newThrd) {
+  static auto main{[this](){
+    mdl = vosk_spk_model_new(".");
+    if(mdl == nullptr) fireEv("_continue", "Unable to load model for recognition", index);
+    fireEv("_continue", ".", index);
+  }};
+  if(!newThrd) {
+    main();
+    return;
+  }
+  // FIXME: Recognizer reuse this thread if possible
+  std::thread t{main};
+  t.detach();
 }
 bool spkModel::checkModelFiles() {
   return fs::exists("mfcc.conf") && 

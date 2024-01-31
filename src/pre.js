@@ -1,10 +1,10 @@
-let objs =  []
+let objs =  [new EventTarget()]
 class Recognizer extends EventTarget {
   constructor() {
     super()
   }
   _init(model, sampleRate) {
-    this.obj  = new Module.recognizer(model, sampleRate, objs.length)
+    this.obj = new Module.recognizer(model, sampleRate, objs.length)
     objs.push(this)
     this.ptr = Module._malloc(512)
   }
@@ -50,18 +50,20 @@ class Recognizer extends EventTarget {
   }
 }
 class Model extends EventTarget {
-  constructor(url, storepath) {
+  constructor(storepath, id) {
     super()
-    this.obj = new Module.model(url, storepath, objs.length)
+    this.obj = new Module.model(storepath, id, objs.length)
+    objs.push(this)
   }
   delete() {
     this.obj.delete()
   }
 }
 class SpkModel extends EventTarget {
-  constructor(url, storepath) {
+  constructor(storepath, id) {
     super()
-    this.obj = new Module.spkModel(url, storepath, objs.length)
+    this.obj = new Module.spkModel(storepath, id, objs.length)
+    objs.push(this)
   }
   delete() {
     this.obj.delete()
@@ -70,55 +72,55 @@ class SpkModel extends EventTarget {
 Module.deleteAll = () => {
   objs.forEach(obj => obj.delete())
 }
-Module.makeModel = async (url, storepath) => {
-  let mdl = new Model(url, storepath)
+Module.makeModel = async (url, storepath, id) => {
+  let mdl = new Model(storepath, id)
   return new Promise((resolve, reject) => {
-    if(mdl.checkModel()) {
-      objs.push(mdl)
-      resolve(mdl)
+    mdl.addEventListener("_continue", (ev) => {
+      if(ev.detail === ".") {
+        return resolve(mdl)
+      }
+      mdl.delete()
+      return reject(ev.detail)
+    }, {once : true})
+    if(mdl.obj.checkModel()) {
+      mdl.obj.load(true)
+      return resolve(mdl)
     }
     (async () => {
       let res = await fetch(url)
       if(!res.ok) {
-        reject("Unable to download model")
+        return reject("Unable to download model")
       }
       let arr = await res.arrayBuffer()
       let mdlMem = Module._malloc(arr.byteLength) // Will free in C++
       Module.HEAP8.set(new Int8Array(arr), mdlMem)
-      mdl.addEventListener("_continue", (ev) => {
-        if(ev.details === ".") {
-          objs.push(mdl)
-          resolve(mdl)
-        }
-        reject(ev.details)
-      }, {once : true})
-      mdl.afterFetch(mdlMem, arr.byteLength)
+      mdl.obj.afterFetch(mdlMem, arr.byteLength)
     })()
   })
 }
 Module.makeSpkModel = async (url, storepath, id) => {
-  let mdl = new Model(url, storepath)
+  let mdl = new SpkModel(storepath, id)
   return new Promise((resolve, reject) => {
-    if(mdl.checkModel()) {
-      objs.push(mdl)
-      resolve(mdl)
+    mdl.addEventListener("_continue", (ev) => {
+      if(ev.detail === ".") {
+        return resolve(mdl)
+      }
+      mdl.delete()
+      reject(ev.detail)
+    }, {once : true})
+    if(mdl.obj.checkModel()) {
+      mdl.obj.load(true)
+      return resolve(mdl)
     }
     (async () => {
       let res = await fetch(url)
       if(!res.ok) {
-        reject("Unable to download model")
+        return reject("Unable to download model")
       }
       let arr = await res.arrayBuffer()
       let mdlMem = Module._malloc(arr.byteLength) // Will free in C++
       Module.HEAP8.set(new Int8Array(arr), mdlMem)
-      mdl.addEventListener("_continue", (ev) => {
-        if(ev.details === ".") {
-          objs.push(mdl)
-          resolve(mdl)
-        }
-        reject(ev.details)
-      }, {once : true})
-      mdl.afterFetch(mdlMem, arr.byteLength)
+      mdl.obj.afterFetch(mdlMem, arr.byteLength)
     })()
   })
 }
@@ -126,10 +128,12 @@ Module.makeRecognizer = (model, sampleRate) => {
   let rec = new Recognizer()
   let retval = new Promise((resolve, reject) => {
     rec.addEventListener("_continue", (ev) => {
-      if(ev.details == ".") {
+      if(ev.detail == ".") {
+        objs.push(rec)
         resolve(rec)
       }
-      reject(ev.details)
+      rec.delete()
+      reject(ev.detail)
     }, {once : true})
   })
   rec._init(model.obj, sampleRate)
