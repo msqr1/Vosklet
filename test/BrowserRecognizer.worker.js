@@ -95,9 +95,17 @@ function handleMessage(e) {
       Module['ENVIRONMENT_IS_PTHREAD'] = true;
 
       if (typeof e.data.urlOrBlob == 'string') {
+        if (typeof self.trustedTypes != 'undefined' && self.trustedTypes.createPolicy) {
+          var p = self.trustedTypes.createPolicy('emscripten#workerPolicy3', { createScriptURL: (ignored) => e.data.urlOrBlob });
+          importScripts(p.createScriptURL('ignored'));
+        } else
         importScripts(e.data.urlOrBlob);
       } else {
         var objectUrl = URL.createObjectURL(e.data.urlOrBlob);
+        if (typeof self.trustedTypes != 'undefined' && self.trustedTypes.createPolicy) {
+          var p = self.trustedTypes.createPolicy('emscripten#workerPolicy3', { createScriptURL: (ignored) => objectUrl });
+          importScripts(p.createScriptURL('ignored'));
+        } else
         importScripts(objectUrl);
         URL.revokeObjectURL(objectUrl);
       }

@@ -6,8 +6,8 @@ recognizer::recognizer(model* mdl, float sampleRate, int index) : index(index) {
       fireEv("_continue", "Unable to initialize recognizer", this->index);
       return;
     }
+    fireEv("_continue", "." ,this->index);
     while(!done.test()) {
-      fireEv("_continue", "." ,this->index);
       controller1.wait(false, std::memory_order_relaxed);
       controller2.wait(false, std::memory_order_relaxed);
       if(!done.test()) {

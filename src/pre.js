@@ -1,4 +1,4 @@
-let objs =  [new EventTarget()]
+let objs = []
 class Recognizer extends EventTarget {
   constructor() {
     super()
@@ -11,7 +11,7 @@ class Recognizer extends EventTarget {
   async getNode(ctx, channelIndex = 0) {
     if(typeof this.node === "undefined") {
       let msgChannel = new MessageChannel()
-      ctx.AudioWorklet.addModule("src/processor.js")
+      ctx.AudioWorklet.addModule("../src/processor.js")
       this.node = new AudioWorkletNode(ctx, 'BRProcessor', { channelCountMode: "max", numberOfInputs: 1, numberOfOutputs: 1 })
       this.node.port.postMessage({cmd : "init", ptr: this.ptr, channel: channelIndex}, [msgChannel.port1])
       msgChannel.port1.onmessage = (ev) => {
@@ -84,7 +84,7 @@ Module.makeModel = async (url, storepath, id) => {
     }, {once : true})
     if(mdl.obj.checkModel()) {
       mdl.obj.load(true)
-      return resolve(mdl)
+      return;
     }
     (async () => {
       let res = await fetch(url)
@@ -110,7 +110,7 @@ Module.makeSpkModel = async (url, storepath, id) => {
     }, {once : true})
     if(mdl.obj.checkModel()) {
       mdl.obj.load(true)
-      return resolve(mdl)
+      return
     }
     (async () => {
       let res = await fetch(url)
@@ -130,7 +130,7 @@ Module.makeRecognizer = (model, sampleRate) => {
     rec.addEventListener("_continue", (ev) => {
       if(ev.detail == ".") {
         objs.push(rec)
-        resolve(rec)
+        return resolve(rec)
       }
       rec.delete()
       reject(ev.detail)

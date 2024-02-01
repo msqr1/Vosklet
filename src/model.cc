@@ -11,9 +11,12 @@ bool model::checkModel() {
   return genericModel::checkModel();
 }
 void model::load(bool newThrd) {
-  static auto main{[this](){
+  auto main{[this](){
     mdl = vosk_model_new(".");
-    if(mdl == nullptr) fireEv("_continue", "Unable to load model for recognition", index);
+    if(mdl == nullptr) {
+      fireEv("_continue", "Unable to load model for recognition", index);
+      return;
+    }
     fireEv("_continue", ".", index);
   }};
   if(!newThrd) {
