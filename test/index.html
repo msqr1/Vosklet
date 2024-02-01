@@ -8,7 +8,6 @@
 
         const model = await BrRec.makeModel("en-model.tzst","model","en0.0.1")
         let ctx = new AudioContext()
-
         const recognizer = await BrRec.makeRecognizer(model, ctx.sampleRate)
         recognizer.addEventListener("result", e => {
           console.log("Result: ",e.details)
@@ -16,7 +15,6 @@
         recognizer.addEventListener("partialResult", e => {
           console.log("Partial result: ",e.details)
         })
-
         let micNode = ctx.createMediaStreamSource(await navigator.mediaDevices.getUserMedia({
           video: false,
           audio: {

@@ -11,7 +11,7 @@ class Recognizer extends EventTarget {
   async getNode(ctx, channelIndex = 0) {
     if(typeof this.node === "undefined") {
       let msgChannel = new MessageChannel()
-      ctx.AudioWorklet.addModule("../src/processor.js")
+      await ctx.audioWorklet.addModule(processorUrl)
       this.node = new AudioWorkletNode(ctx, 'BRProcessor', { channelCountMode: "max", numberOfInputs: 1, numberOfOutputs: 1 })
       this.node.port.postMessage({cmd : "init", ptr: this.ptr, channel: channelIndex}, [msgChannel.port1])
       msgChannel.port1.onmessage = (ev) => {
