@@ -32,6 +32,7 @@ if [ $MAX_THREAD -lt 2 ]; then
 fi
 if [ $COMPILE_JOBS -lt 1 ]; then
   echo "COMPILE_JOBS must be greater than or equal to 1" &&
+  exit 1
 fi
 if ! [[ $MAX_MEMORY =~ ^[0-9]+([kmgt]b)?$ ]]; then
   echo "MAX_MEMORY valid suffixes are kb, mb, gb, tb, none (bytes)" &&
