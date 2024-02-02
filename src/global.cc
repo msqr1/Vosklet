@@ -1,6 +1,5 @@
 #include "global.h"
 
-static pthread_t selfTID{pthread_self()};
 void throwJS(const char* msg, bool err) {
   EM_ASM({
     if($1) {

@@ -1,13 +1,22 @@
 #include "genericModel.h"
 genericModel::genericModel(const std::string& storepath, const std::string &id, int index) : storepath(storepath), id(id), index(index) {
-  fs::current_path("/opfs");
-  fs::create_directories(storepath);
-  fs::current_path(storepath);
+  fs::current_path("/opfs", tank);
+  if(tank.value() != 0) {
+    throwJS("Unable to change to OPFS directory");
+    return;
+  }
+  if(!fs::create_directories(storepath, tank)) {
+    throwJS("Unable to make model directory");
+    return;
+  };
+  fs::current_path(storepath, tank); 
+  if(tank.value() != 0) {
+    throwJS("Unable to change to model directory");
+  }
 }
 bool genericModel::checkModel() {
   if(!checkModelFiles()) return false;
-  static std::error_code c{};
-  if(!fs::exists("id", c)) return false;
+  if(!fs::exists("id", tank)) return false;
   std::ifstream file {"id", std::ifstream::binary}; 
   if(!file.is_open()) return false;
   long long size {file.seekg(0, std::ios::end).tellg()};

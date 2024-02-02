@@ -28,18 +28,17 @@ void model::load(bool newThrd) {
   t.detach();
 }
 bool model::checkModelFiles() { 
-  static std::error_code c{};
-  return fs::exists("am/final.mdl", c) &&
-    fs::exists("conf/mfcc.conf", c) &&
-    fs::exists("conf/model.conf", c) &&
-    fs::exists("graph/phones/word_boundary.int", c) &&
-    fs::exists("graph/Gr.fst", c) &&
-    fs::exists("graph/HCLr.fst", c) &&
-    fs::exists("graph/disambig_tid.int", c) &&
-    fs::exists("ivector/final.dubm", c) &&
-    fs::exists("ivector/final.ie", c) &&
-    fs::exists("ivector/final.mat", c) &&
-    fs::exists("ivector/global_cmvn.stats", c) && 
-    fs::exists("ivector/online_cmvn.conf", c) &&
-    fs::exists("ivector/splice.conf", c);
+  return fs::exists("am/final.mdl", tank) &&
+    fs::exists("conf/mfcc.conf", tank) &&
+    fs::exists("conf/model.conf", tank) &&
+    fs::exists("graph/phones/word_boundary.int", tank) &&
+    fs::exists("graph/Gr.fst", tank) &&
+    fs::exists("graph/HCLr.fst", tank) &&
+    fs::exists("graph/disambig_tid.int", tank) &&
+    fs::exists("ivector/final.dubm", tank) &&
+    fs::exists("ivector/final.ie", tank) &&
+    fs::exists("ivector/final.mat", tank) &&
+    fs::exists("ivector/global_cmvn.stats", tank) && 
+    fs::exists("ivector/online_cmvn.conf", tank) &&
+    fs::exists("ivector/splice.conf", tank);
 }

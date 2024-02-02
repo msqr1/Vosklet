@@ -32,8 +32,8 @@ void spkModel::load(bool newThrd) {
   t.detach();
 }
 bool spkModel::checkModelFiles() {
-  return fs::exists("mfcc.conf") && 
-    fs::exists("final.ext.raw") && 
-    fs::exists("mean.vec") && 
-    fs::exists("transform.mat");
+  return fs::exists("mfcc.conf", tank) && 
+    fs::exists("final.ext.raw", tank) && 
+    fs::exists("mean.vec", tank) && 
+    fs::exists("transform.mat", tank);
 }
