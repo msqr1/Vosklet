@@ -62,7 +62,7 @@ git clone -b go/v0.3.46 --depth=1 https://github.com/alphacep/vosk-api &&
 
 cd /tmp/zstd && 
 HAVE_THREAD=0 ZSTD_LEGACY_SUPPORT=0 HAVE_ZLIB=0 HAVE_LZMA=0 HAVE_LZ4=0 ZSTD_NOBENCH=1 ZSTD_NODICT=1 ZSTD_NOCOMPRESS=1 BACKTRACE=0 PREFIX=$ZSTD CPPFLAGS="-O3 -flto" LDFLAGS="-O3 -flto" emmake make -j$COMPILE_JOBS install &&
-rm -rf /tmp/zstd &
+rm -rf /tmp/zstd &&
 
 cd /tmp/libarchive && 
 build/autogen.sh && 
