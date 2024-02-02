@@ -78,6 +78,7 @@ autoreconf -i &&
 CXXFLAGS="-pthread -r -O3 -flto"  LDFLAGS="-O3 -pthread -flto" emconfigure ./configure --prefix=$OPENFST --enable-static --disable-shared --enable-ngram-fsts --enable-lookahead-fsts --disable-bin --with-pic && 
 emmake make -j$COMPILE_JOBS install &&
 echo "PACKAGE_VERSION = 1.8.0" >> $OPENFST/Makefile &&
+rm -rf /tmp/openfst &&
 
 cd $KALDI/src &&
 git apply $SRC/kaldi.patch &&
