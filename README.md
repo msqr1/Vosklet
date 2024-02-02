@@ -41,7 +41,7 @@ cd Browser-recognizer &&
 | MAX_MEMORY | Set max memory, valid suffixes: kb, mb, gb, tb or none (bytes) | ```300mb```, as [recommended](https://alphacephei.com/vosk/models) |
 | MAX_THREADS | Set the max number of thread (2 min) | ```2``` (1 OPFS thread + 1 model/recognizer thread) |
 | COMPILE_JOBS | Set the number of jobs (threads) when compiling | ```$(nproc)```   |
-| EMSDK | Set EMSDK's path (will install EMSDK in root folder if unset) | ```.``` |
+| EMSDK | Set EMSDK's path (will install EMSDK in root folder if unset) | ```emsdk``` |
 ## Response headers
 Browser-recognizer require SharedArrayBuffer, so these response headers must be set:
 - ***Cross-Origin-Embedder-Policy*** ---> ***require-corp***
