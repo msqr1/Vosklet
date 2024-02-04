@@ -6,7 +6,7 @@ struct spkModel : genericModel {
   VoskSpkModel* mdl{};
   spkModel(const std::string& storepath, const std::string& id, int index);
   bool checkModel();
-  void afterFetch(int addr, size_t size);
+  void afterFetch();
   void load(bool newThrd);
   ~spkModel();
 };

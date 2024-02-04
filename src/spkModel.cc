@@ -11,8 +11,8 @@ spkModel::~spkModel() {
 bool spkModel::checkModel() {
   return genericModel::checkModel();
 }
-void spkModel::afterFetch(int addr, size_t size) {
-  genericModel::afterFetch(addr,size);
+void spkModel::afterFetch() {
+  genericModel::afterFetch();
 }
 void spkModel::load(bool newThrd) {
   auto main{[this](){
@@ -27,9 +27,7 @@ void spkModel::load(bool newThrd) {
     main();
     return;
   }
-  // FIXME: Recognizer reuse this thread if possible
-  std::thread t{main};
-  t.detach();
+  thrd.setTask1(main);
 }
 bool spkModel::checkModelFiles() {
   return fs::exists("mfcc.conf", tank) && 

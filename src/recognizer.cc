@@ -1,7 +1,7 @@
 #include "recognizer.h" 
 recognizer::recognizer(model* mdl, float sampleRate, int index) : index(index) {
-  std::thread t{[this](VoskModel* mdl, VoskRecognizer* rec, float sampleRate){
-    rec = vosk_recognizer_new(mdl,sampleRate);
+  auto main{[this, mdl, sampleRate](){
+    rec = vosk_recognizer_new(mdl->mdl,sampleRate);
     if(rec == nullptr) {
       fireEv("_continue", "Unable to initialize recognizer", this->index);
       return;
@@ -20,7 +20,12 @@ recognizer::recognizer(model* mdl, float sampleRate, int index) : index(index) {
         }
       }
     }
-  },mdl->mdl, rec, sampleRate};
+  }};
+  if(mdl->thrd.reusable) {
+    mdl->thrd.setTask2(main);
+    return;
+  }
+  std::thread t{main};
   t.detach();
 }
 recognizer::~recognizer() {

@@ -4,8 +4,8 @@ model::model(const std::string& storepath, const std::string& id, int index) : g
 model::~model() {
   vosk_model_free(mdl);
 }
-void model::afterFetch(int addr, size_t size) {
-  genericModel::afterFetch(addr,size);
+void model::afterFetch() {
+  genericModel::afterFetch();
 }
 bool model::checkModel() {
   return genericModel::checkModel();
@@ -23,9 +23,7 @@ void model::load(bool newThrd) {
     main();
     return;
   }
-  // FIXME: Recognizer reuse this thread if possible
-  std::thread t{main};
-  t.detach();
+  thrd.setTask1(main);
 }
 bool model::checkModelFiles() { 
   return fs::exists("am/final.mdl", tank) &&

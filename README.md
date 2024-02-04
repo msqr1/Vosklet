@@ -1,18 +1,17 @@
 # Browser-recognizer
 - A speech recognizer built on Vosk that can be run on the browser, inspired by [vosk-browser](https://github.com/ccoreilly/vosk-browser), but built from scratch and no code taken!
-- Browser-recognizer can run both in the browser main thread and web workers
 - The API is also designed with strong exception safety
 ## Global and all objects' common interface 
 | Function signature (global) | Description |
 |---|---|
 | ```Promise<Model> makeModel(path: string, url: string, id: string)```<br><br>```Promise<SpkModel> makeSpkModel(path: string, url: string, id: string)``` | Make a ```Model``` or ```SpkModel```<br>- If **path** contains valid model files and **id** is the same, there will not be a fetch from **url**.<br>- If **path** doesn't contain valid model files, or if it contains valid model files but **id** is different, there will be a fetch from **url**, and the model is stored with **id**. |
-| ```Promise<Recognizer> makeRecognizer(model: Model, sampleRate: float)``` | Make a ```Recognizer```, it will use **model**'s thread if it's the first to use **model**, else it will use a new thread.
-| ```setLogLevel(lvl: int)``` | Set Vosk's log level (default: -1) <br>- 2: Error<br>- 1: Warning<br>- 0: Info <br>- 1: Verbose<br>- 2: More verbose<br>- 3: Debug |
+| ```Promise<Recognizer> makeRecognizer(model: Model, sampleRate: float)``` | Make a ```Recognizer```, it will use **model**'s thread if it's the first user of **model**, else it will use a new thread.
+| ```setLogLevel(lvl: int)``` | Set Vosk's log level (default: ```0```: Info) <br>```-2```: Error<br>```-1```: Warning<br>```1```: Verbose<br>```2```: More verbose<br>```3```: Debug |
 | ```cleanUp()``` | Call ```delete()``` on all objects and revoke all Blob URLs. |
 
 | Function signature (all objects) | Description
 |---|---|
-| ```delete()``` | Delete this object, see [why](https://emscripten.org/docs/getting_started/FAQ.html#what-does-exiting-the-runtime-mean-why-don-t-atexit-s-run) this is neccessary .
+| ```delete()``` | Delete this object, see [why](https://emscripten.org/docs/getting_started/FAQ.html#what-does-exiting-the-runtime-mean-why-don-t-atexit-s-run) this is neccessary.
 ## ```Recognizer``` object
 | Function signature | Description |
 |---|---|
@@ -41,7 +40,7 @@ cd Browser-recognizer &&
 | MAX_MEMORY | Set max memory, valid suffixes: kb, mb, gb, tb or none (bytes) | ```300mb```, as [recommended](https://alphacephei.com/vosk/models) |
 | MAX_THREADS | Set the max number of thread (2 min) | ```2``` (1 OPFS thread + 1 model/recognizer thread) |
 | COMPILE_JOBS | Set the number of jobs (threads) when compiling | ```$(nproc)```   |
-| EMSDK | Set EMSDK's path (will install EMSDK in root folder if unset) | ```emsdk``` |
+| EMSDK | Set EMSDK's path (will install EMSDK in root folder if unset) | ```../emsdk``` |
 ## Response headers
 Browser-recognizer require SharedArrayBuffer, so these response headers must be set:
 - ***Cross-Origin-Embedder-Policy*** ---> ***require-corp***
@@ -57,7 +56,6 @@ If you can't set them, you may use a VERY HACKY workaround at *src/addCOI.js*.
 ```
 <!--Load this from a script tag-->
 <script src="BrowserRecognizer.js"></script>
-<!-->
 <script>
   // Select name
   const BrRec = await loadBR()
@@ -72,7 +70,7 @@ If you can't set them, you may use a VERY HACKY workaround at *src/addCOI.js*.
     console.log("Partial result: ",e.details)
   })
 
-  // Process audio
+  // Microphone setup
   media = await navigator.mediaDevices.getUserMedia({
     video: false,
     audio: {
@@ -81,7 +79,7 @@ If you can't set them, you may use a VERY HACKY workaround at *src/addCOI.js*.
       channelCount: 1,
       sampleRate: 16000
     },
-  });
+  })
 
 </script>
 ```

@@ -1,25 +1,9 @@
-let objs = []
-let processorUrl = URL.createObjectURL(new Blob([
-  (() => {
-    registerProcessor("BRProcessor", class extends AudioWorkletProcessor {
-      constructor(options) {
-        super(options)
-        this.done = false
-        this.port.onmessage = (ev) => {
-          if(ev.cmd === "deinit") this.done = false
-        }
-        this.ptr = options.processorOptions.ptr 
-      }
-      process(inputs, outputs, params) {
-        if(this.done) return false;
-        this.wasmMem.set(inputs[0].getChannelData(this.channel));
-        this.recognizerPort.postMessage(".") 
-        outputs = inputs
-        return true
-      }
-    })
-  }).toString()
-], {type : "text/javascript"}))
+let objs = [] 
+Module.cleanUp = () => {
+  objs.forEach(obj => obj.delete())
+  URL.revokeObjectURL(pthreadUrl)
+  URL.revokeObjectURL(processorUrl)
+}
 class Recognizer extends EventTarget {
   constructor() {
     super()
@@ -114,10 +98,8 @@ Module.makeModel = async (url, storepath, id) => {
       if(!res.ok) {
         return reject("Unable to download model")
       }
-      let arr = await res.arrayBuffer()
-      let mdlMem = Module._malloc(arr.byteLength) // Will free in C++
-      Module.HEAP8.set(new Int8Array(arr), mdlMem)
-      mdl.obj.afterFetch(mdlMem, arr.byteLength)
+      await (await (await root.getFileHandle("m0dEl.tzst", {create : true})).createWritable()).write(await res.arrayBuffer()) 
+      mdl.obj.afterFetch()
     })()
   })
 }
@@ -167,6 +149,27 @@ Module.makeRecognizer = (model, sampleRate) => {
   rec._init(model.obj, sampleRate)
   return retval
 }
+let processorUrl = URL.createObjectURL(new Blob([
+  (() => {
+    registerProcessor("BRProcessor", class extends AudioWorkletProcessor {
+      constructor(options) {
+        super(options)
+        this.done = false
+        this.port.onmessage = (ev) => {
+          if(ev.cmd === "deinit") this.done = false
+        }
+        this.ptr = options.processorOptions.ptr 
+      }
+      process(inputs, outputs, params) {
+        if(this.done) return false;
+        this.wasmMem.set(inputs[0].getChannelData(this.channel));
+        this.recognizerPort.postMessage(".") 
+        outputs = inputs
+        return true
+      }
+    })
+  }).toString()
+], {type : "text/javascript"}))
 // Taken from the worker.js file
 let pthreadUrl = URL.createObjectURL(new Blob([
   (() => {
@@ -340,8 +343,3 @@ let pthreadUrl = URL.createObjectURL(new Blob([
     self.onmessage = handleMessage;
   }).toString()
 ], {type : "text/javascript"}))
-Module.cleanUp = () => {
-  objs.forEach(obj => obj.delete())
-  URL.revokeObjectURL(pthreadUrl)
-  URL.revokeObjectURL(processorUrl)
-}
