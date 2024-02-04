@@ -29,7 +29,7 @@ browser-recognizer: vosk libarchive
 
 prepare:
 	sudo apt install shtool libtool autogen autotools-dev pkg-config make && \
-	[ $(EMSDK) != emsdk -a ! -d $(EMSDK) ] && \
+	[ $(EMSDK) != ../emsdk -a ! -d $(EMSDK) ] && \
 		echo "Invalid emsdk path"; \
 		exit 1; \
 	[ $(MAX_THREAD) -lt 2 ] && \
