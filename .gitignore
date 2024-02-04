@@ -5,3 +5,4 @@ minitest
 libarchive
 .vscode
 clapack-wasm
+emsdk
