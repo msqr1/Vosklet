@@ -75,12 +75,7 @@ class SpkModel extends EventTarget {
   }
 }
 Module.makeModel = async (url, storepath, id) => {
-  try {
-    let mdl = new Model(storepath, id)
-  }
-  catch(e) {
-    return Promise.reject(e)
-  }
+  let mdl = new Model(storepath, id)
   return new Promise((resolve, reject) => {
     mdl.addEventListener("_continue", (ev) => {
       if(ev.detail === ".") {
@@ -98,18 +93,15 @@ Module.makeModel = async (url, storepath, id) => {
       if(!res.ok) {
         return reject("Unable to download model")
       }
-      await (await (await root.getFileHandle("m0dEl.tzst", {create : true})).createWritable()).write(await res.arrayBuffer()) 
+      let wStream = await (await (await navigator.storage.getDirectory()).getFileHandle("m0dEl.tzst", {create : true})).createWritable()
+      await wStream.write(await res.arrayBuffer())
+      await wStream.close()
       mdl.obj.afterFetch()
     })()
   })
 }
 Module.makeSpkModel = async (url, storepath, id) => {
-  try {
-    let mdl = new SpkModel(storepath, id)
-  }
-  catch(e) {
-    return Promise.reject(e)
-  }
+  let mdl = new SpkModel(storepath, id)
   return new Promise((resolve, reject) => {
     mdl.addEventListener("_continue", (ev) => {
       if(ev.detail === ".") {
@@ -149,7 +141,7 @@ Module.makeRecognizer = (model, sampleRate) => {
   rec._init(model.obj, sampleRate)
   return retval
 }
-let processorUrl = URL.createObjectURL(new Blob([
+let processorUrl = URL.createObjectURL(new Blob(['(',
   (() => {
     registerProcessor("BRProcessor", class extends AudioWorkletProcessor {
       constructor(options) {
@@ -169,9 +161,9 @@ let processorUrl = URL.createObjectURL(new Blob([
       }
     })
   }).toString()
-], {type : "text/javascript"}))
+, ')()'], {type : "text/javascript"}))
 // Taken from the worker.js file
-let pthreadUrl = URL.createObjectURL(new Blob([
+let pthreadUrl = URL.createObjectURL(new Blob(['(',
   (() => {
     /**
      * @license
@@ -342,4 +334,4 @@ let pthreadUrl = URL.createObjectURL(new Blob([
 
     self.onmessage = handleMessage;
   }).toString()
-], {type : "text/javascript"}))
+, ')()'], {type : "text/javascript"}))

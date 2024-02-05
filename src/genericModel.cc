@@ -3,16 +3,16 @@
 genericModel::genericModel(const std::string& storepath, const std::string &id, int index) : storepath(storepath), id(id), index(index) {
   fs::current_path("/opfs", tank);
   if(tank.value() != 0) {
-    throwJS("Unable to change to OPFS directory");
+    throwJS("Unable to cd OPFS root");
     return;
   }
-  if(!fs::create_directories(storepath, tank)) {
-    throwJS("Unable to make model directory");
-    return;
-  };
+  fs::create_directories(storepath, tank);
+  if(tank.value() != 0) {
+    throwJS("Unable to create storepath");
+  }
   fs::current_path(storepath, tank); 
   if(tank.value() != 0) {
-    throwJS("Unable to change to model directory");
+    throwJS("Unable to cd storepath");
   }
 }
 bool genericModel::checkModel() {
@@ -29,7 +29,7 @@ bool genericModel::checkModel() {
 void genericModel::afterFetch() {
   thrd.setTask1([this](){
     if(!extractModel()) {
-      fireEv("_continue", "Unable to extract model", index);
+      fireEv("_continue", "Unable to extract model and delete .tzst file", index);
       return;
     }
     std::ofstream idFile("id");
@@ -41,7 +41,18 @@ void genericModel::afterFetch() {
     }
     idFile << id;
     idFile.close();
-    load(false);
+    char a[3] {};
+    int fd = open("./conf/model.conf", O_RDONLY);
+    read(fd, a, 3);
+    emscripten_console_log(a);
+    close(fd);
+    std::ifstream is("./conf/model.conf");
+    emscripten_console_logf("%d", is.good());
+    emscripten_console_logf("%d", is.bad());
+    emscripten_console_logf("%d", is.eof());
+    emscripten_console_logf("%d", is.fail());
+
+    //load(false);
   });
 }
 bool genericModel::extractModel() {
@@ -50,7 +61,7 @@ bool genericModel::extractModel() {
   archive_entry* entry {};
   archive_read_support_filter_all(src);
   archive_read_support_format_all(src);
-  archive_read_open_filename(src, "m0dEl.tzst", 10240);
+  archive_read_open_filename(src, "/opfs/m0dEl.tzst", 10240);
   if(archive_errno(src) != 0) return false;
   while (archive_read_next_header(src, &entry) == ARCHIVE_OK) {
     path = archive_entry_pathname(entry);
@@ -61,5 +72,5 @@ bool genericModel::extractModel() {
     archive_read_extract(src, entry, ARCHIVE_EXTRACT_UNLINK);
   }
   archive_read_free(src);
-  return true;
+  return fs::remove("/opfs/m0dEl.tzst",tank);
 }
