@@ -14,7 +14,7 @@ COMPILE_JOBS?:=$(nproc)
 SRC:=$(realpath src) 
 KALDI:=$(realpath kaldi) 
 VOSK:=$(realpath vosk-api) 
-OPENFST:=$(KALDI)/tools/openfst 
+OPENFST:=$(realpath openfst)
 LIBARCHIVE:=$(realpath libarchive) 
 ZSTD:=$(realpath zstd) 
 CLAPACK_WASM:=$(realpath clapack-wasm) 
@@ -29,7 +29,7 @@ browser-recognizer: vosk libarchive
 
 prepare:
 	sudo apt install shtool libtool autogen autotools-dev pkg-config make && \
-	[ $(EMSDK) != ../emsdk -a ! -d $(EMSDK) ] && \
+	[ $(EMSDK) != ../emsdk  ! -d $(EMSDK) ] && \
 		echo "Invalid emsdk path"; \
 		exit 1; \
 	[ $(MAX_THREAD) -lt 2 ] && \
@@ -69,6 +69,7 @@ libarchive: zstd
 clapack-wasm: prepare
 	git clone --depth=1 https://gitlab.inria.fr/multispeech/kaldi.web/clapack-wasm.git $(CLAPACK_WASM) && \
 	cd $(CLAPACK_WASM) && \
+	git apply $(SRC)/clapack-wasm.patch &&
 	bash ./install_repo.sh emcc 
 
 openfst: prepare
@@ -85,7 +86,7 @@ kaldi: openfst clapack-wasm
 	git clone -b vosk --depth=1 https://github.com/alphacep/kaldi $(KALDI) && \
 	cd $(KALDI)/src && \
 	git apply $(SRC)/kaldi.patch && \
-	CXXFLAGS="-O3 -msimd128 -UHAVE_EXECINFO_H -pthread -flto" LDFLAGS="-O3 -sERROR_ON_UNDEFINED_SYMBOLS=0 -lembind -pthread -flto" emconfigure ./configure --use-cuda=no --with-cudadecoder=no --static --static-math=yes --static-fst=yes --debug-level=0 --double-precision=yes --clapack-root=$(CLAPACK_WASM) --host=WASM && \
+	CXXFLAGS="-O3 -msimd128 -UHAVE_EXECINFO_H -pthread -flto" LDFLAGS="-O3 -sERROR_ON_UNDEFINED_SYMBOLS=0 -lembind -pthread -flto" emconfigure ./configure --use-cuda=no --with-cudadecoder=no --static --static-math=yes --static-fst=yes --debug-level=0 --double-precision=yes --fst-root=$(OPENFST) --clapack-root=$(CLAPACK_WASM) --host=WASM && \
 	emmake make -j$(COMPILE_JOBS) online2 lm rnnlm
 
 vosk: kaldi

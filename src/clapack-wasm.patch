@@ -1,16 +1,61 @@
-diff --git a/libf2c/main.c b/libf2c/main.c
-index d95fdc9..ac82f68 100644
---- a/libf2c/main.c
-+++ b/libf2c/main.c
-@@ -105,9 +105,9 @@ char **xargv;
+diff --git a/CBLAS/Makefile.in.WASM b/CBLAS/Makefile.in.WASM
+index bf7eda6..5fedaf6 100644
+--- a/CBLAS/Makefile.in.WASM
++++ b/CBLAS/Makefile.in.WASM
+@@ -36,7 +36,7 @@ LOADER = $(CC)
+ # Flags for Compilers
+ #-----------------------------------------------------------------------------
  
-  int
- #ifdef KR_headers
--main(argc, argv) int argc; char **argv;
-+m(argc, argv) int argc; char **argv;
- #else
--main(int argc, char **argv)
-+m(int argc, char **argv)
- #endif
- {
- xargc = argc;
+-CFLAGS = -DADD_ -O3
++CFLAGS = -DADD_ -O3 -flto
+ 
+ #-----------------------------------------------------------------------------
+ # Archive programs and flags
+diff --git a/CLAPACK-3.2.1/make.inc.WASM b/CLAPACK-3.2.1/make.inc.WASM
+index 80037d0..a964b2d 100644
+--- a/CLAPACK-3.2.1/make.inc.WASM
++++ b/CLAPACK-3.2.1/make.inc.WASM
+@@ -23,7 +23,7 @@ PLAT =
+ # This is used to compile C libary
+ # if no wrapping of the blas library is needed, uncomment next line
+ CC        = emcc # -DNO_BLAS_WRAP
+-CFLAGS    = -I$(TOPDIR)/INCLUDE -I$(TOPDIR)/../libf2c -O3
++CFLAGS    = -I$(TOPDIR)/INCLUDE -I$(TOPDIR)/../libf2c -O3 -flto
+ LOADER    = $(CC)
+ LOADOPTS  =
+ NOOPT     = -O0 -I$(TOPDIR)/INCLUDE -I$(TOPDIR)/../libf2c
+diff --git a/f2c_BLAS-3.8.0/make.inc.WASM b/f2c_BLAS-3.8.0/make.inc.WASM
+index e071614..4647c2b 100644
+--- a/f2c_BLAS-3.8.0/make.inc.WASM
++++ b/f2c_BLAS-3.8.0/make.inc.WASM
+@@ -16,7 +16,7 @@ PLAT =
+ #  desired load options for your machine.
+ #
+ CC       = emcc
+-CFLAGS   = -I../libf2c -O3
++CFLAGS   = -I../libf2c -O3 -flto
+ DRVOPTS  = $(OPTS)
+ NOOPT    =
+ LOADER   = emcc
+diff --git a/libf2c/makefile.WASM b/libf2c/makefile.WASM
+index 6221401..d93b87f 100644
+--- a/libf2c/makefile.WASM
++++ b/libf2c/makefile.WASM
+@@ -15,7 +15,7 @@
+ .SUFFIXES: .c .o
+ CC = emcc
+ SHELL = /bin/sh
+-CFLAGS = -DNON_UNIX_STDIO -O3
++CFLAGS = -DNON_UNIX_STDIO -O3 -flto
+ 
+ LD = wasm-ld
+ RANLIB = emranlib
+@@ -24,7 +24,7 @@ AR = emar
+ # compile, then strip unnecessary symbols
+ .c.o:
+ 	$(CC) -c -DSkip_f2c_Undefs $(CFLAGS) $*.c
+-	$(LD) --relocatable -o $*.xxx $*.o
++	$(LD) --no-entry -r -o $*.xxx $*.o
+ 	mv $*.xxx $*.o
+ ## Under Solaris (and other systems that do not understand ld -x),
+ ## omit -x in the ld line above.
