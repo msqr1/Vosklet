@@ -1,8 +1,11 @@
 let objs = [] 
-Module.cleanUp = () => {
-  objs.forEach(obj => obj.delete())
+Module.revokeURLs = () => {
   URL.revokeObjectURL(pthreadUrl)
   URL.revokeObjectURL(processorUrl)
+} 
+Module.cleanUp = () => {
+  objs.forEach(obj => obj.delete())
+  Module.revokeURLs()
 }
 class Recognizer extends EventTarget {
   constructor() {

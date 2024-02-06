@@ -16,9 +16,9 @@ Browser-recognizer require SharedArrayBuffer to share thread's data, so these re
 If you can't set them, you may use a HACKY workaround at *src/addCOI.js*.
 
 ## Origin Private Filesystem (OPFS)
-Browser-recognizer needs the Emscripten WASMFS' OPFS to store its model, IDBFS was considered, but discarded because there is no direct way to read from IDBFS to C++ without copying to MEMFS. To be safe, always:
+Browser-recognizer needs the Emscripten WASMFS' OPFS to store its model, IDBFS was considered, but dropped because there is no direct way to read from IDBFS to C++ without copying to MEMFS (basically RAM). For safety with this, always:
 - Try catch ```window.loadBR()``` to to check for OPFS availability.
-- Check if there is enough space for **model + compressed model** before calling makeModel via ```navigator.storage.estimate()```
+- Check if there is enough space via ```navigator.storage.estimate()``` for **model + compressed model** before calling makeModel 
 
 # API interface
 ## JS ```window``` object
@@ -37,7 +37,8 @@ Browser-recognizer needs the Emscripten WASMFS' OPFS to store its model, IDBFS w
 | ```Promise<Model> makeModel(path: string, url: string, id: string)```<br><br>```Promise<SpkModel> makeSpkModel(path: string, url: string, id: string)``` | Make a ```Model``` or ```SpkModel```<br>- If **path** contains valid model files and **id** is the same, there will not be a fetch from **url**.<br>- If **path** doesn't contain valid model files, or if it contains valid model files but **id** is different, there will be a fetch from **url**, and the model is stored with **id**. |
 | ```Promise<Recognizer> makeRecognizer(model: Model, sampleRate: float)``` | Make a ```Recognizer```, it will use **model**'s thread if it's the first user of **model**, else it will use a new thread.
 | ```setLogLevel(lvl: int)``` | Set Vosk's log level (default: ```0```: Info) <br>```-2```: Error<br>```-1```: Warning<br>```1```: Verbose<br>```2```: More verbose<br>```3```: Debug |
-| ```cleanUp()``` | A convenient function that call ```delete()``` on all objects and revoke all Blob URLs. |
+| ```revokeURLs()``` | Revoke the Blob URLs of pthread worker and worklet processor |
+| ```cleanUp()``` | A convenient function that call ```revokeURLs()``` and ```delete()``` on all objects and . You should put this at the end of your program! |
 
 ## ```Recognizer``` object 
 | Function signature | Description |
@@ -72,6 +73,6 @@ cd Browser-recognizer &&
 # TODO:
 - Fix libarchive extract closing issue
 - setSpkModel avoid spawning extra thread
-- Top level await in usage
+- Top level await in API usage
 - Write examples 
 - Balance code size and speed 
