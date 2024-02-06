@@ -28,10 +28,13 @@ bool genericModel::checkModel() {
 }
 void genericModel::afterFetch() {
   thrd.setTask1([this](){
-    if(!extractModel()) {
-      fireEv("_continue", "Unable to extract model and delete .tzst file", index);
+    if(!extractModel() && fs::remove("/opfs/m0dEl.tzst",tank)) {
+      fs::current_path("/opfs");
+      fs::remove_all(storepath);
+      fireEv("_continue", "Unable to extract model", index);
       return;
     }
+    fs::remove("/opfs/m0dEl.tzst",tank);
     std::ofstream idFile("id");
     if(!idFile.is_open()) {
       fs::current_path("/opfs");
@@ -41,17 +44,13 @@ void genericModel::afterFetch() {
     }
     idFile << id;
     idFile.close();
-    char a[3] {};
-    int fd = open("./conf/model.conf", O_RDONLY);
-    read(fd, a, 3);
-    emscripten_console_log(a);
-    close(fd);
+    // I wanna give up on this thing so bad...
     std::ifstream is("./conf/model.conf");
     emscripten_console_logf("%d", is.good());
     emscripten_console_logf("%d", is.bad());
     emscripten_console_logf("%d", is.eof());
     emscripten_console_logf("%d", is.fail());
-
+    is.close();
     //load(false);
   });
 }
@@ -68,9 +67,9 @@ bool genericModel::extractModel() {
     // Strip first component, keep relative path
     path = "." + path.substr(path.find("/"));
     archive_entry_set_pathname(entry, path.c_str());
+    archive_read_extract(src, entry, ARCHIVE_EXTRACT_UNLINK | ARCHIVE_EXTRACT_NO_AUTODIR);
     if(archive_errno(src) != 0) return false;
-    archive_read_extract(src, entry, ARCHIVE_EXTRACT_UNLINK);
   }
   archive_read_free(src);
-  return fs::remove("/opfs/m0dEl.tzst",tank);
+  return true;
 }
