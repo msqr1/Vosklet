@@ -75,8 +75,3 @@ cd Browser-recognizer &&
 | COMPILE_JOBS | Set the number of jobs (threads) when compiling | ```$(nproc)```   |
 | EMSDK | Set EMSDK's path (will install EMSDK in root folder if unset) | ```../emsdk``` |
 
-# TODO:
-- setSpkModel avoid spawning extra thread
-- Top level await in API usage
-- Write examples 
-- Balance code size and speed 
