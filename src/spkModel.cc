@@ -27,7 +27,7 @@ void spkModel::load(bool newThrd) {
     main();
     return;
   }
-  thrd.setTask1(main);
+  thrd.addTask(main);
 }
 bool spkModel::checkModelFiles() {
   return fs::exists("mfcc.conf", tank) && 

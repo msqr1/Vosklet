@@ -11,11 +11,7 @@ Module.cleanUp = () => {
 class Recognizer extends EventTarget {
   constructor() {
     super()
-  }
-  _init(model, sampleRate) {
-    this.obj = new Module.recognizer(model, sampleRate, objs.length)
     objs.push(this)
-    this.ptr = Module._malloc(512)
   }
   async getNode(ctx, channelIndex = 0) {
     if(typeof this.node === "undefined") {
@@ -59,9 +55,8 @@ class Recognizer extends EventTarget {
   }
 }
 class Model extends EventTarget {
-  constructor(storepath, id) {
+  constructor(d) {
     super()
-    this.obj = new Module.model(storepath, id, objs.length)
     objs.push(this)
   }
   delete() {
@@ -69,9 +64,8 @@ class Model extends EventTarget {
   }
 }
 class SpkModel extends EventTarget {
-  constructor(storepath, id) {
+  constructor() {
     super()
-    this.obj = new Module.spkModel(storepath, id, objs.length)
     objs.push(this)
   }
   delete() {
@@ -79,7 +73,7 @@ class SpkModel extends EventTarget {
   }
 }
 Module.makeModel = async (url, storepath, id) => {
-  let mdl = new Model(storepath, id)
+  let mdl = new Model()
   return new Promise((resolve, reject) => {
     mdl.addEventListener("_continue", (ev) => {
       if(ev.detail === ".") {
@@ -88,6 +82,7 @@ Module.makeModel = async (url, storepath, id) => {
       mdl.delete()
       return reject(ev.detail)
     }, {once : true})
+    mdl.obj = new Module.model(storepath, id, objs.length)
     if(mdl.obj.checkModel()) {
       mdl.obj.load(true)
       return;
@@ -110,7 +105,7 @@ Module.makeModel = async (url, storepath, id) => {
   })
 }
 Module.makeSpkModel = async (url, storepath, id) => {
-  let mdl = new SpkModel(storepath, id)
+  let mdl = new SpkModel()
   return new Promise((resolve, reject) => {
     mdl.addEventListener("_continue", (ev) => {
       if(ev.detail === ".") {
@@ -119,6 +114,7 @@ Module.makeSpkModel = async (url, storepath, id) => {
       mdl.delete()
       reject(ev.detail)
     }, {once : true})
+    mdl.obj = new Module.model(storepath, id, objs.length)
     if(mdl.obj.checkModel()) {
       mdl.obj.load(true)
       return
@@ -128,16 +124,21 @@ Module.makeSpkModel = async (url, storepath, id) => {
       if(!res.ok) {
         return reject("Unable to download model")
       }
-      let arr = await res.arrayBuffer()
-      let mdlMem = Module._malloc(arr.byteLength) // Will free in C++
-      Module.HEAP8.set(new Int8Array(arr), mdlMem)
-      mdl.obj.afterFetch(mdlMem, arr.byteLength)
+      let wStream = await (await (await navigator.storage.getDirectory()).getFileHandle("m0dEl.tar", {create : true})).createWritable()
+      let tarReader = res.body.pipeThrough(dStream).getReader()
+      while(true) {
+        let readRes = await tarReader.read()
+        if(!readRes.done) await wStream.write(readRes.value)
+        else break
+      }
+      await wStream.close()
+      mdl.obj.afterFetch()
     })()
   })
 }
 Module.makeRecognizer = (model, sampleRate) => {
   let rec = new Recognizer()
-  let retval = new Promise((resolve, reject) => {
+  return new Promise((resolve, reject) => {
     rec.addEventListener("_continue", (ev) => {
       if(ev.detail == ".") {
         objs.push(rec)
@@ -146,9 +147,9 @@ Module.makeRecognizer = (model, sampleRate) => {
       rec.delete()
       reject(ev.detail)
     }, {once : true})
+    rec.obj = new Module.recognizer(model, sampleRate, objs.length)  
+    rec.ptr = Module._malloc(512)
   })
-  rec._init(model.obj, sampleRate)
-  return retval
 }
 let processorUrl = URL.createObjectURL(new Blob(['(',
   (() => {

@@ -23,7 +23,7 @@ void model::load(bool newThrd) {
     main();
     return;
   }
-  thrd.setTask1(main);
+  thrd.addTask(main);
 }
 bool model::checkModelFiles() { 
   return fs::exists("am/final.mdl", tank) &&

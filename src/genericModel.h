@@ -14,7 +14,8 @@ namespace fs = std::filesystem;
 struct genericModel {
   const std::string storepath{};
   const std::string id{};
-  twiceThrd thrd{};
+  reusableThrd thrd{};
+  bool recognizerUsedThrd{};
   int index{};
   static bool extractModel();
   virtual bool checkModelFiles() = 0;

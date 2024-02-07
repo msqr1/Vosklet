@@ -1,13 +1,5 @@
 #include "global.h"
-void throwJS(const char* msg, bool err) {
-  EM_ASM({
-    if($1) {
-      throw Error(UTF8ToString($0));
-      return;
-    }
-    throw UTF8ToString($0);
-  },msg, err);
-}
+
 void fireEv(const char *type, const char *content, int index) {
   static ProxyingQueue pq{};
   auto proxy{[index, type, content](){
@@ -23,22 +15,26 @@ void fireEv(const char *type, const char *content, int index) {
 }
 int main() {
   std::thread t{[](){
-    wasmfs_create_directory("/opfs", 0777, wasmfs_create_opfs_backend());
+    OPFSOk = (wasmfs_create_directory("/opfs", 0777, wasmfs_create_opfs_backend()) == 0 ? true : false);
   }};
   t.detach();
   emscripten_exit_with_live_runtime();
 }
-void twiceThrd::setTask1(std::function<void()> task1) {
-  blocker.lock();
-  std::thread t{[this, task1](){
-    task1();
-    blocker.lock(); 
-    task2();
+ProxyingQueue reusableThrd::pq{};
+reusableThrd::reusableThrd() {
+  thrd = std::thread{[this](){
+    while(!done.test()) {
+      static ProxyingQueue pq{};
+      pq.execute();
+      blocker.wait(done.test(), std::memory_order_relaxed);
+    }
   }};
-  t.detach();
+  thrd.detach();
 }
-void twiceThrd::setTask2(std::function<void()> task2) {
-  this->task2 = task2;
-  blocker.unlock();
-  reusable = false;
+void reusableThrd::addTask(std::function<void()> task) {
+  pq.proxyAsync(thrd.native_handle(), std::move(task));
+}
+reusableThrd::~reusableThrd() {
+  done.test_and_set(std::memory_order_relaxed);
+  done.notify_one();
 }

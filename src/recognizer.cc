@@ -1,5 +1,9 @@
 #include "recognizer.h" 
 recognizer::recognizer(model* mdl, float sampleRate, int index) : index(index) {
+  if(!OPFSOk) {
+    fireEv("_continue", "OPFS hasn't been initialized or not available", index);
+    return;
+  }
   auto main{[this, mdl, sampleRate](){
     rec = vosk_recognizer_new(mdl->mdl,sampleRate);
     if(rec == nullptr) {
@@ -21,8 +25,9 @@ recognizer::recognizer(model* mdl, float sampleRate, int index) : index(index) {
       }
     }
   }};
-  if(mdl->thrd.reusable) {
-    mdl->thrd.setTask2(main);
+  if(mdl->recognizerUsedThrd) {
+    mdl->thrd.addTask(main);
+    mdl->recognizerUsedThrd = true;
     return;
   }
   std::thread t{main};

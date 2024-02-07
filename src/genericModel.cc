@@ -1,18 +1,22 @@
 #include "genericModel.h"
 
 genericModel::genericModel(const std::string& storepath, const std::string &id, int index) : storepath(storepath), id(id), index(index) {
+  if(!OPFSOk) {
+    fireEv("_continue", "OPFS hasn't been initialized or not available", index);
+    return;
+  }
   fs::current_path("/opfs", tank);
   if(tank.value() != 0) {
-    throwJS("Unable to cd OPFS root");
+    fireEv("_continue","Unable to cd OPFS root",index);
     return;
   }
   fs::create_directories(storepath, tank);
   if(tank.value() != 0) {
-    throwJS("Unable to create storepath");
+    fireEv("_continue","Unable to create storepath", index);
   }
   fs::current_path(storepath, tank); 
   if(tank.value() != 0) {
-    throwJS("Unable to cd storepath");
+    fireEv("_continue", "Unable to cd storepath", index);
   }
 }
 bool genericModel::checkModel() {
@@ -27,7 +31,7 @@ bool genericModel::checkModel() {
   return id.compare(oldid) == 0 ? true : false;
 }
 void genericModel::afterFetch() {
-  thrd.setTask1([this](){
+  thrd.addTask([this](){
     if(!extractModel()) {
       fs::remove("/opfs/m0dEl.tar",tank);
       fs::current_path("/opfs", tank);
@@ -39,8 +43,8 @@ void genericModel::afterFetch() {
     fs::remove("README",tank);
     std::ofstream idFile("id");
     if(!idFile.is_open()) {
-      fs::current_path("/opfs");
-      fs::remove_all(storepath);
+      fs::current_path("/opfs", tank);
+      fs::remove_all(storepath, tank);
       fireEv("_continue", "Unable to write model ID", index);
       return;
     }
