@@ -1,4 +1,5 @@
 let objs = [] 
+let dStream = new DecompressionStream("gzip")
 Module.revokeURLs = () => {
   URL.revokeObjectURL(pthreadUrl)
   URL.revokeObjectURL(processorUrl)
@@ -96,8 +97,13 @@ Module.makeModel = async (url, storepath, id) => {
       if(!res.ok) {
         return reject("Unable to download model")
       }
-      let wStream = await (await (await navigator.storage.getDirectory()).getFileHandle("m0dEl.tzst", {create : true})).createWritable()
-      await wStream.write(await res.arrayBuffer())
+      let wStream = await (await (await navigator.storage.getDirectory()).getFileHandle("m0dEl.tar", {create : true})).createWritable()
+      let tarReader = res.body.pipeThrough(dStream).getReader()
+      while(true) {
+        let readRes = await tarReader.read()
+        if(!readRes.done) await wStream.write(readRes.value)
+        else break
+      }
       await wStream.close()
       mdl.obj.afterFetch()
     })()

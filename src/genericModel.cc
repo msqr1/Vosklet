@@ -28,13 +28,15 @@ bool genericModel::checkModel() {
 }
 void genericModel::afterFetch() {
   thrd.setTask1([this](){
-    if(!extractModel() && fs::remove("/opfs/m0dEl.tzst",tank)) {
-      fs::current_path("/opfs");
-      fs::remove_all(storepath);
+    if(!extractModel()) {
+      fs::remove("/opfs/m0dEl.tar",tank);
+      fs::current_path("/opfs", tank);
+      fs::remove_all(storepath, tank);
       fireEv("_continue", "Unable to extract model", index);
       return;
     }
-    fs::remove("/opfs/m0dEl.tzst",tank);
+    fs::remove("/opfs/m0dEl.tar",tank);
+    fs::remove("README",tank);
     std::ofstream idFile("id");
     if(!idFile.is_open()) {
       fs::current_path("/opfs");
@@ -55,21 +57,25 @@ void genericModel::afterFetch() {
   });
 }
 bool genericModel::extractModel() {
-  std::string path{};
+  static std::string path{};
   archive* src {archive_read_new()};
-  archive_entry* entry {};
-  archive_read_support_filter_all(src);
-  archive_read_support_format_all(src);
-  archive_read_open_filename(src, "/opfs/m0dEl.tzst", 10240);
+  archive* dst{archive_write_disk_new()};
+  static archive_entry* entry{};
+  archive_read_support_format_tar(src);
+  archive_read_open_filename(src, "/opfs/m0dEl.tar", 10240);
+  archive_write_disk_set_standard_lookup(dst); 
+  archive_write_disk_set_options(dst, ARCHIVE_EXTRACT_NO_AUTODIR | ARCHIVE_EXTRACT_UNLINK);
   if(archive_errno(src) != 0) return false;
-  while (archive_read_next_header(src, &entry) == ARCHIVE_OK) {
+  if(archive_errno(dst) != 0) return false;
+  while(archive_read_next_header2(src, entry) == ARCHIVE_OK) {
     path = archive_entry_pathname(entry);
-    // Strip first component, keep relative path
-    path = "." + path.substr(path.find("/"));
-    archive_entry_set_pathname(entry, path.c_str());
-    archive_read_extract(src, entry, ARCHIVE_EXTRACT_UNLINK | ARCHIVE_EXTRACT_NO_AUTODIR);
+    path = "." + path.substr(path.find("/")); // Strip 1st component
+    emscripten_console_log(archive_entry_pathname(entry));
+    archive_read_extract2(src, entry, dst);
     if(archive_errno(src) != 0) return false;
+    if(archive_errno(dst) != 0) return false;
   }
   archive_read_free(src);
+  archive_write_free(dst);
   return true;
 }

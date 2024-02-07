@@ -1,6 +1,8 @@
 # Overview
 - A speech recognizer built on Vosk that can be run on the browser, inspired by [vosk-browser](https://github.com/ccoreilly/vosk-browser), but built from scratch and no code taken!
 - Designed with strong exception safety
+- See the examples folder for ways to use the API
+- See the devel folder for the absolutely newest build (not guaranteed to work) and the JS build script
 
 # Additions to vosk-browser:
 - Download multiple models
@@ -24,7 +26,7 @@ Browser-recognizer needs the Emscripten WASMFS' OPFS to store its model, IDBFS w
 ## JS ```window``` object
 | Function signature | Description |
 |---|---|
-|```Promise<Module> loadBR()``` | Load the Emscripten Module
+|```Promise<Module> loadBR()``` | Load Emscripten's Module |
 
 ## Shared interface
 | Function signature  | Description |
@@ -34,7 +36,7 @@ Browser-recognizer needs the Emscripten WASMFS' OPFS to store its model, IDBFS w
 ## ```Module``` object 
 | Function signature | Description |
 |---|---|
-| ```Promise<Model> makeModel(path: string, url: string, id: string)```<br><br>```Promise<SpkModel> makeSpkModel(path: string, url: string, id: string)``` | Make a ```Model``` or ```SpkModel```<br>- If **path** contains valid model files and **id** is the same, there will not be a fetch from **url**.<br>- If **path** doesn't contain valid model files, or if it contains valid model files but **id** is different, there will be a fetch from **url**, and the model is stored with **id**. |
+| ```Promise<Model> makeModel(path: string, url: string, id: string)```<br><br>```Promise<SpkModel> makeSpkModel(path: string, url: string, id: string)``` | Make a ```Model``` or ```SpkModel```<br>- If **path** contains valid model files and **id** is the same, there will not be a fetch from **url**.<br>- If **path** doesn't contain valid model files, or if it contains valid model files but **id** is different, there will be a fetch from **url**, and the model is stored with **id**. Model files must be directly under the model root folder, and compressed model must be in .tgz format. |
 | ```Promise<Recognizer> makeRecognizer(model: Model, sampleRate: float)``` | Make a ```Recognizer```, it will use **model**'s thread if it's the first user of **model**, else it will use a new thread.
 | ```setLogLevel(lvl: int)``` | Set Vosk's log level (default: ```0```: Info) <br>```-2```: Error<br>```-1```: Warning<br>```1```: Verbose<br>```2```: More verbose<br>```3```: Debug |
 | ```revokeURLs()``` | Revoke the Blob URLs of pthread worker and worklet processor |
@@ -70,6 +72,7 @@ cd Browser-recognizer &&
 | MAX_THREADS | Set the max number of thread (2 min) | ```2``` (1 OPFS thread + 1 model/recognizer thread) |
 | COMPILE_JOBS | Set the number of jobs (threads) when compiling | ```$(nproc)```   |
 | EMSDK | Set EMSDK's path (will install EMSDK in root folder if unset) | ```../emsdk``` |
+
 # TODO:
 - Fix libarchive extract closing issue
 - setSpkModel avoid spawning extra thread
