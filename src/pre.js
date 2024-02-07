@@ -8,17 +8,83 @@ Module.cleanUp = () => {
   objs.forEach(obj => obj.delete())
   Module.revokeURLs()
 }
+class genericModel extends EventTarget {
+  constructor() {
+    super()
+    objs.push(this)
+  }
+  static async _init(url, storepath, id, normalMdl) {
+    let mdl = new genericModel()
+    return new Promise((resolve, reject) => {
+      mdl.addEventListener("_continue", (ev) => {
+        if(ev.detail === ".") {
+          return resolve(mdl)
+        }
+        mdl.delete()
+        return reject(ev.detail)
+      }, {once : true})
+      if(normalMdl) {
+        mdl.obj = new Module.model(storepath, id, objs.length)
+      }
+      else {
+        mdl.obj = new Module.spkModel(storepath, id, objs.length)
+      }
+      if(mdl.obj.checkModel()) {
+        mdl.obj.load(true)
+        return;
+      }
+      (async () => {
+        let res = await fetch(url)
+        if(!res.ok) {
+          return reject("Unable to download model")
+        }
+        let wStream = await (await (await navigator.storage.getDirectory()).getFileHandle("m0dEl.tar", {create : true})).createWritable()
+        let tarReader = res.body.pipeThrough(dStream).getReader()
+        while(true) {
+          let readRes = await tarReader.read()
+          if(!readRes.done) await wStream.write(readRes.value)
+          else break
+        }
+        await wStream.close()
+        mdl.obj.afterFetch()
+      })()
+    })
+  }
+  delete() {
+    this.obj.delete()
+  }
+}
+Module.makeModel = async (url, storepath, id) => {
+  return genericModel._init(url, storepath, id,true)
+}
+Module.makeSpkModel = async (url, storepath, id) => {
+  return genericModel._init(url, storepath, id, false)
+}
 class Recognizer extends EventTarget {
   constructor() {
     super()
     objs.push(this)
   }
+  static async _init(model, sampleRate) {
+    let rec = new Recognizer()
+    return new Promise((resolve, reject) => {
+      rec.addEventListener("_continue", (ev) => {
+        if(ev.detail == ".") {
+          objs.push(rec)
+          return resolve(rec)
+        }
+        rec.delete()
+        reject(ev.detail)
+      }, {once : true})
+      rec.obj = new Module.recognizer(model, sampleRate, objs.length)  
+      rec.ptr = Module._malloc(512)
+    })
+  }
   async getNode(ctx, channelIndex = 0) {
     if(typeof this.node === "undefined") {
       let msgChannel = new MessageChannel()
       await ctx.audioWorklet.addModule(processorUrl)
-      this.node = new AudioWorkletNode(ctx, 'BRProcessor', { channelCountMode: "max", numberOfInputs: 1, numberOfOutputs: 1 })
-      this.node.port.postMessage({cmd : "init", ptr: this.ptr, channel: channelIndex}, [msgChannel.port1])
+      this.node = new AudioWorkletNode(ctx, 'BRProcessor', { channelCountMode: "max", numberOfInputs: 1, numberOfOutputs: 1, processorOptions: { ptr: this.ptr, channel: channelIndex, recognizerPort: msgChannel.port1 } })
       msgChannel.port1.onmessage = (ev) => {
         this.obj.acceptWaveForm()
       } 
@@ -32,7 +98,7 @@ class Recognizer extends EventTarget {
   delete() {
     this.obj.delete()
     if(typeof this.node !== "undefined") {
-      this.node.port.postMessage({cmd : "deinit"})
+      this.node.port.postMessage(".")
     }
   }
   setWords(words) {
@@ -44,8 +110,8 @@ class Recognizer extends EventTarget {
   setGrm(grm) {
     this.obj.setGrm(grm)
   }
-  setSpkModel(model) {
-    this.obj.setSpkModel(model.obj)
+  setSpkModel(spkModel) {
+    this.obj.setSpkModel(spkModel.obj)
   }
   setNLSML(nlsml) {
     this.obj.setNLSML(nlsml)
@@ -54,117 +120,22 @@ class Recognizer extends EventTarget {
     this.obj.setMaxAlternatives(alts)
   }
 }
-class Model extends EventTarget {
-  constructor(d) {
-    super()
-    objs.push(this)
-  }
-  delete() {
-    this.obj.delete()
-  }
-}
-class SpkModel extends EventTarget {
-  constructor() {
-    super()
-    objs.push(this)
-  }
-  delete() {
-    this.obj.delete()
-  }
-}
-Module.makeModel = async (url, storepath, id) => {
-  let mdl = new Model()
-  return new Promise((resolve, reject) => {
-    mdl.addEventListener("_continue", (ev) => {
-      if(ev.detail === ".") {
-        return resolve(mdl)
-      }
-      mdl.delete()
-      return reject(ev.detail)
-    }, {once : true})
-    mdl.obj = new Module.model(storepath, id, objs.length)
-    if(mdl.obj.checkModel()) {
-      mdl.obj.load(true)
-      return;
-    }
-    (async () => {
-      let res = await fetch(url)
-      if(!res.ok) {
-        return reject("Unable to download model")
-      }
-      let wStream = await (await (await navigator.storage.getDirectory()).getFileHandle("m0dEl.tar", {create : true})).createWritable()
-      let tarReader = res.body.pipeThrough(dStream).getReader()
-      while(true) {
-        let readRes = await tarReader.read()
-        if(!readRes.done) await wStream.write(readRes.value)
-        else break
-      }
-      await wStream.close()
-      mdl.obj.afterFetch()
-    })()
-  })
-}
-Module.makeSpkModel = async (url, storepath, id) => {
-  let mdl = new SpkModel()
-  return new Promise((resolve, reject) => {
-    mdl.addEventListener("_continue", (ev) => {
-      if(ev.detail === ".") {
-        return resolve(mdl)
-      }
-      mdl.delete()
-      reject(ev.detail)
-    }, {once : true})
-    mdl.obj = new Module.model(storepath, id, objs.length)
-    if(mdl.obj.checkModel()) {
-      mdl.obj.load(true)
-      return
-    }
-    (async () => {
-      let res = await fetch(url)
-      if(!res.ok) {
-        return reject("Unable to download model")
-      }
-      let wStream = await (await (await navigator.storage.getDirectory()).getFileHandle("m0dEl.tar", {create : true})).createWritable()
-      let tarReader = res.body.pipeThrough(dStream).getReader()
-      while(true) {
-        let readRes = await tarReader.read()
-        if(!readRes.done) await wStream.write(readRes.value)
-        else break
-      }
-      await wStream.close()
-      mdl.obj.afterFetch()
-    })()
-  })
-}
 Module.makeRecognizer = (model, sampleRate) => {
-  let rec = new Recognizer()
-  return new Promise((resolve, reject) => {
-    rec.addEventListener("_continue", (ev) => {
-      if(ev.detail == ".") {
-        objs.push(rec)
-        return resolve(rec)
-      }
-      rec.delete()
-      reject(ev.detail)
-    }, {once : true})
-    rec.obj = new Module.recognizer(model, sampleRate, objs.length)  
-    rec.ptr = Module._malloc(512)
-  })
+  return Recognizer._init(model.obj, sampleRate)
 }
 let processorUrl = URL.createObjectURL(new Blob(['(',
   (() => {
     registerProcessor("BRProcessor", class extends AudioWorkletProcessor {
       constructor(options) {
-        super(options)
         this.done = false
-        this.port.onmessage = (ev) => {
-          if(ev.cmd === "deinit") this.done = false
-        }
+        this.port.onmessage = (ev) => this.done = true
         this.ptr = options.processorOptions.ptr 
+        this.recognizerPort = options.processorOptions.recognizerPort
+        this.channelIndex = options.processorOptions.channelIndex
       }
       process(inputs, outputs, params) {
         if(this.done) return false;
-        this.wasmMem.set(inputs[0].getChannelData(this.channel));
+        this.wasmMem.set(inputs[0].getChannelData(this.channelIndex));
         this.recognizerPort.postMessage(".") 
         outputs = inputs
         return true
@@ -172,6 +143,7 @@ let processorUrl = URL.createObjectURL(new Blob(['(',
     })
   }).toString()
 , ')()'], {type : "text/javascript"}))
+
 // Taken from the worker.js file
 let pthreadUrl = URL.createObjectURL(new Blob(['(',
   (() => {
@@ -194,7 +166,6 @@ let pthreadUrl = URL.createObjectURL(new Blob(['(',
     function assert(condition, text) {
       if (!condition) abort('Assertion failed: ' + text);
     }
-
     function threadPrintErr() {
       var text = Array.prototype.slice.call(arguments).join(' ');
       console.error(text);

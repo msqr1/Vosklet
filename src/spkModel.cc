@@ -2,7 +2,7 @@
 spkModel::spkModel(const std::string& storepath, const std::string& id, int index) : genericModel(storepath, id, index) {
   mdl = vosk_spk_model_new(".");
   if(mdl == nullptr) {
-    throwJS("Unable to initialize speaker model");
+    fireEv("_continue", "Unable to initialize speaker model", index);
   }
 }
 spkModel::~spkModel() {
