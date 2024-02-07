@@ -2,12 +2,14 @@
 - A speech recognizer built on Vosk that can be run on the browser, inspired by [vosk-browser](https://github.com/ccoreilly/vosk-browser), but built from scratch and no code taken!
 - Designed with strong exception safety
 - See the examples folder for ways to use the API
-- See the devel folder for the absolutely newest build (not guaranteed to work) and the JS build script
+- See the devel folder for the newest build (not guaranteed to work) and the JS build script
 
 # Additions to vosk-browser:
 - Download multiple models
 - Model storage path management (for multiple models)
 - Model ID management (for model updates)
+- Smaller JS size
+- Doesn't need another file when using AudioWorkletNode
 
 # User agent notes
 ## SharedArrayBuffer
@@ -20,7 +22,7 @@ If you can't set them, you may use a HACKY workaround at *src/addCOI.js*.
 ## Origin Private Filesystem (OPFS)
 Browser-recognizer needs the Emscripten WASMFS' OPFS to store its model, IDBFS was considered, but dropped because there is no direct way to read from IDBFS to C++ without copying to MEMFS (basically RAM). For safety with this, always:
 - Try catch ```window.loadBR()``` to to check for OPFS availability.
-- Check if there is enough space via ```navigator.storage.estimate()``` for **model + compressed model** before calling makeModel 
+- Check if there is enough space via ```navigator.storage.estimate()``` for TWICE THE MODEL SIZE before calling Module.makeModel 
 
 # API interface
 ## JS ```window``` object
@@ -74,7 +76,6 @@ cd Browser-recognizer &&
 | EMSDK | Set EMSDK's path (will install EMSDK in root folder if unset) | ```../emsdk``` |
 
 # TODO:
-- Fix libarchive extract closing issue
 - setSpkModel avoid spawning extra thread
 - Top level await in API usage
 - Write examples 

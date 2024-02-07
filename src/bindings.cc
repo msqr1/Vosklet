@@ -1,8 +1,10 @@
 #include "spkModel.h"
 #include "model.h"
 #include "recognizer.h"
+
 #include <emscripten/bind.h>
 using namespace emscripten;
+
 EMSCRIPTEN_BINDINGS() {
   function("setLogLevel", &vosk_set_log_level, allow_raw_pointers());
   class_<model>("model")

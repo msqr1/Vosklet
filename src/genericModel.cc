@@ -46,36 +46,33 @@ void genericModel::afterFetch() {
     }
     idFile << id;
     idFile.close();
-    // I wanna give up on this thing so bad...
-    std::ifstream is("./conf/model.conf");
-    emscripten_console_logf("%d", is.good());
-    emscripten_console_logf("%d", is.bad());
-    emscripten_console_logf("%d", is.eof());
-    emscripten_console_logf("%d", is.fail());
-    is.close();
-    //load(false);
+    load(false);
   });
 }
 bool genericModel::extractModel() {
-  static std::string path{};
+  std::string path{};
   archive* src {archive_read_new()};
-  archive* dst{archive_write_disk_new()};
-  static archive_entry* entry{};
+  archive_entry* entry{};
+  int fd{};
   archive_read_support_format_tar(src);
   archive_read_open_filename(src, "/opfs/m0dEl.tar", 10240);
-  archive_write_disk_set_standard_lookup(dst); 
-  archive_write_disk_set_options(dst, ARCHIVE_EXTRACT_NO_AUTODIR | ARCHIVE_EXTRACT_UNLINK);
   if(archive_errno(src) != 0) return false;
-  if(archive_errno(dst) != 0) return false;
   while(archive_read_next_header2(src, entry) == ARCHIVE_OK) {
     path = archive_entry_pathname(entry);
-    path = "." + path.substr(path.find("/")); // Strip 1st component
-    emscripten_console_log(archive_entry_pathname(entry));
-    archive_read_extract2(src, entry, dst);
-    if(archive_errno(src) != 0) return false;
-    if(archive_errno(dst) != 0) return false;
+    // Strip 1st component, keep relative path
+    path = "." + path.substr(path.find("/")); 
+    if(!fs::path(path).has_extension()) {
+      fs::create_directory(path);
+      continue;
+    }
+    fd = open(path.c_str(), O_CREAT | O_WRONLY | O_TRUNC);
+    archive_read_data_into_fd(src, fd);
+    close(fd);
+    if(archive_errno(src) != 0) {
+      emscripten_console_log(archive_error_string(src));
+      return false;
+    }
   }
   archive_read_free(src);
-  archive_write_free(dst);
   return true;
 }
