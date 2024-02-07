@@ -42,7 +42,7 @@ Browser-recognizer needs the Emscripten WASMFS' OPFS to store its model, IDBFS w
 | ```Promise<Recognizer> makeRecognizer(model: Model, sampleRate: float)``` | Make a ```Recognizer```, it will use **model**'s thread if it's the first user of **model**, else it will use a new thread.
 | ```setLogLevel(lvl: int)``` | Set Vosk's log level (default: ```0```: Info) <br>```-2```: Error<br>```-1```: Warning<br>```1```: Verbose<br>```2```: More verbose<br>```3```: Debug |
 | ```revokeURLs()``` | Revoke the Blob URLs of pthread worker and worklet processor |
-| ```cleanUp()``` | A convenience function that call ```revokeURLs()``` and ```delete()``` on all objects and . You should put this at the end of your program! |
+| ```cleanUp()``` | A convenience function that call ```revokeURLs()``` and ```delete()``` on all objects. You should put this at the end of your program! |
 
 ## ```Recognizer``` object 
 | Function signature | Description |
