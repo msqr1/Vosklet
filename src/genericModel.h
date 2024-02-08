@@ -19,7 +19,7 @@ struct genericModel {
   int index{};
   static bool extractModel();
   virtual bool checkModelFiles() = 0;
-  virtual void load(bool) = 0;
+  virtual void load(bool newThrd) = 0;
   bool checkModel();
   void afterFetch();
   genericModel(const std::string &storepath, const std::string &id, int index);

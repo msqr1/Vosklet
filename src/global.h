@@ -1,6 +1,7 @@
 #pragma once
 #include <thread>
 #include <atomic>
+#include <queue>
 
 #include <emscripten/wasmfs.h>
 #include <emscripten/console.h>
@@ -8,18 +9,18 @@
 #include <emscripten/proxying.h>
 using namespace emscripten;
 
-static pthread_t selfTID{pthread_self()};
-static std::error_code tank{};
-static bool OPFSOk{};
+extern bool OPFSOk;
+extern std::error_code tank;
+extern pthread_t dstThrd;
+extern ProxyingQueue glbQ;
+
 void fireEv(const char *type, const char *content, int index);
 int main();
 
-struct reusableThrd { // A minimal std::thread wrapper to run exactly 2 tasks
-  static ProxyingQueue pq;
-  std::thread thrd;
+struct reusableThrd { 
+  std::queue<std::function<void()>> queue{};
   std::atomic_flag blocker{};
   std::atomic_flag done{};
-  reusableThrd();
   void addTask(std::function<void()> task);
   ~reusableThrd();
 };

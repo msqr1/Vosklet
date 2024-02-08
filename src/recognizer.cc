@@ -1,7 +1,8 @@
 #include "recognizer.h" 
+
 recognizer::recognizer(model* mdl, float sampleRate, int index) : index(index) {
   if(!OPFSOk) {
-    fireEv("_continue", "OPFS hasn't been initialized or not available", index);
+    fireEv("_continue", "OPFS isn't initialized or unavailable", index);
     return;
   }
   auto main{[this, mdl, sampleRate](){
@@ -11,17 +12,16 @@ recognizer::recognizer(model* mdl, float sampleRate, int index) : index(index) {
       return;
     }
     fireEv("_continue", "." ,this->index);
-    while(!done.test()) {
-      controller1.wait(false, std::memory_order_relaxed);
-      controller2.wait(false, std::memory_order_relaxed);
-      if(!done.test()) {
-        switch(vosk_recognizer_accept_waveform_f(rec, dataPtr, 512)) {
-        case 0:
-        fireEv("result", vosk_recognizer_result(rec), this->index);
-        break;
-        case 1:
-        fireEv("partialResult", vosk_recognizer_partial_result(rec), this->index);
-        }
+    while(!done.test(std::memory_order_relaxed)) {
+      controller.wait(!done.test(std::memory_order_relaxed), std::memory_order_relaxed);
+      controller.clear(std::memory_order_relaxed);
+      if(done.test(std::memory_order_relaxed)) continue;
+      switch(vosk_recognizer_accept_waveform_f(rec, dataPtr, 512)) {
+      case 0:
+      fireEv("result", vosk_recognizer_result(rec), this->index);
+      break;
+      case 1:
+      fireEv("partialResult", vosk_recognizer_partial_result(rec), this->index);
       }
     }
   }};
@@ -35,22 +35,16 @@ recognizer::recognizer(model* mdl, float sampleRate, int index) : index(index) {
 }
 recognizer::~recognizer() {
   done.test_and_set(std::memory_order_relaxed);
-  controller1.notify_one();
+  done.notify_one();
+  controller.test_and_set(std::memory_order_relaxed);
+  controller.notify_one();
   vosk_recognizer_free(rec);
   free(dataPtr);
 }
 
 void recognizer::acceptWaveForm() {
-  controller1.test_and_set(std::memory_order_relaxed);
-  controller1.notify_one();
-  controller1.clear(std::memory_order_relaxed);
-  controller1.notify_one(); //Make sure c1 is locked before unlocking c2
-  controller2.test_and_set(std::memory_order_relaxed);
-  controller2.notify_one();
-  controller2.clear(std::memory_order_relaxed);
-  controller2.notify_one();
-  emscripten_console_log("Unblocked");
-  fireEv("result", "Test event", index);
+  controller.test_and_set(std::memory_order_relaxed);
+  controller.notify_one();
 }
 void recognizer::setGrm(const std::string& grm) {
   vosk_recognizer_set_grm(rec, grm.c_str());

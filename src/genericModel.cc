@@ -2,12 +2,12 @@
 
 genericModel::genericModel(const std::string& storepath, const std::string &id, int index) : storepath(storepath), id(id), index(index) {
   if(!OPFSOk) {
-    fireEv("_continue", "OPFS hasn't been initialized or not available", index);
+    fireEv("_continue", "OPFS isn't initialized or unavailable", index);
     return;
   }
   fs::current_path("/opfs", tank);
   if(tank.value() != 0) {
-    fireEv("_continue","Unable to cd OPFS root",index);
+    fireEv("_continue","Unable to cd OPFS root", index);
     return;
   }
   fs::create_directories(storepath, tank);
@@ -28,7 +28,7 @@ bool genericModel::checkModel() {
   std::string oldid(size, ' ');
   file.seekg(0);
   file.read(&oldid[0], size);
-  return id.compare(oldid) == 0 ? true : false;
+  return id.compare(oldid) == 0;
 }
 void genericModel::afterFetch() {
   thrd.addTask([this](){
@@ -41,6 +41,10 @@ void genericModel::afterFetch() {
     }
     fs::remove("/opfs/m0dEl.tar",tank);
     fs::remove("README",tank);
+    if(!checkModelFiles()) {
+      fireEv("_continue", "URL contains invalid model files", index);
+      return;
+    }
     std::ofstream idFile("id");
     if(!idFile.is_open()) {
       fs::current_path("/opfs", tank);

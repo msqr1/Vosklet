@@ -21,13 +21,13 @@ class genericModel extends EventTarget {
           return resolve(mdl)
         }
         mdl.delete()
-        return reject(ev.detail)
+        reject(ev.detail)
       }, {once : true})
       if(normalMdl) {
-        mdl.obj = new Module.model(storepath, id, objs.length)
+        mdl.obj = new Module.model(storepath, id, objs.length-1)
       }
       else {
-        mdl.obj = new Module.spkModel(storepath, id, objs.length)
+        mdl.obj = new Module.spkModel(storepath, id, objs.length-1)
       }
       if(mdl.obj.checkModel()) {
         mdl.obj.load(true)
@@ -76,7 +76,7 @@ class Recognizer extends EventTarget {
         rec.delete()
         reject(ev.detail)
       }, {once : true})
-      rec.obj = new Module.recognizer(model, sampleRate, objs.length)  
+      rec.obj = new Module.recognizer(model, sampleRate, objs.length-1)  
       rec.ptr = Module._malloc(512)
     })
   }

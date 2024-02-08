@@ -4,17 +4,11 @@
 #include "global.h"
 
 #include <filesystem>
-
-#include <AL/al.h>
-#include <AL/alc.h>
-#include <archive.h>
-#include <archive_entry.h>
 namespace fs = std::filesystem;
 
 struct recognizer {
   std::atomic_flag done{};
-  std::atomic_flag controller1{};
-  std::atomic_flag controller2{};
+  std::atomic_flag controller{};
   float* dataPtr{};
   int index{};
   VoskRecognizer* rec{};
