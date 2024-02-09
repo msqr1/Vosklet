@@ -1,4 +1,5 @@
 # Overview
+- **THE LIBRARY IS STILL UNDER DEVELOPMENT!**
 - A speech recognizer built on Vosk that can be run on the browser, inspired by [vosk-browser](https://github.com/ccoreilly/vosk-browser), but built from scratch and no code taken!
 - Designed with strong exception safety
 - See the usage folder's README.md for API documentation and important notes
@@ -12,4 +13,5 @@
 - All files are merged into a single bundle.
 
 # Basic usage
+- None now
 
