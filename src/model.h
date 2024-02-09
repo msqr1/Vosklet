@@ -5,9 +5,9 @@ struct model : genericModel {
   bool checkModelFiles();
   VoskModel* mdl{};
   model(const std::string& storepath, const std::string& id, int index);
-  bool checkModel();
+  void checkModel();
   void afterFetch();
-  void load(bool newThrd);
+  void load(bool newTask);
   ~model();
 };
 

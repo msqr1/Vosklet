@@ -1,34 +1,50 @@
 #include "genericModel.h"
 
-genericModel::genericModel(const std::string& storepath, const std::string &id, int index) : storepath(storepath), id(id), index(index) {
-  if(!OPFSOk) {
-    fireEv("_continue", "OPFS isn't initialized or unavailable", index);
-    return;
-  }
-  fs::current_path("/opfs", tank);
-  if(tank.value() != 0) {
-    fireEv("_continue","Unable to cd OPFS root", index);
-    return;
-  }
-  fs::create_directories(storepath, tank);
-  if(tank.value() != 0) {
-    fireEv("_continue","Unable to create storepath", index);
-  }
-  fs::current_path(storepath, tank); 
-  if(tank.value() != 0) {
-    fireEv("_continue", "Unable to cd storepath", index);
-  }
-}
-bool genericModel::checkModel() {
-  if(!checkModelFiles()) return false;
-  if(!fs::exists("id", tank)) return false;
-  std::ifstream file {"id", std::ifstream::binary}; 
-  if(!file.is_open()) return false;
-  long long size {file.seekg(0, std::ios::end).tellg()};
-  std::string oldid(size, ' ');
-  file.seekg(0);
-  file.read(&oldid[0], size);
-  return id.compare(oldid) == 0;
+genericModel::genericModel(const std::string& storepath, const std::string &id, int index) : storepath(storepath), id(id), index(index) {}
+void genericModel::checkModel() {
+  thrd.addTask([this](){
+    if(OPFSTried && !OPFSOk) {
+      fireEv("_checkMdl", "OPFS isn't available", index);
+      return;
+    }
+    if(!OPFSTried){
+      OPFSTried = true;
+      OPFSOk = wasmfs_create_directory("/opfs", 0777, wasmfs_create_opfs_backend()) == 0;
+    }
+    if(!OPFSOk) {
+      fireEv("_checkMdl", "OPFS initialization failed", index);
+      return;
+    }
+    fs::current_path("/opfs", tank);
+    if(tank.value() != 0) {
+      fireEv("_continue","Unable to cd OPFS root", index);
+      return;
+    }
+    fs::create_directories(storepath, tank);
+    if(tank.value() != 0) {
+      fireEv("_continue","Unable to create storepath", index);
+    }
+    fs::current_path(storepath, tank); 
+    if(tank.value() != 0) {
+      fireEv("_continue", "Unable to cd storepath", index);
+    }
+    if(!checkModelFiles() && !fs::exists("id", tank)) {
+      fireEv("_checkMdl", "fetch", index);
+      return;
+    }
+    std::ifstream file {"id", std::ifstream::in}; 
+    if(!file.is_open()) {
+      fireEv("_checkMdl", "Couldn't open id file", index);
+      return;
+    }
+    long long size {file.seekg(0, std::ios::end).tellg()};
+    std::string oldid(size, ' ');
+    file.seekg(0);
+    file.read(&oldid[0], size);
+    if(id.compare(oldid) == 0) fireEv("_checkMdl", nullptr, index);
+    else fireEv("_checkMdl", "fetch", index);
+    file.close();
+  });
 }
 void genericModel::afterFetch() {
   thrd.addTask([this](){
@@ -45,7 +61,7 @@ void genericModel::afterFetch() {
       fireEv("_continue", "URL contains invalid model files", index);
       return;
     }
-    std::ofstream idFile("id");
+    std::ofstream idFile{"id"};
     if(!idFile.is_open()) {
       fs::current_path("/opfs", tank);
       fs::remove_all(storepath, tank);
@@ -76,10 +92,7 @@ bool genericModel::extractModel() {
     fd = open(path.c_str(), O_CREAT | O_WRONLY | O_TRUNC);
     archive_read_data_into_fd(src, fd);
     close(fd);
-    if(archive_errno(src) != 0) {
-      emscripten_console_log(archive_error_string(src));
-      return false;
-    }
+    if(archive_errno(src) != 0) return false;
   }
   archive_read_free(src);
   return true;

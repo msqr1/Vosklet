@@ -7,19 +7,19 @@ model::~model() {
 void model::afterFetch() {
   genericModel::afterFetch();
 }
-bool model::checkModel() {
-  return genericModel::checkModel();
+void model::checkModel() {
+  genericModel::checkModel();
 }
-void model::load(bool newThrd) {
+void model::load(bool newTask) {
   auto main{[this](){
     mdl = vosk_model_new(".");
     if(mdl == nullptr) {
       fireEv("_continue", "Unable to load model for recognition", index);
       return;
     }
-    fireEv("_continue", ".", index);
+    fireEv("_continue", nullptr, index);
   }};
-  if(!newThrd) {
+  if(!newTask) {
     main();
     return;
   }

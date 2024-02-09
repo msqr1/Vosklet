@@ -10,17 +10,16 @@
 using namespace emscripten;
 
 extern bool OPFSOk;
+extern bool OPFSTried;
 extern std::error_code tank;
 extern pthread_t dstThrd;
 extern ProxyingQueue glbQ;
 
 void fireEv(const char *type, const char *content, int index);
-int main();
-
 struct reusableThrd { 
   std::queue<std::function<void()>> queue{};
   std::atomic_flag blocker{};
   std::atomic_flag done{};
-  void addTask(std::function<void()> task);
+  void addTask(std::function<void()>&& task);
   ~reusableThrd();
 };

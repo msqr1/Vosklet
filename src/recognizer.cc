@@ -1,17 +1,13 @@
 #include "recognizer.h" 
 
 recognizer::recognizer(model* mdl, float sampleRate, int index) : index(index) {
-  if(!OPFSOk) {
-    fireEv("_continue", "OPFS isn't initialized or unavailable", index);
-    return;
-  }
   auto main{[this, mdl, sampleRate](){
     rec = vosk_recognizer_new(mdl->mdl,sampleRate);
     if(rec == nullptr) {
       fireEv("_continue", "Unable to initialize recognizer", this->index);
       return;
     }
-    fireEv("_continue", "." ,this->index);
+    fireEv("_continue", nullptr, this->index);
     while(!done.test(std::memory_order_relaxed)) {
       controller.wait(!done.test(std::memory_order_relaxed), std::memory_order_relaxed);
       controller.clear(std::memory_order_relaxed);

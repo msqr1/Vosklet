@@ -17,41 +17,45 @@ class genericModel extends EventTarget {
     let mdl = new genericModel()
     return new Promise((resolve, reject) => {
       mdl.addEventListener("_continue", (ev) => {
-        if(ev.detail === ".") {
+        if(ev.detail === "0") {
           return resolve(mdl)
         }
         mdl.delete()
         reject(ev.detail)
       }, {once : true})
-      if(normalMdl) {
-        mdl.obj = new Module.model(storepath, id, objs.length-1)
-      }
-      else {
-        mdl.obj = new Module.spkModel(storepath, id, objs.length-1)
-      }
-      if(mdl.obj.checkModel()) {
-        mdl.obj.load(true)
-        return;
-      }
-      (async () => {
-        let res = await fetch(url)
-        if(!res.ok) {
-          return reject("Unable to download model")
+      mdl.addEventListener("_checkMdl", (ev) => {
+        switch(ev.detail) {
+          case "0":
+            mdl.load(true);
+            break;
+          case "fetch":
+            (async () => {
+              let res = await fetch(url)
+              if(!res.ok) {
+                return reject("Unable to download model")
+              }
+              let wStream = await (await (await navigator.storage.getDirectory()).getFileHandle("m0dEl.tar", {create : true})).createWritable()
+              let tarReader = res.body.pipeThrough(dStream).getReader()
+              while(true) {
+                let readRes = await tarReader.read()
+                if(!readRes.done) await wStream.write(readRes.value)
+                else break
+              }
+              await wStream.close()
+              mdl.obj.afterFetch()
+            })()
+            break;
+          default:
+            reject(ev.detail)
         }
-        let wStream = await (await (await navigator.storage.getDirectory()).getFileHandle("m0dEl.tar", {create : true})).createWritable()
-        let tarReader = res.body.pipeThrough(dStream).getReader()
-        while(true) {
-          let readRes = await tarReader.read()
-          if(!readRes.done) await wStream.write(readRes.value)
-          else break
-        }
-        await wStream.close()
-        mdl.obj.afterFetch()
-      })()
+      }, {once : true})
+      if(normalMdl) mdl.obj = new Module.model(storepath, id, objs.length-1)
+      else mdl.obj = new Module.spkModel(storepath, id, objs.length-1)
+      mdl.obj.checkModel()
     })
   }
   delete() {
-    this.obj.delete()
+    if (this.obj) this.obj.delete()
   }
 }
 Module.makeModel = async (url, storepath, id) => {
@@ -69,15 +73,14 @@ class Recognizer extends EventTarget {
     let rec = new Recognizer()
     return new Promise((resolve, reject) => {
       rec.addEventListener("_continue", (ev) => {
-        if(ev.detail == ".") {
-          objs.push(rec)
+        if(ev.detail == "0") {
+          rec.ptr = Module._malloc(512)
           return resolve(rec)
         }
         rec.delete()
         reject(ev.detail)
       }, {once : true})
       rec.obj = new Module.recognizer(model, sampleRate, objs.length-1)  
-      rec.ptr = Module._malloc(512)
     })
   }
   async getNode(ctx, channelIndex = 0) {
@@ -96,10 +99,8 @@ class Recognizer extends EventTarget {
     this.obj.acceptWaveForm()
   }
   delete() {
-    this.obj.delete()
-    if(typeof this.node !== "undefined") {
-      this.node.port.postMessage(".")
-    }
+    if (this.obj) this.obj.delete()
+    if(this.node) this.node.postMessage("0")
   }
   setWords(words) {
     this.obj.setWords(words)
@@ -136,7 +137,7 @@ let processorUrl = URL.createObjectURL(new Blob(['(',
       process(inputs, outputs, params) {
         if(this.done) return false;
         this.wasmMem.set(inputs[0].getChannelData(this.channelIndex));
-        this.recognizerPort.postMessage(".") 
+        this.recognizerPort.postMessage("0") 
         outputs = inputs
         return true
       }

@@ -8,22 +8,22 @@ spkModel::spkModel(const std::string& storepath, const std::string& id, int inde
 spkModel::~spkModel() {
   vosk_spk_model_free(mdl);
 }
-bool spkModel::checkModel() {
-  return genericModel::checkModel();
+void spkModel::checkModel() {
+  genericModel::checkModel();
 }
 void spkModel::afterFetch() {
   genericModel::afterFetch();
 }
-void spkModel::load(bool newThrd) {
+void spkModel::load(bool newTask) {
   auto main{[this](){
     mdl = vosk_spk_model_new(".");
     if(mdl == nullptr) {
       fireEv("_continue", "Unable to load model for recognition", index);
       return;
     }
-    fireEv("_continue", ".", index);
+    fireEv("_continue", nullptr, index);
   }};
-  if(!newThrd) {
+  if(!newTask) {
     main();
     return;
   }
