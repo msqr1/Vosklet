@@ -52,7 +52,7 @@ Browser-recognizer needs the Emscripten WASMFS' OPFS to store its model, IDBFS w
 Changing any option to non-default values requires recompilation
 ```
 git clone --depth=1 https://github.com/msqr1/Browser-recognizer &&
-cd Browser-recognizer &&
+cd Browser-recognizer/src &&
 [Options] make
 ```
 | Option | Description | Default value |
