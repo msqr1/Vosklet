@@ -7,7 +7,7 @@ index bf7eda6..5fedaf6 100644
  #-----------------------------------------------------------------------------
  
 -CFLAGS = -DADD_ -O3
-+CFLAGS = -DADD_ -O3 -flto
++CFLAGS = -DADD_ -O3 -flto -msimd128
  
  #-----------------------------------------------------------------------------
  # Archive programs and flags
@@ -20,7 +20,7 @@ index 80037d0..a964b2d 100644
  # if no wrapping of the blas library is needed, uncomment next line
  CC        = emcc # -DNO_BLAS_WRAP
 -CFLAGS    = -I$(TOPDIR)/INCLUDE -I$(TOPDIR)/../libf2c -O3
-+CFLAGS    = -I$(TOPDIR)/INCLUDE -I$(TOPDIR)/../libf2c -O3 -flto
++CFLAGS    = -I$(TOPDIR)/INCLUDE -I$(TOPDIR)/../libf2c -O3 -flto -msimd128
  LOADER    = $(CC)
  LOADOPTS  =
  NOOPT     = -O0 -I$(TOPDIR)/INCLUDE -I$(TOPDIR)/../libf2c
@@ -33,7 +33,7 @@ index e071614..4647c2b 100644
  #
  CC       = emcc
 -CFLAGS   = -I../libf2c -O3
-+CFLAGS   = -I../libf2c -O3 -flto
++CFLAGS   = -I../libf2c -O3 -flto -msimd128
  DRVOPTS  = $(OPTS)
  NOOPT    =
  LOADER   = emcc
@@ -46,7 +46,7 @@ index 6221401..d93b87f 100644
  CC = emcc
  SHELL = /bin/sh
 -CFLAGS = -DNON_UNIX_STDIO -O3
-+CFLAGS = -DNON_UNIX_STDIO -O3 -flto
++CFLAGS = -DNON_UNIX_STDIO -O3 -flto -msimd128
  
  LD = wasm-ld
  RANLIB = emranlib

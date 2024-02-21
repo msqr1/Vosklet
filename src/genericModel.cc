@@ -32,18 +32,28 @@ void genericModel::checkModel() {
       fireEv("_checkMdl", "fetch", index);
       return;
     }
-    std::ifstream file {"id", std::ifstream::in}; 
-    if(!file.is_open()) {
+    FILE* idFile {fopen("id", "r")};
+    if(idFile == nullptr) {
       fireEv("_checkMdl", "Couldn't open id file", index);
       return;
     }
-    long long size {file.seekg(0, std::ios::end).tellg()};
-    std::string oldid(size, ' ');
-    file.seekg(0);
-    file.read(&oldid[0], size);
-    if(id.compare(oldid) == 0) fireEv("_checkMdl", nullptr, index);
-    else fireEv("_checkMdl", "fetch", index);
-    file.close();
+    if(fseek(idFile, 0, SEEK_END) != 0) {
+      fireEv("_checkMdl", "Id file end seeking fail", index);
+      fclose(idFile);
+      return;
+    };
+    long long oldsize{ftell(idFile)};
+    char* oldid {new char[oldsize]};
+    if(fseek(idFile, 0L, SEEK_SET) != 0) {
+      fireEv("_checkMdl", "Id file start seeking fail", index);
+      fclose(idFile);
+      return;
+    };
+    fread(oldid, 1, oldsize, idFile);
+    fclose(idFile);
+    if(strcmp(oldid, id.c_str()) != 0) fireEv("_checkMdl", "fetch", index);
+    else fireEv("_checkMdl", nullptr, index);
+    delete[] oldid;
   });
 }
 void genericModel::afterFetch() {
@@ -58,18 +68,16 @@ void genericModel::afterFetch() {
     fs::remove("/opfs/m0dEl.tar",tank);
     fs::remove("README",tank);
     if(!checkModelFiles()) {
-      fireEv("_continue", "URL contains invalid model files", index);
+      fireEv("_continue", "URL points to invalid model files", index);
       return;
     }
-    std::ofstream idFile{"id"};
-    if(!idFile.is_open()) {
-      fs::current_path("/opfs", tank);
-      fs::remove_all(storepath, tank);
-      fireEv("_continue", "Unable to write model ID", index);
+    int idFd {open("id", O_WRONLY | O_TRUNC)};
+    if(write(idFd, id.c_str(), id.size()) == -1) {
+      fireEv("_continue", "Unable to write new ID", index);
+      close(idFd);
       return;
-    }
-    idFile << id;
-    idFile.close();
+    };
+    close(idFd);
     load(false);
   });
 }

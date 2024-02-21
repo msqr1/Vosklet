@@ -3,9 +3,9 @@
 
 #include <string>
 #include <filesystem>
-#include <fstream>
-
+#include <cstring>
 #include <fcntl.h>
+
 #include <vosk_api.h>
 #include <archive.h>
 #include <archive_entry.h>
