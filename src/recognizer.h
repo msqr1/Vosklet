@@ -3,9 +3,6 @@
 #include "spkModel.h"
 #include "global.h"
 
-#include <filesystem>
-namespace fs = std::filesystem;
-
 struct recognizer {
   std::atomic_flag done{};
   std::atomic_flag controller{};
@@ -13,7 +10,11 @@ struct recognizer {
   int index{};
   VoskRecognizer* rec{};
   recognizer(model* model, float sampleRate, int index);
+  recognizer(model* model, spkModel* spkModel, float sampleRate, int index);
+  recognizer(model* model, const std::string& grm, float sampleRate, int index, int dummy);
   ~recognizer();
+  void finishConstruction();
+  void tryStealMdlThrd(std::function<void()>&& main, model* mdl);
   void acceptWaveForm();
   void setSpkModel(spkModel* model);
   void setGrm(const std::string& grm);

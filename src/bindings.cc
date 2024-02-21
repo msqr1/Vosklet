@@ -21,6 +21,8 @@ EMSCRIPTEN_BINDINGS() {
   
   class_<recognizer>("recognizer") 
   .constructor<model*, float, int>(allow_raw_pointers())
+  .constructor<model*, spkModel*, float, int>(allow_raw_pointers())
+  .constructor<model*, std::string, float, int, int>(allow_raw_pointers())
   .function("setWords", &recognizer::setWords, allow_raw_pointers())
   .function("setPartialWords", &recognizer::setPartialWords, allow_raw_pointers())
   .function("setGrm", &recognizer::setGrm, allow_raw_pointers())

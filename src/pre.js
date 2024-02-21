@@ -68,7 +68,7 @@ class Recognizer extends EventTarget {
     super()
     objs.push(this)
   }
-  static async _init(model, sampleRate) {
+  static async _init1(model, sampleRate) {
     let rec = new Recognizer()
     return new Promise((resolve, reject) => {
       rec.addEventListener("_continue", (ev) => {
@@ -80,6 +80,34 @@ class Recognizer extends EventTarget {
         reject(ev.detail)
       }, {once : true})
       rec.obj = new Module.recognizer(model, sampleRate, objs.length-1)  
+    })
+  }
+  static async _init2(model, spkModel, sampleRate) {
+    let rec = new Recognizer()
+    return new Promise((resolve, reject) => {
+      rec.addEventListener("_continue", (ev) => {
+        if(ev.detail == "0") {
+          rec.ptr = Module._malloc(512)
+          return resolve(rec)
+        }
+        rec.delete()
+        reject(ev.detail)
+      }, {once : true})
+      rec.obj = new Module.recognizer(model, spkModel, sampleRate, objs.length-1)  
+    })
+  }
+  static async _init3(model, grammar, sampleRate) {
+    let rec = new Recognizer()
+    return new Promise((resolve, reject) => {
+      rec.addEventListener("_continue", (ev) => {
+        if(ev.detail == "0") {
+          rec.ptr = Module._malloc(512)
+          return resolve(rec)
+        }
+        rec.delete()
+        reject(ev.detail)
+      }, {once : true})
+      rec.obj = new Module.recognizer(model, grammar, sampleRate, objs.length-1, 0)  
     })
   }
   async getNode(ctx, channelIndex = 0) {
@@ -123,6 +151,12 @@ class Recognizer extends EventTarget {
 Module.makeRecognizer = (model, sampleRate) => {
   return Recognizer._init(model.obj, sampleRate)
 }
+Module.makeRecognizerWithSpkModel = (model, spkModel, sampleRate) => {
+  return Recognizer._init2(model.obj, spkModel.obj, sampleRate)
+} 
+Module.makeRecognizerWithGrm = (model, grammar, sampleRate) => {
+  return Recognizer._init3(model.obj, grammar, sampleRate)
+} 
 let processorUrl = URL.createObjectURL(new Blob(['(',
   (() => {
     registerProcessor("BRProcessor", class extends AudioWorkletProcessor {
