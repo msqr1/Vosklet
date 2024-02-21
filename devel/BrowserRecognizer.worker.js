@@ -82,6 +82,7 @@ function handleMessage(e) {
       // that iteration, allowing safe reference from a closure.
       for (const handler of e.data.handlers) {
         Module[handler] = (...args) => {
+          dbg(`calling handler on main thread: ${handler}`);
           postMessage({ cmd: 'callHandler', handler, args: args });
         }
       }
@@ -134,6 +135,7 @@ function handleMessage(e) {
           // and let the top level handler propagate it back to the main thread.
           throw ex;
         }
+        dbg(`Pthread 0x${Module['_pthread_self']().toString(16)} completed its main entry point with an 'unwind', keeping the worker alive for asynchronous operation.`);
       }
     } else if (e.data.cmd === 'cancel') { // Main thread is asking for a pthread_cancel() on this thread.
       if (Module['_pthread_self']()) {
