@@ -2,7 +2,7 @@
 ## JS' ```window``` object
 | Function signature | Description |
 |---|---|
-|```Promise<Module> loadBR()``` | Load Emscripten's Module |
+|```Promise<Module> loadVosklet()``` | Load Emscripten's Module |
 
 ## Shared interface
 | Function signature  | Description |
@@ -36,22 +36,22 @@
 
 # User agent notes
 ## SharedArrayBuffer
-Browser-recognizer require SharedArrayBuffer to share thread's data, so these response headers must be set:
+Vosklet require SharedArrayBuffer to share thread's data, so these response headers must be set:
 - ***Cross-Origin-Embedder-Policy*** ---> ***require-corp***
 - ***Cross-Origin-Opener-Policy*** ---> ***same-origin***
 
 If you can't set them, you may use a HACKY workaround at *src/addCOI.js*.
 
 ## Origin Private Filesystem (OPFS)
-Browser-recognizer needs the Emscripten WASMFS' OPFS to store its model, IDBFS was considered, but dropped because there is no direct way to read from IDBFS to C++ without copying to MEMFS (basically RAM). For safety with this, always:
+Vosklet needs the Emscripten WASMFS' OPFS to store its model, IDBFS was considered, but dropped because there is no direct way to read from IDBFS to C++ without copying to MEMFS (basically RAM). For safety with this, always:
 - Try catch ```window.loadBR()``` to to check for OPFS availability.
 - Check if there is enough space via ```navigator.storage.estimate()``` for TWICE THE MODEL SIZE before calling Module.makeModel 
 
 # Compilation
 Changing any option to non-default values requires recompilation
 ```
-git clone --depth=1 https://github.com/msqr1/Browser-recognizer &&
-cd Browser-recognizer/src &&
+git clone --depth=1 https://github.com/msqr1/Vosklet &&
+cd Vosklet/src &&
 [Options] make
 ```
 | Option | Description | Default value |

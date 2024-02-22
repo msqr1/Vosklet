@@ -1,7 +1,5 @@
-zstd
 vosk
 kaldi
-minitest
 libarchive
 .vscode
 clapack-wasm

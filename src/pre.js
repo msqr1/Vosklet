@@ -6,7 +6,7 @@ Module.cleanUp = () => {
   URL.revokeObjectURL(processorUrl)
 }
 Module.locateFile = (path, scriptDir) => {
-  if(path === "BrowserRecognizer.worker.js") return pthreadUrl
+  if(path === "Vosklet.js") return pthreadUrl
   return scriptDir+path
 }
 class genericModel extends EventTarget {
