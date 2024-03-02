@@ -3,12 +3,10 @@
 genericModel::genericModel(std::string storepath, std::string id, int index, bool normalMdl) : index(index), normalMdl(normalMdl) {
   this->storepath = new char[storepath.size()];
   this->id = new char[id.size()];
-  memcpy(this->storepath, storepath.c_str(), storepath.size());
-  memcpy(this->id, id.c_str(), id.size());
+  strcpy(this->storepath, storepath.c_str());
+  strcpy(this->id, id.c_str());
 }
 void genericModel::load(bool newTask) {
-  emscripten_console_log(storepath);
-  emscripten_console_log(id);
   auto main{[this](){
     if(normalMdl) {
       VoskModel* temp {vosk_model_new(".")};
@@ -121,7 +119,6 @@ void genericModel::check() {
 }
 void genericModel::afterFetch() {
   thrd.addTask([this](){
-    emscripten_console_log("1");
     if(!extract()) {
       fs::remove("/opfs/m0dEl.tar",tank);
       fs::current_path("/opfs", tank);
@@ -129,17 +126,25 @@ void genericModel::afterFetch() {
       fireEv("_continue", "Unable to extract model", index);
       return;
     }
-    emscripten_console_log("2");
     fs::remove("/opfs/m0dEl.tar",tank);
     fs::remove("README",tank);
     if(!checkFiles()) {
       fireEv("_continue", "URL points to invalid model files", index);
       return;
     }
-    emscripten_console_log("3");
-    int idFd {open("id", O_WRONLY | O_TRUNC)};
+    int idFd {open("id", O_WRONLY | O_TRUNC | O_CREAT)};
+    if(idFd == -1) {
+      fireEv("_continue", "Unable create ID file", index);
+      fs::remove("/opfs/m0dEl.tar",tank);
+      fs::current_path("/opfs", tank);
+      fs::remove_all(storepath, tank);
+      return;
+    }
     if(write(idFd, id, strlen(id)) == -1) {
       fireEv("_continue", "Unable to write new ID", index);
+      fs::remove("/opfs/m0dEl.tar",tank);
+      fs::current_path("/opfs", tank);
+      fs::remove_all(storepath, tank);
       close(idFd);
       return;
     };
