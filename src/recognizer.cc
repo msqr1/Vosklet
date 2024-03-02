@@ -1,25 +1,25 @@
 #include "recognizer.h" 
 
-recognizer::recognizer(model* mdl, float sampleRate, int index) : index(index) {
-  auto main{[this, mdl, sampleRate](){
-    rec = vosk_recognizer_new(mdl->mdl,sampleRate);
+recognizer::recognizer(genericModel* model, float sampleRate, int index) : index(index) {
+  auto main{[this, model, sampleRate](){
+    rec = vosk_recognizer_new(std::get<0>(model->mdl),sampleRate);
     finishConstruction();
   }};
-  tryStealMdlThrd(main, mdl);
+  tryStealMdlThrd(main, model);
 }
-recognizer::recognizer(model* mdl, spkModel* spkMdl, float sampleRate, int index) {
-  auto main{[this, mdl, sampleRate, spkMdl](){
-    rec = vosk_recognizer_new_spk(mdl->mdl, sampleRate, spkMdl->mdl);
+recognizer::recognizer(genericModel* model, genericModel* spkMdl, float sampleRate, int index) {
+  auto main{[this, model, sampleRate, spkMdl](){
+    rec = vosk_recognizer_new_spk(std::get<0>(model->mdl), sampleRate, std::get<1>(spkMdl->mdl));
     finishConstruction();
   }};
-  tryStealMdlThrd(main, mdl);
+  tryStealMdlThrd(main, model);
 }
-recognizer::recognizer(model* mdl, const std::string& grm, float sampleRate, int index, int dummy) {
-  auto main{[this, mdl, sampleRate, grm](){
-    rec = vosk_recognizer_new_grm(mdl->mdl, sampleRate, grm.c_str());
+recognizer::recognizer(genericModel* model, const std::string& grm, float sampleRate, int index, int dummy) {
+  auto main{[this, model, sampleRate, grm](){
+    rec = vosk_recognizer_new_grm(std::get<0>(model->mdl), sampleRate, grm.c_str());
     finishConstruction();
   }};
-  tryStealMdlThrd(main, mdl);
+  tryStealMdlThrd(main, model);
 }
 recognizer::~recognizer() {
   done.test_and_set(std::memory_order_relaxed);
@@ -29,10 +29,10 @@ recognizer::~recognizer() {
   vosk_recognizer_free(rec);
   free(dataPtr);
 }
-void recognizer::tryStealMdlThrd(std::function<void()>&& main, model* mdl) {
-  if(mdl->recognizerUsedThrd) {
-    mdl->thrd.addTask(std::move(main));
-    mdl->recognizerUsedThrd = true;
+void recognizer::tryStealMdlThrd(std::function<void()>&& main, genericModel* model) {
+  if(model->recognizerUsedThrd) {
+    model->thrd.addTask(std::move(main));
+    model->recognizerUsedThrd = true;
     return;
   }
   std::thread t{main};
@@ -64,8 +64,8 @@ void recognizer::acceptWaveForm() {
 void recognizer::setGrm(const std::string& grm) {
   vosk_recognizer_set_grm(rec, grm.c_str());
 }
-void recognizer::setSpkModel(spkModel* mdl) {
-  vosk_recognizer_set_spk_model(rec, mdl->mdl);
+void recognizer::setSpkModel(genericModel* spkModel) {
+  vosk_recognizer_set_spk_model(rec, std::get<1>(spkModel->mdl));
 }
 void recognizer::setWords(bool words) {
   vosk_recognizer_set_words(rec,words);

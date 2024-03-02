@@ -5,6 +5,7 @@
 #include <filesystem>
 #include <cstring>
 #include <fcntl.h>
+#include <variant>
 
 #include <vosk_api.h>
 #include <archive.h>
@@ -12,16 +13,19 @@
 namespace fs = std::filesystem;
 
 struct genericModel {
-  const std::string storepath{};
-  const std::string id{};
-  reusableThrd thrd{};
+  bool normalMdl{};
   bool recognizerUsedThrd{};
   int index{};
-  static bool extractModel();
-  virtual bool checkModelFiles() = 0;
-  virtual void load(bool newTask) = 0;
-  void checkModel();
+  char* storepath{};
+  char* id{};
+  std::variant<VoskModel*, VoskSpkModel*> mdl{};
+  reusableThrd thrd{};
+  static bool extract();
+  void load(bool newTask);
+  void check();
+  bool checkFiles();
   void afterFetch();
-  genericModel(const std::string &storepath, const std::string &id, int index);
+  genericModel(std::string storepath, std::string id, int index, bool normalMdl);
+  ~genericModel();
 };
 

@@ -48,9 +48,8 @@ class genericModel extends EventTarget {
             reject(ev.detail)
         }
       }, {once : true})
-      if(normalMdl) mdl.obj = new Module.model(storepath, id, objs.length-1)
-      else mdl.obj = new Module.spkModel(storepath, id, objs.length-1)
-      mdl.obj.checkModel()
+      mdl.obj = new Module.genericModel(storepath, id, objs.length-1, normalMdl)
+      mdl.obj.check()
     })
   }
   delete() {
@@ -122,7 +121,7 @@ class Recognizer extends EventTarget {
     return this.node
   }
   recognize(buf, channelIndex = 0) {
-    Module.HEAPF32.set(buf.getChannelData(channelIndex).subarray(0, 512), this.ptr);
+    Module.HEAPF32.set(buf.getChannelData(channelIndex).subarray(0, 512), this.ptr)
     this.obj.acceptWaveForm()
   }
   delete() {
@@ -168,8 +167,8 @@ let processorUrl = URL.createObjectURL(new Blob(['(',
         this.channelIndex = options.processorOptions.channelIndex
       }
       process(inputs, outputs, params) {
-        if(this.done) return false;
-        this.wasmMem.set(inputs[0].getChannelData(this.channelIndex));
+        if(this.done) return false
+        this.wasmMem.set(inputs[0].getChannelData(this.channelIndex))
         this.recognizerPort.postMessage("0") 
         outputs = inputs
         return true

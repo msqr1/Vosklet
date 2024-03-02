@@ -1,7 +1,70 @@
 #include "genericModel.h"
 
-genericModel::genericModel(const std::string& storepath, const std::string &id, int index) : storepath(storepath), id(id), index(index) {}
-void genericModel::checkModel() {
+genericModel::genericModel(std::string storepath, std::string id, int index, bool normalMdl) : index(index), normalMdl(normalMdl) {
+  this->storepath = new char[storepath.size()];
+  this->id = new char[id.size()];
+  memcpy(this->storepath, storepath.c_str(), storepath.size());
+  memcpy(this->id, id.c_str(), id.size());
+}
+void genericModel::load(bool newTask) {
+  emscripten_console_log(storepath);
+  emscripten_console_log(id);
+  auto main{[this](){
+    if(normalMdl) {
+      VoskModel* temp {vosk_model_new(".")};
+      if(temp == nullptr) {
+        fireEv("_continue", "Unable to load model for recognition", index);
+        return;
+      }
+      mdl = temp;
+    }
+    else {
+      VoskSpkModel* temp {vosk_spk_model_new(".")};
+      if(temp == nullptr) {
+        fireEv("_continue", "Unable to load model for recognition", index);
+        return;
+      }
+      mdl = temp;
+    }
+    fireEv("_continue", nullptr, index);
+  }};
+  if(!newTask) {
+    main();
+    return;
+  }
+  thrd.addTask(main);
+}
+bool genericModel::checkFiles() {
+  if(std::holds_alternative<VoskModel*>(mdl)) {
+    return fs::exists("am/final.mdl", tank) &&
+      fs::exists("conf/mfcc.conf", tank) &&
+      fs::exists("conf/model.conf", tank) &&
+      fs::exists("graph/phones/word_boundary.int", tank) &&
+      fs::exists("graph/Gr.fst", tank) &&
+      fs::exists("graph/HCLr.fst", tank) &&
+      fs::exists("graph/disambig_tid.int", tank) &&
+      fs::exists("ivector/final.dubm", tank) &&
+      fs::exists("ivector/final.ie", tank) &&
+      fs::exists("ivector/final.mat", tank) &&
+      fs::exists("ivector/global_cmvn.stats", tank) && 
+      fs::exists("ivector/online_cmvn.conf", tank) &&
+      fs::exists("ivector/splice.conf", tank);
+  }
+  return fs::exists("mfcc.conf", tank) && 
+    fs::exists("final.ext.raw", tank) && 
+    fs::exists("mean.vec", tank) && 
+    fs::exists("transform.mat", tank);
+}
+genericModel::~genericModel() {
+  if(std::holds_alternative<VoskModel*>(mdl)) {
+    vosk_model_free(std::get<0>(mdl));
+    return;
+  }
+  vosk_spk_model_free(std::get<1>(mdl));
+  delete[] storepath;
+  delete[] id;
+}
+void genericModel::check() {
   thrd.addTask([this](){
     if(OPFSTried && !OPFSOk) {
       fireEv("_checkMdl", "OPFS isn't available", index);
@@ -28,7 +91,7 @@ void genericModel::checkModel() {
     if(tank.value() != 0) {
       fireEv("_continue", "Unable to cd storepath", index);
     }
-    if(!checkModelFiles() && !fs::exists("id", tank)) {
+    if(!checkFiles() && !fs::exists("id", tank)) {
       fireEv("_checkMdl", "fetch", index);
       return;
     }
@@ -51,28 +114,31 @@ void genericModel::checkModel() {
     };
     fread(oldid, 1, oldsize, idFile);
     fclose(idFile);
-    if(strcmp(oldid, id.c_str()) != 0) fireEv("_checkMdl", "fetch", index);
+    if(strcmp(oldid, id) != 0) fireEv("_checkMdl", "fetch", index);
     else fireEv("_checkMdl", nullptr, index);
     delete[] oldid;
   });
 }
 void genericModel::afterFetch() {
   thrd.addTask([this](){
-    if(!extractModel()) {
+    emscripten_console_log("1");
+    if(!extract()) {
       fs::remove("/opfs/m0dEl.tar",tank);
       fs::current_path("/opfs", tank);
       fs::remove_all(storepath, tank);
       fireEv("_continue", "Unable to extract model", index);
       return;
     }
+    emscripten_console_log("2");
     fs::remove("/opfs/m0dEl.tar",tank);
     fs::remove("README",tank);
-    if(!checkModelFiles()) {
+    if(!checkFiles()) {
       fireEv("_continue", "URL points to invalid model files", index);
       return;
     }
+    emscripten_console_log("3");
     int idFd {open("id", O_WRONLY | O_TRUNC)};
-    if(write(idFd, id.c_str(), id.size()) == -1) {
+    if(write(idFd, id, strlen(id)) == -1) {
       fireEv("_continue", "Unable to write new ID", index);
       close(idFd);
       return;
@@ -81,7 +147,7 @@ void genericModel::afterFetch() {
     load(false);
   });
 }
-bool genericModel::extractModel() {
+bool genericModel::extract() {
   std::string path{};
   archive* src {archive_read_new()};
   archive_entry* entry{};
