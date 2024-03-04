@@ -43,8 +43,8 @@ prepare:
 		echo "Installing emsdk + Emscripten..."; \
 		git clone --depth=1 https://github.com/emscripten-core/emsdk.git ../emsdk && \
 		cd ../emsdk &&
-		./emsdk install 3.1.54 && \
-		./emsdk activate 3.1.54; \
+		./emsdk install 3.1.56 && \
+		./emsdk activate 3.1.56; \
 		. ./emsdk_env.sh && \
 		export PATH=:$$PATH:$(realpath $(EMSDK))/upstream/bin && \
 		cd ../src
