@@ -16,12 +16,12 @@ struct genericModel {
   bool normalMdl{};
   bool recognizerUsedThrd{};
   int index{};
-  char* storepath{};
-  char* id{};
+  std::string storepath;
+  std::string id;
   std::variant<VoskModel*, VoskSpkModel*> mdl{};
   reusableThrd thrd{};
   static bool extract();
-  void load(bool newTask);
+  void load();
   void check();
   bool checkFiles();
   void afterFetch();

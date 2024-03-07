@@ -11,11 +11,8 @@ void fireEv(const char *type, const char *content, int index) {
       objs[$0].dispatchEvent(new CustomEvent(UTF8ToString($1), {"detail" : UTF8ToString($2)}));
     },index, type, content);
   }};
-  if(dstThrd == pthread_self()) {
-    proxy();
-    return;
-  }
-  glbQ.proxySync(dstThrd, proxy);
+  if(dstThrd == pthread_self()) proxy();
+  else glbQ.proxySync(dstThrd, proxy);
 }
 void reusableThrd::addTask(std::function<void()>&& task) {
   static std::thread thrd{[this](){
