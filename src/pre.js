@@ -41,6 +41,7 @@ class genericModel extends EventTarget {
               if(!readRes.done) await wStream.write(readRes.value)
               else break
             }
+            tarReader.releaseLock()
             await wStream.close()
             mdl.obj.afterFetch()
             break;

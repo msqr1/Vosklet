@@ -21,5 +21,6 @@ struct reusableThrd {
   std::atomic_flag blocker{};
   std::atomic_flag done{};
   void addTask(std::function<void()>&& task);
+  reusableThrd();
   ~reusableThrd();
 };

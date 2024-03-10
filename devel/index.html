@@ -2,5 +2,10 @@
 <html>
   <head>
     <script src="Vosklet.js"></script>
+    <script>
+      window.onload = async () => {
+        window.module = await loadVosklet();
+      }
+    </script>
   </head>
 </html>

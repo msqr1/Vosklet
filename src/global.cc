@@ -14,18 +14,21 @@ void fireEv(const char *type, const char *content, int index) {
   if(dstThrd == pthread_self()) proxy();
   else glbQ.proxySync(dstThrd, proxy);
 }
-void reusableThrd::addTask(std::function<void()>&& task) {
-  static std::thread thrd{[this](){
-    pthread_detach(pthread_self());
+reusableThrd::reusableThrd() {
+  std::thread thrd{[this](){
     while(!done.test()) {
       blocker.wait(done.test(std::memory_order_relaxed) || queue.empty(), std::memory_order_relaxed);
       blocker.clear(std::memory_order_relaxed);
       while(!queue.empty()) {
+        emscripten_console_log("Executing task...");
         queue.front()();
         queue.pop();
       }
     }
   }};
+  thrd.detach();
+}
+void reusableThrd::addTask(std::function<void()>&& task) {
   queue.emplace(task);
   blocker.test_and_set(std::memory_order_relaxed);
   blocker.notify_one();
