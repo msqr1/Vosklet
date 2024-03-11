@@ -52,7 +52,7 @@ void genericModel::check() {
   thrd.addTask([this](){
     if(OPFSTried && !OPFSOk) {
       emscripten_console_log("OPFS isn't available");
-      fireEv("_checkMdl", "OPFS isn't available", index);
+      fireEv("_continue", "OPFS isn't available", index);
       return;
     }
     if(!OPFSTried){ 
@@ -63,7 +63,7 @@ void genericModel::check() {
     emscripten_console_log("Initializing OPFS");
     if(!OPFSOk) {
       emscripten_console_log("OPFS initialization failed");
-      fireEv("_checkMdl", "OPFS initialization failed", index);
+      fireEv("_continue", "OPFS initialization failed", index);
       return;
     }
     fs::current_path("/opfs", tank);
@@ -84,41 +84,24 @@ void genericModel::check() {
     }
     if(!checkFiles() && !fs::exists("id", tank)) {
       emscripten_console_log("Model is not available, fetching...");
-      fireEv("_checkMdl", "fetch", index);
+      fireEv("_continue", "1", index);
       return;
     }
     emscripten_console_log("Model is available, verifying ID");
-    FILE* idFile {fopen("id", "r")};
-    if(idFile == nullptr) {
-      emscripten_console_log("Couldn't open id file");
-      fireEv("_checkMdl", "Couldn't open id file", index);
-      return;
-    }
-    if(fseek(idFile, 0, SEEK_END) != 0) {
-      emscripten_console_log("Id file end seeking fail");
-      fireEv("_checkMdl", "Id file end seeking fail", index);
-      fclose(idFile);
-      return;
-    };
-    long long oldsize{ftell(idFile)};
-    char* oldid {new char[oldsize]};
-    if(fseek(idFile, 0L, SEEK_SET) != 0) {
-      emscripten_console_log("Id file start seeking fail");
-      fireEv("_checkMdl", "Id file start seeking fail", index);
-      fclose(idFile);
-      return;
-    };
-    fread(oldid, 1, oldsize, idFile);
-    fclose(idFile);
-    if(strcmp(oldid, id.c_str()) != 0) {
+    std::ifstream idFile("id");
+    idFile.seekg(0, std::ios::end);
+    size_t oldSize = idFile.tellg();
+    std::string oldID(oldSize, ' ');
+    idFile.seekg(0);
+    idFile.read(&oldID[0], oldSize); 
+    if(id.compare(oldID.c_str()) != 0) {
       emscripten_console_log("ID doesn't match, fetching...");
-      fireEv("_checkMdl", "fetch", index);
+      fireEv("_continue", "1", index);
     }
     else {
-      emscripten_console_log("ID match, returning instance");
-      fireEv("_checkMdl", nullptr, index);
+      emscripten_console_log("ID matches, loading...");
+      //load();
     }
-    delete[] oldid;
     emscripten_console_log("Success! Model is ready!");
   });
 }
@@ -126,9 +109,9 @@ void genericModel::afterFetch() {
   thrd.addTask([this](){
     emscripten_console_log("Trying to extract...");
     if(!extract()) {
-      fs::remove("/opfs/m0dEl.tar",tank);
+      //fs::remove("/opfs/m0dEl.tar",tank);
       fs::current_path("/opfs", tank);
-      fs::remove_all(storepath, tank);
+      //fs::remove_all(storepath, tank);
       emscripten_console_log("Unable to extract model");
       fireEv("_continue", "Unable to extract model", index);
       return;
@@ -167,13 +150,25 @@ void genericModel::afterFetch() {
 bool genericModel::extract() {
   static fs::path path{};
   static int fd{};
-  static archive_entry* entry{archive_entry_new()};
+  archive_entry* entry{archive_entry_new()};
   archive* src {archive_read_new()};
+  auto cleanup {[&](){
+    archive_entry_free(entry);
+    archive_read_free(src);
+  }};
   archive_read_support_format_tar(src);
   archive_read_open_filename(src, "/opfs/m0dEl.tar", 10240);
-  if(archive_errno(src) != 0) return false;
+  if(archive_errno(src) != 0) {
+    cleanup();
+    emscripten_console_log(archive_error_string(src));
+    return false;
+  }
   while(archive_read_next_header2(src, entry) == ARCHIVE_OK) {
-    if(archive_errno(src) != 0) return false;
+    if(archive_errno(src) != 0) {
+      cleanup();
+      emscripten_console_log(archive_error_string(src));
+      return false;
+    }
     path = archive_entry_pathname(entry);
     // Strip 1st component, keep relative path
     path = "." + path.generic_string().substr(path.generic_string().find("/"));
@@ -183,16 +178,20 @@ bool genericModel::extract() {
       continue;
     }
     fd = creat(path.c_str(),0777);
-    if(fd == -1) return false;
+    if(fd == -1) {
+      cleanup();
+      return false;
+    }
     archive_read_data_into_fd(src, fd);
     close(fd);
     if(archive_errno(src) != 0) {
+      cleanup();
       emscripten_console_log(archive_error_string(src));
       return false;
     }
   }
   fs::remove("README",tank);
   fs::remove("/opfs/m0dEl.tar",tank);
-  archive_read_free(src);
+  cleanup();
   return true;
 }

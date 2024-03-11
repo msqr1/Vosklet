@@ -9,7 +9,7 @@
 - Download multiple models
 - Model storage path management (for multiple models)
 - Model ID management (for model updates)
-- Massively smaller JS size (>5.7MB vs 1.7MB)
+- Smaller JS size (>3.1MB vs 1.7MB)
 - All related files (worker.js, worklet processors,...) are bundled
 - Shorter from-scratch build time
 

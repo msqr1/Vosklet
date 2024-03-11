@@ -5,9 +5,9 @@
 struct recognizer {
   std::atomic_flag done{};
   std::atomic_flag controller{};
-  float* dataPtr{};
-  int index{};
-  VoskRecognizer* rec{};
+  float* dataPtr;
+  int index;
+  VoskRecognizer* rec;
   recognizer(genericModel* model, float sampleRate, int index);
   recognizer(genericModel* model, genericModel* spkModel, float sampleRate, int index);
   recognizer(genericModel* model, const std::string& grm, float sampleRate, int index, int dummy);

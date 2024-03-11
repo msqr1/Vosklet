@@ -3,7 +3,7 @@
 
 #include <string>
 #include <filesystem>
-#include <cstring>
+#include <fstream>
 #include <fcntl.h>
 #include <variant>
 
@@ -13,14 +13,14 @@
 namespace fs = std::filesystem;
 
 struct genericModel {
-  bool normalMdl{};
-  bool recognizerUsedThrd{};
-  int index{};
+  bool normalMdl;
+  bool recognizerUsedThrd;
+  int index;
   std::string storepath;
   std::string id;
-  std::variant<VoskModel*, VoskSpkModel*> mdl{};
-  reusableThrd thrd{};
-  static bool extract();
+  std::variant<VoskModel*, VoskSpkModel*> mdl;
+  reusableThrd thrd;
+  bool extract();
   void load();
   void check();
   bool checkFiles();

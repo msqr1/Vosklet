@@ -15,7 +15,6 @@ interface WasmModule {
 export interface genericModel {
   check(): void;
   afterFetch(): void;
-  load(): void;
   delete(): void;
 }
 

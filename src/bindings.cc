@@ -9,8 +9,7 @@ EMSCRIPTEN_BINDINGS() {
   class_<genericModel>("genericModel")
   .constructor<std::string, std::string, int, bool>(allow_raw_pointers())
   .function("check", &genericModel::check, allow_raw_pointers())
-  .function("afterFetch", &genericModel::afterFetch, allow_raw_pointers())
-  .function("load", &genericModel::load, allow_raw_pointers());
+  .function("afterFetch", &genericModel::afterFetch, allow_raw_pointers());
   
   class_<recognizer>("recognizer") 
   .constructor<genericModel*, float, int>(allow_raw_pointers())

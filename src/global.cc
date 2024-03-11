@@ -20,7 +20,6 @@ reusableThrd::reusableThrd() {
       blocker.wait(done.test(std::memory_order_relaxed) || queue.empty(), std::memory_order_relaxed);
       blocker.clear(std::memory_order_relaxed);
       while(!queue.empty()) {
-        emscripten_console_log("Executing task...");
         queue.front()();
         queue.pop();
       }
