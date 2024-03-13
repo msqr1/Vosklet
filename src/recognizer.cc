@@ -1,25 +1,16 @@
 #include "recognizer.h" 
 
 recognizer::recognizer(genericModel* model, float sampleRate, int index) : index(index) {
-  auto main{[this, model, sampleRate](){
-    rec = vosk_recognizer_new(std::get<0>(model->mdl),sampleRate);
-    finishConstruction();
-  }};
-  tryStealMdlThrd(main, model);
+  rec = vosk_recognizer_new(std::get<0>(model->mdl),sampleRate);
+  finishConstruction(model, nullptr);
 }
 recognizer::recognizer(genericModel* model, genericModel* spkMdl, float sampleRate, int index) {
-  auto main{[this, model, sampleRate, spkMdl](){
-    rec = vosk_recognizer_new_spk(std::get<0>(model->mdl), sampleRate, std::get<1>(spkMdl->mdl));
-    finishConstruction();
-  }};
-  tryStealMdlThrd(main, model);
+  rec = vosk_recognizer_new_spk(std::get<0>(model->mdl), sampleRate, std::get<1>(spkMdl->mdl));
+  finishConstruction(model, spkMdl);
 }
 recognizer::recognizer(genericModel* model, const std::string& grm, float sampleRate, int index, int dummy) {
-  auto main{[this, model, sampleRate, grm](){
-    rec = vosk_recognizer_new_grm(std::get<0>(model->mdl), sampleRate, grm.c_str());
-    finishConstruction();
-  }};
-  tryStealMdlThrd(main, model);
+  rec = vosk_recognizer_new_grm(std::get<0>(model->mdl), sampleRate, grm.c_str());
+  finishConstruction(model, nullptr);
 }
 recognizer::~recognizer() {
   done.test_and_set(std::memory_order_relaxed);
@@ -29,35 +20,39 @@ recognizer::~recognizer() {
   vosk_recognizer_free(rec);
   free(dataPtr);
 }
-void recognizer::tryStealMdlThrd(std::function<void()>&& main, genericModel* model) {
-  if(model->recognizerUsedThrd) {
-    model->thrd.addTask(std::move(main));
-    model->recognizerUsedThrd = true;
-    return;
-  }
-  std::thread t{main};
-  t.detach();
-}
-void recognizer::finishConstruction() {
+void recognizer::finishConstruction(genericModel* model, genericModel* spkModel) {
   if(rec == nullptr) {
     fireEv("_continue", "Unable to initialize recognizer", this->index);
     return;
   }
-  fireEv("_continue", nullptr, this->index);
-  while(!done.test(std::memory_order_relaxed)) {
-    controller.wait(!done.test(std::memory_order_relaxed), std::memory_order_relaxed);
-    controller.clear(std::memory_order_relaxed);
-    if(done.test(std::memory_order_relaxed)) continue;
-    switch(vosk_recognizer_accept_waveform_f(rec, dataPtr, 512)) {
-      case 0:
-        fireEv("result", vosk_recognizer_result(rec), this->index);
-        break;
-      case 1:
-        fireEv("partialResult", vosk_recognizer_partial_result(rec), this->index);
-    }
+  auto main {[this](){
+    fireEv("_continue", nullptr, index);
+    while(!done.test(std::memory_order_relaxed)) {
+      controller.wait(!done.test(std::memory_order_relaxed), std::memory_order_relaxed);
+      controller.clear(std::memory_order_relaxed);
+      if(done.test(std::memory_order_relaxed)) continue;
+      switch(vosk_recognizer_accept_waveform_f(rec, dataPtr, 512)) {
+        case 0:
+          fireEv("result", vosk_recognizer_result(rec), index);
+          break;
+        case 1:
+          fireEv("partialResult", vosk_recognizer_partial_result(rec), index);
+      }
   }
+  }};
+  if(!model->recognizerUsedThrd) {
+    model->recognizerUsedThrd = true;
+    model->thrd.addTask(main);
+    return;
+  }
+  if(spkModel != nullptr && !spkModel->recognizerUsedThrd) {
+    spkModel->recognizerUsedThrd = true;
+    spkModel->thrd.addTask(main);
+  }
+  std::thread t{main};
+  t.detach();
 }
-void recognizer::acceptWaveForm() {
+void recognizer::acceptWaveForm() noexcept {
   controller.test_and_set(std::memory_order_relaxed);
   controller.notify_one();
 }

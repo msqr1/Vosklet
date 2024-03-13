@@ -12,7 +12,7 @@ struct recognizer {
   recognizer(genericModel* model, genericModel* spkModel, float sampleRate, int index);
   recognizer(genericModel* model, const std::string& grm, float sampleRate, int index, int dummy);
   ~recognizer();
-  void finishConstruction();
+  void finishConstruction(genericModel* model, genericModel* spkModel);
   void tryStealMdlThrd(std::function<void()>&& main, genericModel* mdl);
   void acceptWaveForm();
   void setSpkModel(genericModel* model);

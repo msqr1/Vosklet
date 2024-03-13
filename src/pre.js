@@ -57,13 +57,13 @@ class genericModel extends EventTarget {
   }
 }
 Module.makeModel = async (url, storepath, id) => {
-  for (obj in objs) {
+  for (let obj in objs) {
     if (typeof obj.normalMdl !== "undefined" && obj.normalMdl && obj.url === url && obj.storepath === storepath && obj.id === id) return obj;
   }
   return genericModel._init(url, storepath, id, true);
 }
 Module.makeSpkModel = async (url, storepath, id) => {
-  for(obj in objs) {
+  for(let obj in objs) {
     if(typeof obj.normalMdl !== "undefined" && !obj.normalMdl && obj.url === url && obj.storepath === storepath && obj.id === id) {
       return obj;
     }

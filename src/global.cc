@@ -16,7 +16,7 @@ void fireEv(const char *type, const char *content, int index) {
 }
 reusableThrd::reusableThrd() {
   std::thread thrd{[this](){
-    while(!done.test()) {
+    while(!done.test(std::memory_order_relaxed)) {
       blocker.wait(done.test(std::memory_order_relaxed) || queue.empty(), std::memory_order_relaxed);
       blocker.clear(std::memory_order_relaxed);
       while(!queue.empty()) {

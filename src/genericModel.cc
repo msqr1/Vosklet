@@ -1,6 +1,6 @@
 #include "genericModel.h"
 
-genericModel::genericModel(std::string storepath, std::string id, int index, bool normalMdl) : index(index), normalMdl(normalMdl), storepath(std::move(storepath)), id(std::move(id)) {}
+genericModel::genericModel(std::string storepath, std::string id, int index, bool normalMdl) : index(index), normalMdl(normalMdl), storepath(std::move(storepath)), id(std::move(id)), entry(archive_entry_new()) {}
 void genericModel::load() {
   auto main{[this](){
     if(normalMdl) {
@@ -45,6 +45,7 @@ bool genericModel::checkFiles() {
   fs::exists("transform.mat", tank);
 }
 genericModel::~genericModel() {
+  archive_entry_free(entry);
   if(normalMdl) vosk_model_free(std::get<0>(mdl));
   else vosk_spk_model_free(std::get<1>(mdl));
 }
@@ -150,22 +151,15 @@ void genericModel::afterFetch() {
 bool genericModel::extract() {
   static fs::path path{};
   static int fd{};
-  archive_entry* entry{archive_entry_new()};
   archive* src {archive_read_new()};
-  auto cleanup {[&](){
-    archive_entry_free(entry);
-    archive_read_free(src);
-  }};
   archive_read_support_format_tar(src);
   archive_read_open_filename(src, "/opfs/m0dEl.tar", 10240);
   if(archive_errno(src) != 0) {
-    cleanup();
     emscripten_console_log(archive_error_string(src));
     return false;
   }
   while(archive_read_next_header2(src, entry) == ARCHIVE_OK) {
     if(archive_errno(src) != 0) {
-      cleanup();
       emscripten_console_log(archive_error_string(src));
       return false;
     }
@@ -179,19 +173,17 @@ bool genericModel::extract() {
     }
     fd = creat(path.c_str(),0777);
     if(fd == -1) {
-      cleanup();
       return false;
     }
     archive_read_data_into_fd(src, fd);
     close(fd);
     if(archive_errno(src) != 0) {
-      cleanup();
       emscripten_console_log(archive_error_string(src));
       return false;
     }
   }
   fs::remove("README",tank);
   fs::remove("/opfs/m0dEl.tar",tank);
-  cleanup();
+  archive_read_free(src);
   return true;
 }

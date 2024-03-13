@@ -20,6 +20,7 @@ struct genericModel {
   std::string id;
   std::variant<VoskModel*, VoskSpkModel*> mdl;
   reusableThrd thrd;
+  archive_entry* entry;
   bool extract();
   void load();
   void check();
