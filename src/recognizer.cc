@@ -52,7 +52,7 @@ void recognizer::finishConstruction(genericModel* model, genericModel* spkModel)
   std::thread t{main};
   t.detach();
 }
-void recognizer::acceptWaveForm() noexcept {
+void recognizer::acceptWaveForm() {
   controller.test_and_set(std::memory_order_relaxed);
   controller.notify_one();
 }
