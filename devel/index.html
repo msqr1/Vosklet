@@ -4,7 +4,9 @@
     <script src="Vosklet.js"></script>
     <script>
       window.onload = async () => {
-        window.module = await loadVosklet();
+        const module = await loadVosklet();
+        const model = await module.makeModel("../usage/en-model.tgz","model","ID");
+        const recognizer = await module.makeRecognizer()
       }
     </script>
   </head>

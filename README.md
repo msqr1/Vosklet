@@ -9,10 +9,9 @@
 - Download multiple models
 - Model storage path management (for multiple models)
 - Model ID management (for model updates)
-- Smaller JS size (>3.1MB vs 1.7MB)
+- Smaller JS size (>3.1MB vs 1.4MB)
 - All related files (pthread worker, worklet processor,...) are merged
 - Shorter from-scratch build time
-
 
 # Basic usage
 - Use the prebuilt binary through JsDelivr.

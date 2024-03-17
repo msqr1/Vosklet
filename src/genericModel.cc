@@ -1,48 +1,34 @@
 #include "genericModel.h"
 
-genericModel::genericModel(std::string storepath, std::string id, int index, bool normalMdl) : index(index), normalMdl(normalMdl), storepath(std::move(storepath)), id(std::move(id)), entry(archive_entry_new()) {}
+genericModel::genericModel(std::string storepath, std::string id, int index, bool normalMdl) : index(index), normalMdl(normalMdl), storepath("/opfs/" + std::move(storepath)), id(std::move(id)), entry(archive_entry_new()) {}
 void genericModel::load() {
-  auto main{[this](){
-    if(normalMdl) {
-      VoskModel* temp {vosk_model_new(".")};
-      if(temp == nullptr) {
-        fireEv("_continue", "Unable to load model for recognition", index);
-        return;
-      }
-      mdl = temp;
-    }
-    else {
-      VoskSpkModel* temp {vosk_spk_model_new(".")};
-      if(temp == nullptr) {
-        fireEv("_continue", "Unable to load model for recognition", index);
-        return;
-      }
-      mdl = temp;
-    }
-    fireEv("_continue", nullptr, index);
-  }};
-  thrd.addTask(main);
+  thrd.addTask([this](){
+    if(normalMdl) mdl = vosk_model_new(storepath.c_str());
+    else vosk_spk_model_new(storepath.c_str());
+    if(normalMdl && std::get<0>(mdl) == nullptr || std::get<1>(mdl) == nullptr) fireEv(index, "Unable to load model for recognition");
+    else fireEv(index, nullptr);
+  });
 }
 bool genericModel::checkFiles() {
   if(normalMdl) {
-    return fs::exists("am/final.mdl", tank) &&
-      fs::exists("conf/mfcc.conf", tank) &&
-      fs::exists("conf/model.conf", tank) &&
-      fs::exists("graph/phones/word_boundary.int", tank) &&
-      fs::exists("graph/Gr.fst", tank) &&
-      fs::exists("graph/HCLr.fst", tank) &&
-      fs::exists("graph/disambig_tid.int", tank) &&
-      fs::exists("ivector/final.dubm", tank) &&
-      fs::exists("ivector/final.ie", tank) &&
-      fs::exists("ivector/final.mat", tank) &&
-      fs::exists("ivector/global_cmvn.stats", tank) && 
-      fs::exists("ivector/online_cmvn.conf", tank) &&
-      fs::exists("ivector/splice.conf", tank);
+    return fs::exists(storepath + "/am/final.mdl", tank) &&
+      fs::exists(storepath + "/conf/mfcc.conf", tank) &&
+      fs::exists(storepath + "/conf/model.conf", tank) &&
+      fs::exists(storepath + "/graph/phones/word_boundary.int", tank) &&
+      fs::exists(storepath + "/graph/Gr.fst", tank) &&
+      fs::exists(storepath + "/graph/HCLr.fst", tank) &&
+      fs::exists(storepath + "/graph/disambig_tid.int", tank) &&
+      fs::exists(storepath + "/ivector/final.dubm", tank) &&
+      fs::exists(storepath + "/ivector/final.ie", tank) &&
+      fs::exists(storepath + "/ivector/final.mat", tank) &&
+      fs::exists(storepath + "/ivector/global_cmvn.stats", tank) && 
+      fs::exists(storepath + "/ivector/online_cmvn.conf", tank) &&
+      fs::exists(storepath + "/ivector/splice.conf", tank);
   }
-  return fs::exists("mfcc.conf", tank) && 
-  fs::exists("final.ext.raw", tank) && 
-  fs::exists("mean.vec", tank) && 
-  fs::exists("transform.mat", tank);
+  return fs::exists(storepath + "/mfcc.conf", tank) && 
+  fs::exists(storepath + "/final.ext.raw", tank) && 
+  fs::exists(storepath + "/mean.vec", tank) && 
+  fs::exists(storepath + "/transform.mat", tank);
 }
 genericModel::~genericModel() {
   archive_entry_free(entry);
@@ -53,7 +39,7 @@ void genericModel::check() {
   thrd.addTask([this](){
     if(OPFSTried && !OPFSOk) {
       emscripten_console_log("OPFS isn't available");
-      fireEv("_continue", "OPFS isn't available", index);
+      fireEv(index, "OPFS isn't available");
       return;
     }
     if(!OPFSTried){ 
@@ -64,32 +50,16 @@ void genericModel::check() {
     emscripten_console_log("Initializing OPFS");
     if(!OPFSOk) {
       emscripten_console_log("OPFS initialization failed");
-      fireEv("_continue", "OPFS initialization failed", index);
+      fireEv(index, "OPFS initialization failed");
       return;
     }
-    fs::current_path("/opfs", tank);
-    if(tank.value() != 0) {
-      emscripten_console_log("Unable to cd OPFS root");
-      fireEv("_continue","Unable to cd OPFS root", index);
-      return;
-    }
-    fs::create_directories(storepath, tank);
-    if(tank.value() != 0) {
-      emscripten_console_log("Unable to create storepath");
-      fireEv("_continue","Unable to create storepath", index);
-    }
-    fs::current_path(storepath, tank); 
-    if(tank.value() != 0) {
-      emscripten_console_log("Unable to cd storepath");
-      fireEv("_continue", "Unable to cd storepath", index);
-    }
-    if(!checkFiles() && !fs::exists("id", tank)) {
+    if(!checkFiles() && !fs::exists(storepath + "/id", tank)) {
       emscripten_console_log("Model is not available, fetching...");
-      fireEv("_continue", "1", index);
+      fireEv(index, "1");
       return;
     }
     emscripten_console_log("Model is available, verifying ID");
-    std::ifstream idFile("id");
+    std::ifstream idFile(storepath + "/id");
     idFile.seekg(0, std::ios::end);
     size_t oldSize = idFile.tellg();
     std::string oldID(oldSize, ' ');
@@ -97,11 +67,11 @@ void genericModel::check() {
     idFile.read(&oldID[0], oldSize); 
     if(id.compare(oldID.c_str()) != 0) {
       emscripten_console_log("ID doesn't match, fetching...");
-      fireEv("_continue", "1", index);
+      fireEv(index, "1");
     }
     else {
       emscripten_console_log("ID matches, loading...");
-      //load();
+      load();
     }
     emscripten_console_log("Success! Model is ready!");
   });
@@ -110,35 +80,32 @@ void genericModel::afterFetch() {
   thrd.addTask([this](){
     emscripten_console_log("Trying to extract...");
     if(!extract()) {
-      //fs::remove("/opfs/m0dEl.tar",tank);
-      fs::current_path("/opfs", tank);
-      //fs::remove_all(storepath, tank);
+      fs::remove(storepath + ".tar",tank);
+      fs::remove_all(storepath, tank);
       emscripten_console_log("Unable to extract model");
-      fireEv("_continue", "Unable to extract model", index);
+      fireEv(index, "Unable to extract model");
       return;
     }
     emscripten_console_log("Extract done, checking files...");
     if(!checkFiles()) {
       emscripten_console_log("URL points to invalid model files");
-      fireEv("_continue", "URL points to invalid model files", index);
+      fireEv(index, "URL points to invalid model files");
       return;
     }
     emscripten_console_log("Creating ID file...");
-    int idFd {creat("id",0777)};
+    int idFd {creat((storepath + "/id").c_str(),0777)};
     if(idFd == -1) {
       emscripten_console_log("Unable to create ID file");
-      fireEv("_continue", "Unable to create ID file", index);
-      fs::remove("/opfs/m0dEl.tar",tank);
-      fs::current_path("/opfs", tank);
+      fireEv(index, "Unable to create ID file");
+      fs::remove(storepath + ".tar",tank);
       fs::remove_all(storepath, tank);
       return;
     }
     emscripten_console_log("Writing ID...");
-    if(write(idFd, id.c_str(), id.size()) == -1) {
+    if(write(idFd,id.data(), id.size()) == -1) {
       emscripten_console_log("Unable to write new ID");
-      fireEv("_continue", "Unable to write new ID", index);
-      fs::remove("/opfs/m0dEl.tar",tank);
-      fs::current_path("/opfs", tank);
+      fireEv(index, "Unable to write new ID");
+      fs::remove(storepath + ".tar",tank);
       fs::remove_all(storepath, tank);
       close(idFd);
       return;
@@ -146,14 +113,14 @@ void genericModel::afterFetch() {
     close(idFd);
     emscripten_console_log("Success! Model is ready!");
   });
-  //load();
+  load();
 }
 bool genericModel::extract() {
   static fs::path path{};
   static int fd{};
   archive* src {archive_read_new()};
   archive_read_support_format_tar(src);
-  archive_read_open_filename(src, "/opfs/m0dEl.tar", 10240);
+  archive_read_open_filename(src, (storepath + ".tar").c_str(), 10240);
   if(archive_errno(src) != 0) {
     emscripten_console_log(archive_error_string(src));
     return false;
@@ -164,8 +131,7 @@ bool genericModel::extract() {
       return false;
     }
     path = archive_entry_pathname(entry);
-    // Strip 1st component, keep relative path
-    path = "." + path.generic_string().substr(path.generic_string().find("/"));
+    path = storepath + path.generic_string().substr(path.generic_string().find("/"));
     emscripten_console_logf("Creating file/dir %s", path.c_str()); 
     if(!path.has_extension()) {
       fs::create_directory(path);
@@ -182,8 +148,8 @@ bool genericModel::extract() {
       return false;
     }
   }
-  fs::remove("README",tank);
-  fs::remove("/opfs/m0dEl.tar",tank);
+  fs::remove(storepath + "/README",tank);
+  fs::remove(storepath + ".tar" ,tank);
   archive_read_free(src);
   return true;
 }

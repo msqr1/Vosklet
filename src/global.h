@@ -15,7 +15,7 @@ extern std::error_code tank;
 extern pthread_t dstThrd;
 extern ProxyingQueue glbQ;
 
-void fireEv(const char *type, const char *content, int index);
+void fireEv(int index, const char* content, const char* type = nullptr);
 struct reusableThrd { 
   std::queue<std::function<void()>> queue{};
   std::atomic_flag blocker{};

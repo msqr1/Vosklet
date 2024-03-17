@@ -22,21 +22,21 @@ recognizer::~recognizer() {
 }
 void recognizer::finishConstruction(genericModel* model, genericModel* spkModel) {
   if(rec == nullptr) {
-    fireEv("_continue", "Unable to initialize recognizer", this->index);
+    fireEv(index, "Unable to initialize recognizer");
     return;
   }
   auto main {[this](){
-    fireEv("_continue", nullptr, index);
+    fireEv(index, "0");
     while(!done.test(std::memory_order_relaxed)) {
       controller.wait(!done.test(std::memory_order_relaxed), std::memory_order_relaxed);
       controller.clear(std::memory_order_relaxed);
       if(done.test(std::memory_order_relaxed)) continue;
       switch(vosk_recognizer_accept_waveform_f(rec, dataPtr, 512)) {
         case 0:
-          fireEv("result", vosk_recognizer_result(rec), index);
+          fireEv(index, vosk_recognizer_result(rec), "result");
           break;
         case 1:
-          fireEv("partialResult", vosk_recognizer_partial_result(rec), index);
+          fireEv(index, vosk_recognizer_partial_result(rec), "partialResult");
       }
   }
   }};

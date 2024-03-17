@@ -8,7 +8,6 @@ Module.locateFile = (path, scriptDir) => {
   if(path === "Vosklet.js") return pthreadUrl
   return scriptDir+path
 }
-
 class genericModel extends EventTarget {
   constructor(url, storepath, id, normalMdl) {
     super()
@@ -21,17 +20,17 @@ class genericModel extends EventTarget {
   static async _init(url, storepath, id, normalMdl) {
     return new Promise((resolve, reject) => {
       let mdl = new genericModel(url, storepath, id, normalMdl)
-      mdl.addEventListener("_continue", async function listener(ev) {
+      mdl.addEventListener("0", async function listener(ev) {
         switch(ev.detail) {
           case "0":
-            mdl.removeEventListener("_continue", listener)
+            mdl.removeEventListener("0", listener)
             return resolve(mdl)
           case "1":
             let res = await fetch(url)
             if(!res.ok) {
               return reject("Unable to download model")
             }
-            let wStream = await (await (await navigator.storage.getDirectory()).getFileHandle("m0dEl.tar", {create : true})).createWritable()
+            let wStream = await (await (await navigator.storage.getDirectory()).getFileHandle(storepath + ".tar", {create : true})).createWritable()
             let tarReader = res.body.pipeThrough(new DecompressionStream("gzip")).getReader()
             while(true) {
               let readRes = await tarReader.read()
@@ -40,11 +39,12 @@ class genericModel extends EventTarget {
             }
             tarReader.releaseLock()
             await wStream.close()
+            console.log("Fetching and writing tar done!")
             mdl.obj.afterFetch()
-            break;
+            break
           default:
             mdl.delete()
-            mdl.removeEventListener("_continue", listener)
+            mdl.removeEventListener("0", listener)
             reject(ev.detail)
         }
       })
@@ -57,17 +57,9 @@ class genericModel extends EventTarget {
   }
 }
 Module.makeModel = async (url, storepath, id) => {
-  for (let obj in objs) {
-    if (typeof obj.normalMdl !== "undefined" && obj.normalMdl && obj.url === url && obj.storepath === storepath && obj.id === id) return obj;
-  }
-  return genericModel._init(url, storepath, id, true);
+  return genericModel._init(url, storepath, id, true)
 }
 Module.makeSpkModel = async (url, storepath, id) => {
-  for(let obj in objs) {
-    if(typeof obj.normalMdl !== "undefined" && !obj.normalMdl && obj.url === url && obj.storepath === storepath && obj.id === id) {
-      return obj;
-    }
-  }
   return genericModel._init(url, storepath, id, false)
 }
 class Recognizer extends EventTarget {
@@ -78,7 +70,7 @@ class Recognizer extends EventTarget {
   static async _init(model, sampleRate, mode, grammar, spkModel) {
     return new Promise((resolve, reject) => {
       let rec = new Recognizer()
-      rec.addEventListener("_continue", (ev) => {
+      rec.addEventListener("0", (ev) => {
         if(ev.detail === "0") {
           rec.ptr = Module._malloc(512)
           return resolve(rec)
@@ -165,10 +157,8 @@ let processorUrl = URL.createObjectURL(new Blob(['(',
     })
   }).toString()
 , ')()'], {type : "text/javascript"}))
-/*
-let pthreadUrl = URL.createObjectURL(new Blob(['(',
+/*let pthreadUrl = URL.createObjectURL(new Blob(['(',
   (() => {
-    
+    { PTHREAD_SCRIPT }
   }).toString()
-, ')()'], {type : "text/javascript"})) 
-*/
+, ')()'], {type : "text/javascript"})) */
