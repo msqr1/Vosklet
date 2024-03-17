@@ -4,9 +4,27 @@
     <script src="Vosklet.js"></script>
     <script>
       window.onload = async () => {
-        const module = await loadVosklet();
-        const model = await module.makeModel("../usage/en-model.tgz","model","ID");
-        const recognizer = await module.makeRecognizer()
+        window.ctx = new AudioContext()
+        let micNode = ctx.createMediaStreamSource(await navigator.mediaDevices.getUserMedia({
+          video: false,
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            channelCount: 1,
+            sampleRate: 16000
+          },
+        }))
+        window.module = await loadVosklet()
+        window.model = await module.makeModel("../usage/en-model.tgz","model","ID")
+        window.recognizer = await module.makeRecognizer(model, ctx.sampleRate)
+        recognizer.addEventListener("result", e => {
+          console.log("Result: ", e.detail)
+        })
+        recognizer.addEventListener("partialResult", e => {
+          console.log("Partial result: ", e.detail)
+        })
+        //let recNode = recognizer.getNode(ctx);
+        
       }
     </script>
   </head>

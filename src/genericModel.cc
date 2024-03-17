@@ -5,30 +5,31 @@ void genericModel::load() {
   thrd.addTask([this](){
     if(normalMdl) mdl = vosk_model_new(storepath.c_str());
     else vosk_spk_model_new(storepath.c_str());
-    if(normalMdl && std::get<0>(mdl) == nullptr || std::get<1>(mdl) == nullptr) fireEv(index, "Unable to load model for recognition");
-    else fireEv(index, nullptr);
+    emscripten_console_log("Loading finished!");
+    if(normalMdl ? std::get<0>(mdl) == nullptr : std::get<1>(mdl) == nullptr) fireEv(index, "Unable to load model for recognition");
+    else fireEv(index, "0");
   });
 }
 bool genericModel::checkFiles() {
   if(normalMdl) {
-    return fs::exists(storepath + "/am/final.mdl", tank) &&
-      fs::exists(storepath + "/conf/mfcc.conf", tank) &&
-      fs::exists(storepath + "/conf/model.conf", tank) &&
-      fs::exists(storepath + "/graph/phones/word_boundary.int", tank) &&
-      fs::exists(storepath + "/graph/Gr.fst", tank) &&
-      fs::exists(storepath + "/graph/HCLr.fst", tank) &&
-      fs::exists(storepath + "/graph/disambig_tid.int", tank) &&
-      fs::exists(storepath + "/ivector/final.dubm", tank) &&
-      fs::exists(storepath + "/ivector/final.ie", tank) &&
-      fs::exists(storepath + "/ivector/final.mat", tank) &&
-      fs::exists(storepath + "/ivector/global_cmvn.stats", tank) && 
-      fs::exists(storepath + "/ivector/online_cmvn.conf", tank) &&
-      fs::exists(storepath + "/ivector/splice.conf", tank);
+    return fs::exists(storepath + "/am/final.mdl") &&
+      fs::exists(storepath + "/conf/mfcc.conf") &&
+      fs::exists(storepath + "/conf/model.conf") &&
+      fs::exists(storepath + "/graph/phones/word_boundary.int") &&
+      fs::exists(storepath + "/graph/Gr.fst") &&
+      fs::exists(storepath + "/graph/HCLr.fst") &&
+      fs::exists(storepath + "/graph/disambig_tid.int") &&
+      fs::exists(storepath + "/ivector/final.dubm") &&
+      fs::exists(storepath + "/ivector/final.ie") &&
+      fs::exists(storepath + "/ivector/final.mat") &&
+      fs::exists(storepath + "/ivector/global_cmvn.stats") && 
+      fs::exists(storepath + "/ivector/online_cmvn.conf") &&
+      fs::exists(storepath + "/ivector/splice.conf");
   }
-  return fs::exists(storepath + "/mfcc.conf", tank) && 
-  fs::exists(storepath + "/final.ext.raw", tank) && 
-  fs::exists(storepath + "/mean.vec", tank) && 
-  fs::exists(storepath + "/transform.mat", tank);
+  return fs::exists(storepath + "/mfcc.conf") && 
+  fs::exists(storepath + "/final.ext.raw") && 
+  fs::exists(storepath + "/mean.vec") && 
+  fs::exists(storepath + "/transform.mat");
 }
 genericModel::~genericModel() {
   archive_entry_free(entry);
@@ -53,8 +54,8 @@ void genericModel::check() {
       fireEv(index, "OPFS initialization failed");
       return;
     }
-    if(!checkFiles() && !fs::exists(storepath + "/id", tank)) {
-      emscripten_console_log("Model is not available, fetching...");
+    if(!checkFiles() && !fs::exists(storepath + "/id")) {
+      emscripten_console_log("Model is not available or incorrect file, fetching...");
       fireEv(index, "1");
       return;
     }
@@ -80,8 +81,8 @@ void genericModel::afterFetch() {
   thrd.addTask([this](){
     emscripten_console_log("Trying to extract...");
     if(!extract()) {
-      fs::remove(storepath + ".tar",tank);
-      fs::remove_all(storepath, tank);
+      fs::remove(storepath + ".tar");
+      fs::remove_all(storepath);
       emscripten_console_log("Unable to extract model");
       fireEv(index, "Unable to extract model");
       return;
@@ -97,16 +98,16 @@ void genericModel::afterFetch() {
     if(idFd == -1) {
       emscripten_console_log("Unable to create ID file");
       fireEv(index, "Unable to create ID file");
-      fs::remove(storepath + ".tar",tank);
-      fs::remove_all(storepath, tank);
+      fs::remove(storepath + ".tar");
+      fs::remove_all(storepath);
       return;
     }
     emscripten_console_log("Writing ID...");
     if(write(idFd,id.data(), id.size()) == -1) {
       emscripten_console_log("Unable to write new ID");
       fireEv(index, "Unable to write new ID");
-      fs::remove(storepath + ".tar",tank);
-      fs::remove_all(storepath, tank);
+      fs::remove(storepath + ".tar");
+      fs::remove_all(storepath);
       close(idFd);
       return;
     };
@@ -148,8 +149,8 @@ bool genericModel::extract() {
       return false;
     }
   }
-  fs::remove(storepath + "/README",tank);
-  fs::remove(storepath + ".tar" ,tank);
+  fs::remove(storepath + "/README");
+  fs::remove(storepath + ".tar" );
   archive_read_free(src);
   return true;
 }

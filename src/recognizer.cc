@@ -1,14 +1,17 @@
 #include "recognizer.h" 
 
 recognizer::recognizer(genericModel* model, float sampleRate, int index) : index(index) {
+  emscripten_console_log("Recognizer constructor called...");
   rec = vosk_recognizer_new(std::get<0>(model->mdl),sampleRate);
   finishConstruction(model, nullptr);
 }
-recognizer::recognizer(genericModel* model, genericModel* spkMdl, float sampleRate, int index) {
+recognizer::recognizer(genericModel* model, genericModel* spkMdl, float sampleRate, int index) : index(index) {
+  emscripten_console_log("Recognizer constructor called...");
   rec = vosk_recognizer_new_spk(std::get<0>(model->mdl), sampleRate, std::get<1>(spkMdl->mdl));
   finishConstruction(model, spkMdl);
 }
-recognizer::recognizer(genericModel* model, const std::string& grm, float sampleRate, int index, int dummy) {
+recognizer::recognizer(genericModel* model, const std::string& grm, float sampleRate, int index, int dummy) : index(index) {
+  emscripten_console_log("Recognizer constructor called...");
   rec = vosk_recognizer_new_grm(std::get<0>(model->mdl), sampleRate, grm.c_str());
   finishConstruction(model, nullptr);
 }
@@ -20,12 +23,13 @@ recognizer::~recognizer() {
   vosk_recognizer_free(rec);
   free(dataPtr);
 }
-void recognizer::finishConstruction(genericModel* model, genericModel* spkModel) {
+void recognizer:: finishConstruction(genericModel* model, genericModel* spkModel) {
   if(rec == nullptr) {
     fireEv(index, "Unable to initialize recognizer");
     return;
   }
   auto main {[this](){
+    emscripten_console_log("Recognizer loaded!");
     fireEv(index, "0");
     while(!done.test(std::memory_order_relaxed)) {
       controller.wait(!done.test(std::memory_order_relaxed), std::memory_order_relaxed);
@@ -43,12 +47,16 @@ void recognizer::finishConstruction(genericModel* model, genericModel* spkModel)
   if(!model->recognizerUsedThrd) {
     model->recognizerUsedThrd = true;
     model->thrd.addTask(main);
+    emscripten_console_log("Adding task to model thread...");
     return;
   }
   if(spkModel != nullptr && !spkModel->recognizerUsedThrd) {
     spkModel->recognizerUsedThrd = true;
     spkModel->thrd.addTask(main);
+    emscripten_console_log("Adding task to speaker model thread...");
+    return;
   }
+  emscripten_console_log("New recognizer thread");
   std::thread t{main};
   t.detach();
 }
