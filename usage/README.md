@@ -43,7 +43,7 @@ Vosklet require SharedArrayBuffer to share thread's data, so these response head
 If you can't set them, you may use a HACKY workaround at *src/addCOI.js*.
 
 ## Origin Private Filesystem (OPFS)
-Vosklet needs the Emscripten WASMFS' OPFS to store its model, IDBFS was considered, but dropped because there is no direct way to read from IDBFS to C++ without copying to MEMFS (RAM). For safety with this, always:
+Vosklet needs the Emscripten WASMFS' OPFS to store its model, IDBFS was considered. For safety with this, always:
 - Try catch ```window.loadVosklet()``` to to check for OPFS availability.
 - Check if there is enough space via ```navigator.storage.estimate()``` for TWICE THE MODEL SIZE before calling ```Module.makeModel```
 

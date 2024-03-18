@@ -46,7 +46,7 @@ void recognizer:: finishConstruction(genericModel* model, genericModel* spkModel
   }};
   if(!model->recognizerUsedThrd) {
     model->recognizerUsedThrd = true;
-    model->thrd.addTask(main);
+    model->thrd.addTask(main); 
     emscripten_console_log("Adding task to model thread...");
     return;
   }

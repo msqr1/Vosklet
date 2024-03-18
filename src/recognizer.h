@@ -1,6 +1,6 @@
 #pragma once
 #include "genericModel.h"
-#include "global.h"
+#include "jsBridge.h"
 
 struct recognizer {
   std::atomic_flag done{};

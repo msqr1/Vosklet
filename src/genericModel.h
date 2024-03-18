@@ -1,5 +1,5 @@
 #pragma once
-#include "global.h"
+#include "jsBridge.h"
 
 #include <string>
 #include <filesystem>
@@ -11,7 +11,6 @@
 #include <archive.h>
 #include <archive_entry.h>
 namespace fs = std::filesystem;
-
 struct genericModel {
   bool normalMdl;
   bool recognizerUsedThrd{};
