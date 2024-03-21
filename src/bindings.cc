@@ -7,14 +7,13 @@ using namespace emscripten;
 EMSCRIPTEN_BINDINGS() {
   function("setLogLevel", &vosk_set_log_level, allow_raw_pointers());
   class_<genericModel>("genericModel")
-  .constructor<std::string, std::string, int, bool>(allow_raw_pointers())
-  .function("check", &genericModel::check, allow_raw_pointers())
-  .function("afterFetch", &genericModel::afterFetch, allow_raw_pointers());
+  .constructor<int, bool, std::string, std::string>(allow_raw_pointers())
+  .function("extractAndLoad", &genericModel::extractAndLoad, allow_raw_pointers());
   
   class_<recognizer>("recognizer") 
-  .constructor<genericModel*, float, int>(allow_raw_pointers())
-  .constructor<genericModel*, genericModel*, float, int>(allow_raw_pointers())
-  .constructor<genericModel*, std::string, float, int, int>(allow_raw_pointers())
+  .constructor<int, float, genericModel*>(allow_raw_pointers())
+  .constructor<int, float, genericModel*, genericModel*>(allow_raw_pointers())
+  .constructor<int, float, genericModel*, std::string, int>(allow_raw_pointers())
   .function("setWords", &recognizer::setWords, allow_raw_pointers())
   .function("setPartialWords", &recognizer::setPartialWords, allow_raw_pointers())
   .function("setGrm", &recognizer::setGrm, allow_raw_pointers())

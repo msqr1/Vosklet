@@ -1,6 +1,5 @@
 #pragma once
 #include "genericModel.h"
-#include "jsBridge.h"
 
 struct recognizer {
   std::atomic_flag done{};
@@ -8,9 +7,9 @@ struct recognizer {
   float* dataPtr;
   int index;
   VoskRecognizer* rec;
-  recognizer(genericModel* model, float sampleRate, int index);
-  recognizer(genericModel* model, genericModel* spkModel, float sampleRate, int index);
-  recognizer(genericModel* model, const std::string& grm, float sampleRate, int index, int dummy);
+  recognizer(int index, float sampleRate, genericModel* model);
+  recognizer(int index, float sampleRate, genericModel* model, genericModel* spkModel);
+  recognizer(int index, float sampleRate, genericModel* model, const std::string& grm,  int dummy);
   ~recognizer();
   void finishConstruction(genericModel* model, genericModel* spkModel);
   void acceptWaveForm();

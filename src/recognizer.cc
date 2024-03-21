@@ -1,16 +1,16 @@
 #include "recognizer.h" 
 
-recognizer::recognizer(genericModel* model, float sampleRate, int index) : index(index) {
+recognizer::recognizer(int index, float sampleRate, genericModel* model) : index(index) {
   emscripten_console_log("Recognizer constructor called...");
   rec = vosk_recognizer_new(std::get<0>(model->mdl),sampleRate);
   finishConstruction(model, nullptr);
 }
-recognizer::recognizer(genericModel* model, genericModel* spkMdl, float sampleRate, int index) : index(index) {
+recognizer::recognizer(int index, float sampleRate, genericModel* model, genericModel* spkMdl) : index(index) {
   emscripten_console_log("Recognizer constructor called...");
   rec = vosk_recognizer_new_spk(std::get<0>(model->mdl), sampleRate, std::get<1>(spkMdl->mdl));
   finishConstruction(model, spkMdl);
 }
-recognizer::recognizer(genericModel* model, const std::string& grm, float sampleRate, int index, int dummy) : index(index) {
+recognizer::recognizer(int index, float sampleRate, genericModel* model, const std::string& grm, int dummy) : index(index) {
   emscripten_console_log("Recognizer constructor called...");
   rec = vosk_recognizer_new_grm(std::get<0>(model->mdl), sampleRate, grm.c_str());
   finishConstruction(model, nullptr);

@@ -1,7 +1,6 @@
 #pragma once
-#include "jsBridge.h"
+#include "proxier.h"
 
-#include <string>
 #include <filesystem>
 #include <fstream>
 #include <fcntl.h>
@@ -20,12 +19,8 @@ struct genericModel {
   std::variant<VoskModel*, VoskSpkModel*> mdl;
   reusableThrd thrd;
   archive_entry* entry;
-  bool extract();
-  void load();
-  void check();
-  bool checkFiles();
-  void afterFetch();
-  genericModel(std::string storepath, std::string id, int index, bool normalMdl);
+  void extractAndLoad(int tarStart, int tarSize);
+  genericModel(int index, bool normalMdl, std::string storepath, std::string id);
   ~genericModel();
 };
 

@@ -12,10 +12,6 @@
 - All related files (pthread worker, worklet processor,...) are merged
 - Shorter from-scratch build time
 
-# Disclaimer:
-- Will log empty statement into JS console, see *global.cc* line 34
-- Model loading can be slow due due to slow OPFS reading speed
-
 # Basic usage
 - Use the prebuilt binary through JsDelivr
 

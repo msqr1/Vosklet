@@ -8,6 +8,14 @@ Module.locateFile = (path, scriptDir) => {
   if(path === "Vosklet.js") return pthreadUrl
   return scriptDir+path
 }
+async function getFileHandle(path, create = false) {
+  let components = path.split("/")
+  let prevDir = await navigator.storage.getDirectory()
+  for(let component of components.slice(0, -1)) {
+    prevDir = await prevDir.getDirectoryHandle(component, { create : create })
+  }
+  return prevDir.getFileHandle(components[components.length - 1], { create : create })
+}
 class genericModel extends EventTarget {
   constructor(url, storepath, id, normalMdl) {
     super()
@@ -18,39 +26,46 @@ class genericModel extends EventTarget {
     this.normalMdl = normalMdl
   }
   static async _init(url, storepath, id, normalMdl) {
-    return new Promise((resolve, reject) => {
-      let mdl = new genericModel(url, storepath, id, normalMdl)
-      mdl.addEventListener("0", async function listener(ev) {
-        switch(ev.detail) {
-          case "0":
-            mdl.removeEventListener("0", listener)
-            return resolve(mdl)
-          case "1":
-            let res = await fetch(url)
-            if(!res.ok) {
-              return reject("Unable to download model")
-            }
-            let wStream = await (await (await navigator.storage.getDirectory()).getFileHandle(storepath + ".tar", {create : true})).createWritable()
-            let tarReader = res.body.pipeThrough(new DecompressionStream("gzip")).getReader()
-            while(true) {
-              let readRes = await tarReader.read()
-              if(!readRes.done) await wStream.write(readRes.value)
-              else break
-            }
-            tarReader.releaseLock()
-            await wStream.close()
-            console.log("Fetching and writing tar done!")
-            mdl.obj.afterFetch()
-            break
-          default:
-            mdl.delete()
-            mdl.removeEventListener("0", listener)
-            reject(ev.detail)
+    let mdl = new genericModel(url, storepath, id, normalMdl)
+    let tar
+    mdl.addEventListener("0", async (ev) => {
+      switch(ev.detail) {
+        case "0":
+          return mdl
+        default:
+          mdl.delete()
+          throw ev.detail
+      }
+    }, { once : true })
+    mdl.obj = new Module.genericModel(objs.length - 1, normalMdl, "/" + storepath, id)
+    try {
+      let dataFile = await (await getFileHandle(storepath + "/model.tgz")).getFile()
+      let idFile = await (await getFileHandle(storepath + "/id")).getFile()
+      if(await idFile.text() !== id) throw ""
+      tar = await new Response(dataFile.stream().pipeThrough(new DecompressionStream("gzip"))).arrayBuffer()   
+    }
+    catch {
+      try {
+        let res = await fetch(url)
+        if(!res.ok) {
+          throw "Unable to download model"
         }
-      })
-      mdl.obj = new Module.genericModel(storepath, id, objs.length-1, normalMdl)
-      mdl.obj.check()
-    })
+        let newDataFile = await (await getFileHandle(storepath + "/model.tgz", true)).createWritable()
+        tar = await new Response(res.body.pipeThrough(new DecompressionStream("gzip"))).arrayBuffer()
+        await newDataFile.write(tar)
+        await newDataFile.close()
+        let newIDFile = await (await getFileHandle(storepath + "/id", true)).createWritable()
+        await newIDFile.write(id)
+        await newIDFile.close()
+      }
+      catch(e) {
+        mdl.obj.delete()
+        throw e
+      }
+    }
+    let tarStart = Module._malloc(tar.byteLength)
+    Module.HEAPU8.set(new Uint8Array(tar), tarStart)
+    mdl.obj.extractAndLoad(tarStart, tar.byteLength)
   }
   delete() {
     if (this.obj) this.obj.delete()
@@ -68,27 +83,25 @@ class Recognizer extends EventTarget {
     objs.push(this)
   }
   static async _init(model, sampleRate, mode, grammar, spkModel) {
-    return new Promise((resolve, reject) => {
-      let rec = new Recognizer()
-      rec.addEventListener("0", (ev) => {
-        if(ev.detail === "0") {
-          rec.ptr = Module._malloc(512)
-          return resolve(rec)
-        }
-        rec.delete()
-        reject(ev.detail)
-      }, {once : true})
-      switch(mode) {
-        case 1:
-          rec.obj = new Module.recognizer(model, sampleRate, objs.length-1)
-          break
-        case 2:
-          rec.obj = new Module.recognizer(model, spkModel, sampleRate, objs.length-1) 
-          break
-        default:
-          rec.obj = new Module.recognizer(model, grammar, sampleRate, objs.length-1, 0)  
+    let rec = new Recognizer()
+    rec.addEventListener("0", (ev) => {
+      if(ev.detail === "0") {
+        rec.ptr = Module._malloc(512)
+        return rec
       }
-    })
+      rec.delete()
+      throw ev.detail
+    }, { once : true })
+    switch(mode) {
+      case 1:
+        rec.obj = new Module.recognizer(model, sampleRate, objs.length-1)
+        break
+      case 2:
+        rec.obj = new Module.recognizer(model, spkModel, sampleRate, objs.length-1) 
+        break
+      default:
+        rec.obj = new Module.recognizer(model, grammar, sampleRate, objs.length-1, 0)  
+    }
   } 
   async getNode(ctx, channelIndex = 0) {
     if(typeof this.node === "undefined") {

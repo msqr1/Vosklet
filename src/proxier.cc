@@ -1,8 +1,6 @@
-#include "jsBridge.h"
+#include "proxier.h"
 
 pthread_t dstThrd{pthread_self()};
-bool OPFSOk{};
-bool OPFSTried{};
 ProxyingQueue glbQ{};
 void fireEv(int index, const char* content, const char* type) {
   auto proxy{[index, content, type](){

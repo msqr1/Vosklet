@@ -13,8 +13,7 @@ interface WasmModule {
 }
 
 export interface genericModel {
-  check(): void;
-  afterFetch(): void;
+  extractAndLoad(_0: number, _1: number): void;
   delete(): void;
 }
 
@@ -30,8 +29,8 @@ export interface recognizer {
 }
 
 interface EmbindModule {
-  genericModel: {new(_0: ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string, _1: ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string, _2: number, _3: boolean): genericModel};
-  recognizer: {new(_0: genericModel, _1: number, _2: number): recognizer; new(_0: genericModel, _1: genericModel, _2: number, _3: number): recognizer; new(_0: genericModel, _1: ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string, _2: number, _3: number, _4: number): recognizer};
+  genericModel: {new(_0: number, _1: boolean, _2: ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string, _3: ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string): genericModel};
+  recognizer: {new(_0: number, _1: number, _2: genericModel): recognizer; new(_0: number, _1: number, _2: genericModel, _3: genericModel): recognizer; new(_0: number, _1: number, _2: genericModel, _3: ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string, _4: number): recognizer};
   setLogLevel(_0: number): void;
 }
 export type MainModule = WasmModule & EmbindModule;
