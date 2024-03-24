@@ -15,10 +15,6 @@ var Module = {};
 // Thread-local guard variable for one-time init of the JS state
 var initializedJS = false;
 
-function assert(condition, text) {
-  if (!condition) abort('Assertion failed: ' + text);
-}
-
 function threadPrintErr(...args) {
   var text = args.join(' ');
   console.error(text);
@@ -27,13 +23,8 @@ function threadAlert(...args) {
   var text = args.join(' ');
   postMessage({cmd: 'alert', text, threadId: Module['_pthread_self']()});
 }
-// We don't need out() for now, but may need to add it if we want to use it
-// here. Or, if this code all moves into the main JS, that problem will go
-// away. (For now, adding it here increases code size for no benefit.)
-var out = () => { throw 'out() is not defined in worker.js.'; }
 var err = threadPrintErr;
 self.alert = threadAlert;
-var dbg = threadPrintErr;
 
 Module['instantiateWasm'] = (info, receiveInstance) => {
   // Instantiate from the module posted from the main thread.
@@ -82,18 +73,13 @@ function handleMessage(e) {
       // that iteration, allowing safe reference from a closure.
       for (const handler of e.data.handlers) {
         Module[handler] = (...args) => {
-          dbg(`calling handler on main thread: ${handler}`);
           postMessage({ cmd: 'callHandler', handler, args: args });
         }
       }
 
       Module['wasmMemory'] = e.data.wasmMemory;
 
-      Module['wasmOffsetData'] = e.data.wasmOffsetConverter;
-
       Module['buffer'] = Module['wasmMemory'].buffer;
-
-      Module['workerID'] = e.data.workerID;
 
       Module['ENVIRONMENT_IS_PTHREAD'] = true;
 
@@ -113,7 +99,6 @@ function handleMessage(e) {
       // using the fast `Atomics.notify` notification path.
       Module['__emscripten_thread_mailbox_await'](e.data.pthread_ptr);
 
-      assert(e.data.pthread_ptr);
       // Also call inside JS module to set up the stack frame for this pthread in JS module scope
       Module['establishStackSpace']();
       Module['PThread'].receiveObjectTransfer(e.data);
@@ -135,7 +120,6 @@ function handleMessage(e) {
           // and let the top level handler propagate it back to the main thread.
           throw ex;
         }
-        dbg(`Pthread 0x${Module['_pthread_self']().toString(16)} completed its main entry point with an 'unwind', keeping the worker alive for asynchronous operation.`);
       }
     } else if (e.data.cmd === 'cancel') { // Main thread is asking for a pthread_cancel() on this thread.
       if (Module['_pthread_self']()) {
@@ -155,8 +139,6 @@ function handleMessage(e) {
       err(e.data);
     }
   } catch(ex) {
-    err(`worker.js onmessage() captured an uncaught exception: ${ex}`);
-    if (ex?.stack) err(ex.stack);
     Module['__emscripten_thread_crashed']?.();
     throw ex;
   }

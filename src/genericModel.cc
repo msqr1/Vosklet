@@ -5,20 +5,22 @@ void genericModel::extractAndLoad(int tarStart, int tarSize) {
   static fs::path path{};
   static int fd{};
   thrd.addTask([this, tarStart, tarSize](){
+    emscripten_console_log("Untaring...");
     archive* src {archive_read_new()};
     archive_read_support_format_tar(src);
-    archive_read_open_memory(src, (void*)tarStart, tarSize);
-    free((void*)tarStart);
+    archive_read_open_memory(src, reinterpret_cast<void*>(tarStart), tarSize);
     if(archive_errno(src) != 0) {
       emscripten_console_logf("Unable to open tar in WASM memory: %s", archive_error_string(src));
+      free(reinterpret_cast<void*>(tarStart));
       fireEv(index, "Unable to open tar in WASM memory");
       return;
     }
     while(1) {
-      if(archive_read_next_header2(src, entry) != ARCHIVE_OK) {
-        emscripten_console_logf("Tar header read failed: %s", archive_error_string(src));
-        fireEv(index, "Tar header read failed");
-        return;
+      int headerRes {archive_read_next_header2(src, entry)};
+      if(headerRes == ARCHIVE_EOF) break;
+      if(headerRes < ARCHIVE_OK) {
+        fireEv(index, archive_error_string(src));
+        break;
       }
       path = archive_entry_pathname(entry);
       path = storepath + path.generic_string().substr(path.generic_string().find("/"));
@@ -41,13 +43,14 @@ void genericModel::extractAndLoad(int tarStart, int tarSize) {
         return;
       }
     }
+    free(reinterpret_cast<void*>(tarStart));
     fs::remove(storepath + "/README");
     archive_read_free(src);
-    /*if(normalMdl) mdl = vosk_model_new(storepath.c_str());
+    if(normalMdl) mdl = vosk_model_new(storepath.c_str());
     else vosk_spk_model_new(storepath.c_str());
     emscripten_console_log("Loading finished!");
     if(normalMdl ? std::get<0>(mdl) == nullptr : std::get<1>(mdl) == nullptr) fireEv(index, "Unable to load model for recognition");
-    else fireEv(index, "0");*/
+    else fireEv(index, "0");
   });
 }
 genericModel::~genericModel() {

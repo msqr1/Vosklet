@@ -1,10 +1,10 @@
 #pragma once
-#include "proxier.h"
+#include "jsLink.h"
 
 #include <filesystem>
 #include <fstream>
-#include <fcntl.h>
 #include <variant>
+#include <fcntl.h>
 
 #include <vosk_api.h>
 #include <archive.h>
@@ -17,7 +17,6 @@ struct genericModel {
   std::string storepath;
   std::string id;
   std::variant<VoskModel*, VoskSpkModel*> mdl;
-  reusableThrd thrd;
   archive_entry* entry;
   void extractAndLoad(int tarStart, int tarSize);
   genericModel(int index, bool normalMdl, std::string storepath, std::string id);

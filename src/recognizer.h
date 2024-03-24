@@ -4,14 +4,17 @@
 struct recognizer {
   std::atomic_flag done{};
   std::atomic_flag controller{};
-  float* dataPtr;
+  float dataBuf[128];
+  char state; // 0: Copying data from JS, 1: Processing from C++
   int index;
   VoskRecognizer* rec;
   recognizer(int index, float sampleRate, genericModel* model);
   recognizer(int index, float sampleRate, genericModel* model, genericModel* spkModel);
-  recognizer(int index, float sampleRate, genericModel* model, const std::string& grm,  int dummy);
+  recognizer(int index, float sampleRate, genericModel* model, const std::string& grm, int dummy);
   ~recognizer();
-  void finishConstruction(genericModel* model, genericModel* spkModel);
+  void finishConstruction(genericModel* model, genericModel* spkModel = nullptr);
+  void setEndpointerMode(VoskEndpointerMode mode);
+  void setEndpointerDelays(float tStartMax, float tEnd, float tMax);
   void acceptWaveForm();
   void setSpkModel(genericModel* model);
   void setGrm(const std::string& grm);

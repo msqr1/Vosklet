@@ -27,22 +27,26 @@ class genericModel extends EventTarget {
   }
   static async _init(url, storepath, id, normalMdl) {
     let mdl = new genericModel(url, storepath, id, normalMdl)
+    let result = new Promise((resolve, reject) => {
+      mdl.addEventListener("0", ev => {
+        switch(ev.detail) {
+          case "0":
+            return resolve(mdl)
+          default:
+            mdl.delete()
+            reject(ev.detail)
+        }
+      }, { once : true })
+    })
     let tar
-    mdl.addEventListener("0", async (ev) => {
-      switch(ev.detail) {
-        case "0":
-          return mdl
-        default:
-          mdl.delete()
-          throw ev.detail
-      }
-    }, { once : true })
     mdl.obj = new Module.genericModel(objs.length - 1, normalMdl, "/" + storepath, id)
     try {
+      console.log("Getting Data file")
       let dataFile = await (await getFileHandle(storepath + "/model.tgz")).getFile()
+      console.log("Getting ID file")
       let idFile = await (await getFileHandle(storepath + "/id")).getFile()
       if(await idFile.text() !== id) throw ""
-      tar = await new Response(dataFile.stream().pipeThrough(new DecompressionStream("gzip"))).arrayBuffer()   
+      tar = dataFile.stream()  
     }
     catch {
       try {
@@ -50,22 +54,25 @@ class genericModel extends EventTarget {
         if(!res.ok) {
           throw "Unable to download model"
         }
+        let teedBody = res.body.tee()
         let newDataFile = await (await getFileHandle(storepath + "/model.tgz", true)).createWritable()
-        tar = await new Response(res.body.pipeThrough(new DecompressionStream("gzip"))).arrayBuffer()
-        await newDataFile.write(tar)
+        await newDataFile.write(await new Response(teedBody[0]).arrayBuffer())
         await newDataFile.close()
         let newIDFile = await (await getFileHandle(storepath + "/id", true)).createWritable()
         await newIDFile.write(id)
         await newIDFile.close()
+        tar = teedBody[1]
       }
       catch(e) {
         mdl.obj.delete()
         throw e
       }
     }
+    tar = await new Response(tar.pipeThrough(new DecompressionStream("gzip"))).arrayBuffer()
     let tarStart = Module._malloc(tar.byteLength)
     Module.HEAPU8.set(new Uint8Array(tar), tarStart)
     mdl.obj.extractAndLoad(tarStart, tar.byteLength)
+    return result
   }
   delete() {
     if (this.obj) this.obj.delete()
@@ -84,33 +91,34 @@ class Recognizer extends EventTarget {
   }
   static async _init(model, sampleRate, mode, grammar, spkModel) {
     let rec = new Recognizer()
-    rec.addEventListener("0", (ev) => {
-      if(ev.detail === "0") {
-        rec.ptr = Module._malloc(512)
-        return rec
-      }
-      rec.delete()
-      throw ev.detail
-    }, { once : true })
+    let result = new Promise((resolve, reject) => {
+      rec.addEventListener("0", ev => {
+        if(ev.detail.indexOf(",") === -1) {
+          let loadInfo = ev.detail.split(",")
+          rec.dataBuf = Module.HEAPF32.subarray(parseInt(loadInfo[0]), parseInt(loadInfo[0]) + 128)
+          rec.state = Module.HEAP8.subarray(parseInt(loadInfo[1]), parseInt(loadInfo[1]) + 1) // State is an array with 1 element, there is no other way to get a reference to a single element
+          return resolve(rec)
+        }
+        rec.delete()
+        reject(rec)
+      }, { once : true })
+    })
     switch(mode) {
       case 1:
-        rec.obj = new Module.recognizer(model, sampleRate, objs.length-1)
+        rec.obj = new Module.recognizer(objs.length - 1, sampleRate, model)
         break
       case 2:
-        rec.obj = new Module.recognizer(model, spkModel, sampleRate, objs.length-1) 
+        rec.obj = new Module.recognizer(objs.length -1, sampleRate, model, spkModel) 
         break
       default:
-        rec.obj = new Module.recognizer(model, grammar, sampleRate, objs.length-1, 0)  
+        rec.obj = new Module.recognizer(objs.length - 1, sampleRate, grammar, 0)  
     }
+    return result
   } 
   async getNode(ctx, channelIndex = 0) {
     if(typeof this.node === "undefined") {
-      let msgChannel = new MessageChannel()
       await ctx.audioWorklet.addModule(processorUrl)
-      this.node = new AudioWorkletNode(ctx, 'BRProcessor', { channelCountMode: "max", numberOfInputs: 1, numberOfOutputs: 1, processorOptions: { ptr: this.ptr, channel: channelIndex, recognizerPort: msgChannel.port1 } })
-      msgChannel.port1.onmessage = () => {
-        this.obj.acceptWaveForm()
-      } 
+      this.node = new AudioWorkletNode(ctx, 'VoskletProcessor', { channelCountMode: "max", numberOfInputs: 1, numberOfOutputs: 0, processorOptions: { dataBuf: this.dataBuf, state: this.state, channel: channelIndex }})
     }
     return this.node
   }
@@ -152,19 +160,16 @@ Module.makeRecognizerWithGrm = (model, sampleRate, grammar) => {
 } 
 let processorUrl = URL.createObjectURL(new Blob(['(',
   (() => {
-    registerProcessor("BRProcessor", class extends AudioWorkletProcessor {
+    registerProcessor("VoskletProcessor", class extends AudioWorkletProcessor {
       constructor(options) {
-        this.done = false
-        this.port.onmessage = (ev) => this.done = true
-        this.ptr = options.processorOptions.ptr 
-        this.recognizerPort = options.processorOptions.recognizerPort
         this.channelIndex = options.processorOptions.channelIndex
+        this.dataBuf = options.processorOptions.dataBuf
+        this.state = options.processorOptions.state
       }
       process(inputs, outputs, params) {
-        if(this.done) return false
-        this.wasmMem.set(inputs[0].getChannelData(this.channelIndex))
-        this.recognizerPort.postMessage("0") 
-        outputs = inputs
+        while(state[0])
+        inputs.copyFromChannel(this.dataBuf, this.channelIndex)
+        state[0] = 1
         return true
       }
     })

@@ -6,6 +6,13 @@ using namespace emscripten;
 
 EMSCRIPTEN_BINDINGS() {
   function("setLogLevel", &vosk_set_log_level, allow_raw_pointers());
+  
+  enum_<VoskEndpointerMode>("epMode")
+  .value("ANSWER_DEFAULT", VOSK_EP_ANSWER_DEFAULT)
+  .value("ANSWER_SHORT", VOSK_EP_ANSWER_SHORT)
+  .value("ANSWER_LONG", VOSK_EP_ANSWER_LONG)
+  .value("ANSWER_VERY_LONG", VOSK_EP_ANSWER_VERY_LONG);
+
   class_<genericModel>("genericModel")
   .constructor<int, bool, std::string, std::string>(allow_raw_pointers())
   .function("extractAndLoad", &genericModel::extractAndLoad, allow_raw_pointers());

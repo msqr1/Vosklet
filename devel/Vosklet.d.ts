@@ -12,6 +12,11 @@ interface WasmModule {
   ___set_stack_limits(_0: number, _1: number): void;
 }
 
+export interface epModeValue<T extends number> {
+  value: T;
+}
+export type epMode = epModeValue<0>|epModeValue<1>|epModeValue<2>|epModeValue<3>;
+
 export interface genericModel {
   extractAndLoad(_0: number, _1: number): void;
   delete(): void;
@@ -29,6 +34,7 @@ export interface recognizer {
 }
 
 interface EmbindModule {
+  epMode: {ANSWER_DEFAULT: epModeValue<0>, ANSWER_SHORT: epModeValue<1>, ANSWER_LONG: epModeValue<2>, ANSWER_VERY_LONG: epModeValue<3>};
   genericModel: {new(_0: number, _1: boolean, _2: ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string, _3: ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string): genericModel};
   recognizer: {new(_0: number, _1: number, _2: genericModel): recognizer; new(_0: number, _1: number, _2: genericModel, _3: genericModel): recognizer; new(_0: number, _1: number, _2: genericModel, _3: ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string, _4: number): recognizer};
   setLogLevel(_0: number): void;

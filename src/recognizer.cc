@@ -1,19 +1,16 @@
 #include "recognizer.h" 
 
 recognizer::recognizer(int index, float sampleRate, genericModel* model) : index(index) {
-  emscripten_console_log("Recognizer constructor called...");
   rec = vosk_recognizer_new(std::get<0>(model->mdl),sampleRate);
-  finishConstruction(model, nullptr);
+  finishConstruction(model);
 }
 recognizer::recognizer(int index, float sampleRate, genericModel* model, genericModel* spkMdl) : index(index) {
-  emscripten_console_log("Recognizer constructor called...");
   rec = vosk_recognizer_new_spk(std::get<0>(model->mdl), sampleRate, std::get<1>(spkMdl->mdl));
   finishConstruction(model, spkMdl);
 }
 recognizer::recognizer(int index, float sampleRate, genericModel* model, const std::string& grm, int dummy) : index(index) {
-  emscripten_console_log("Recognizer constructor called...");
   rec = vosk_recognizer_new_grm(std::get<0>(model->mdl), sampleRate, grm.c_str());
-  finishConstruction(model, nullptr);
+  finishConstruction(model);
 }
 recognizer::~recognizer() {
   done.test_and_set(std::memory_order_relaxed);
@@ -21,27 +18,30 @@ recognizer::~recognizer() {
   controller.test_and_set(std::memory_order_relaxed);
   controller.notify_one();
   vosk_recognizer_free(rec);
-  free(dataPtr);
 }
-void recognizer:: finishConstruction(genericModel* model, genericModel* spkModel) {
+void recognizer::finishConstruction(genericModel* model, genericModel* spkModel) {
   if(rec == nullptr) {
     fireEv(index, "Unable to initialize recognizer");
     return;
   }
   auto main {[this](){
     emscripten_console_log("Recognizer loaded!");
-    fireEv(index, "0");
+    std::string loadInfo{};
+    loadInfo += reinterpret_cast<int>(dataBuf);
+    loadInfo += ",";
+    loadInfo += reinterpret_cast<int>(&state);
+    fireEv(index, loadInfo.c_str());
     while(!done.test(std::memory_order_relaxed)) {
       controller.wait(!done.test(std::memory_order_relaxed), std::memory_order_relaxed);
       controller.clear(std::memory_order_relaxed);
-      if(done.test(std::memory_order_relaxed)) continue;
-      switch(vosk_recognizer_accept_waveform_f(rec, dataPtr, 512)) {
+      switch(vosk_recognizer_accept_waveform_f(rec, dataBuf, 512)) {
         case 0:
           fireEv(index, vosk_recognizer_result(rec), "result");
           break;
         case 1:
           fireEv(index, vosk_recognizer_partial_result(rec), "partialResult");
       }
+      state = 0;
   }
   }};
   if(!model->recognizerUsedThrd) {
@@ -59,6 +59,12 @@ void recognizer:: finishConstruction(genericModel* model, genericModel* spkModel
   emscripten_console_log("New recognizer thread");
   std::thread t{main};
   t.detach();
+}
+void recognizer::setEndpointerMode(VoskEndpointerMode mode) {
+  vosk_recognizer_set_endpointer_mode(rec, mode);
+}
+void recognizer::setEndpointerDelays(float tStartMax, float tEnd, float tMax) {
+  vosk_recognizer_set_endpointer_delays(rec, tStartMax, tEnd, tMax);
 }
 void recognizer::acceptWaveForm() {
   controller.test_and_set(std::memory_order_relaxed);

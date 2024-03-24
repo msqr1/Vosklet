@@ -1,4 +1,4 @@
-#include "proxier.h"
+#include <jsLink.h>
 
 pthread_t dstThrd{pthread_self()};
 ProxyingQueue glbQ{};
@@ -12,22 +12,4 @@ void fireEv(int index, const char* content, const char* type) {
   }};
   if(dstThrd == pthread_self()) proxy();
   else glbQ.proxySync(dstThrd, proxy);
-}
-reusableThrd::reusableThrd() {
-  std::thread thrd{[this](){
-    while(!done) {
-      while(!queue.empty()) {
-        emscripten_console_log("==========Executing task===========");
-        queue.front()();
-        queue.pop();
-      }
-    }
-  }};
-  thrd.detach();
-}
-void reusableThrd::addTask(std::function<void()>&& task) {
-  queue.emplace(task);
-}
-reusableThrd::~reusableThrd() {
-  done = true;
 }
