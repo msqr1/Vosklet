@@ -93,14 +93,14 @@ class Recognizer extends EventTarget {
     let rec = new Recognizer()
     let result = new Promise((resolve, reject) => {
       rec.addEventListener("0", ev => {
-        if(ev.detail.indexOf(",") === -1) {
+        if(ev.detail.indexOf(",") !== -1) {
           let loadInfo = ev.detail.split(",")
-          rec.dataBuf = Module.HEAPF32.subarray(parseInt(loadInfo[0]), parseInt(loadInfo[0]) + 128)
-          rec.state = Module.HEAP8.subarray(parseInt(loadInfo[1]), parseInt(loadInfo[1]) + 1) // State is an array with 1 element, there is no other way to get a reference to a single element
+          rec.state = Module.HEAP8.subarray(parseInt(loadInfo[0]), parseInt(loadInfo[0]) + 1) // State is an array with 1 element, there is no other way to get a reference to a single element
+          rec.dataBuf = Module.HEAPF32.subarray(parseInt(loadInfo[1]), parseInt(loadInfo[1]) + 128)
           return resolve(rec)
         }
         rec.delete()
-        reject(rec)
+        reject(ev.detail)
       }, { once : true })
     })
     switch(mode) {

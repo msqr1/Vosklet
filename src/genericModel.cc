@@ -1,11 +1,13 @@
 #include "genericModel.h"
 
-genericModel::genericModel(int index, bool normalMdl, std::string storepath, std::string id) : index(index), normalMdl(normalMdl), storepath(std::move(storepath)), id(std::move(id)), entry(archive_entry_new()) {}
+genericModel::genericModel(int index, bool normalMdl, std::string storepath, std::string id) : index{index}, normalMdl{normalMdl}, storepath{std::move(storepath)}, id{std::move(id)}, entry{archive_entry_new()} {
+  blocker.lock();
+}
 void genericModel::extractAndLoad(int tarStart, int tarSize) {
+  emscripten_console_log("Untaring");
   static fs::path path{};
   static int fd{};
-  thrd.addTask([this, tarStart, tarSize](){
-    emscripten_console_log("Untaring...");
+  func = [this, tarStart, tarSize](){
     archive* src {archive_read_new()};
     archive_read_support_format_tar(src);
     archive_read_open_memory(src, reinterpret_cast<void*>(tarStart), tarSize);
@@ -23,8 +25,7 @@ void genericModel::extractAndLoad(int tarStart, int tarSize) {
         break;
       }
       path = archive_entry_pathname(entry);
-      path = storepath + path.generic_string().substr(path.generic_string().find("/"));
-      emscripten_console_logf("Creating file or directory %s", path.c_str()); 
+      path = storepath + path.generic_string().substr(path.generic_string().find("/")); 
       if(!path.has_extension()) {
         fs::create_directory(path);
         continue;
@@ -51,7 +52,13 @@ void genericModel::extractAndLoad(int tarStart, int tarSize) {
     emscripten_console_log("Loading finished!");
     if(normalMdl ? std::get<0>(mdl) == nullptr : std::get<1>(mdl) == nullptr) fireEv(index, "Unable to load model for recognition");
     else fireEv(index, "0");
-  });
+  };
+  std::thread t{[this](){
+    func();
+    blocker.lock();
+    func();
+  }};
+  t.detach();
 }
 genericModel::~genericModel() {
   archive_entry_free(entry);

@@ -34,8 +34,8 @@
 
 | Event | Description |
 |---|---|
-| ```partialResult``` | There is a partial recognition result, check the event's "details" property |
-| ```result``` | There is a full recognition result, check the event's "details" property |
+| ```partialResult``` | There is a partial recognition result, check the event's *detail* property |
+| ```result``` | There is a full recognition result, check the event's *detail* property |
 
 # User agent notes
 ## SharedArrayBuffer

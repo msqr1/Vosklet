@@ -21,11 +21,13 @@ EMSCRIPTEN_BINDINGS() {
   .constructor<int, float, genericModel*>(allow_raw_pointers())
   .constructor<int, float, genericModel*, genericModel*>(allow_raw_pointers())
   .constructor<int, float, genericModel*, std::string, int>(allow_raw_pointers())
+  .function("reset", &recognizer::reset, allow_raw_pointers())
+  .function("setEndpointerMode", &recognizer::setEndpointerMode, allow_raw_pointers())
+  .function("setEndpointerDelays", &recognizer::setEndpointerDelays, allow_raw_pointers())
   .function("setWords", &recognizer::setWords, allow_raw_pointers())
   .function("setPartialWords", &recognizer::setPartialWords, allow_raw_pointers())
   .function("setGrm", &recognizer::setGrm, allow_raw_pointers())
   .function("setNLSML", &recognizer::setNLSML, allow_raw_pointers())
   .function("setSpkModel", &recognizer::setSpkModel, allow_raw_pointers())
-  .function("setMaxAlternatives", &recognizer::setMaxAlternatives, allow_raw_pointers())
-  .function("acceptWaveForm", &recognizer::acceptWaveForm, allow_raw_pointers());
+  .function("setMaxAlternatives", &recognizer::setMaxAlternatives, allow_raw_pointers());
 };
