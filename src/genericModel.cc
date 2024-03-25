@@ -56,6 +56,7 @@ void genericModel::extractAndLoad(int tarStart, int tarSize) {
   std::thread t{[this](){
     func();
     blocker.lock();
+    blocker.unlock();
     func();
   }};
   t.detach();

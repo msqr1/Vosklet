@@ -15,7 +15,7 @@ namespace fs = std::filesystem;
 
 struct genericModel {
   bool normalMdl;
-  bool thrdConsumed{};
+  bool resourceUsed{};
   int index;
   std::string storepath;
   std::string id;

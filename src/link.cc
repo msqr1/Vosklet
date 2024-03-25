@@ -11,7 +11,7 @@ void fireEv(int index, const char* content, const char* type) {
   if(dstThrd == pthread_self()) proxy();
   else glbQ.proxySync(dstThrd, proxy);
 }
-void fireEv(int index, char* state, float* dataBuf) {
+void fireEv(int index, std::atomic_int* state, float* dataBuf) {
   auto proxy{[index, state, dataBuf](){
     EM_ASM({
       objs[$0].dispatchEvent(new CustomEvent("0", { "detail" : $1 + "," + $2}));

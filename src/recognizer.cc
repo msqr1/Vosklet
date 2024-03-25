@@ -1,17 +1,16 @@
 #include "recognizer.h" 
 
-recognizer::recognizer(int index, float sampleRate, genericModel* model) : index{index}, rec{vosk_recognizer_new(std::get<0>(model->mdl),sampleRate)} {
+recognizer::recognizer(int index, float sampleRate, genericModel* model) : index{index}, sampleRate{sampleRate}, rec{vosk_recognizer_new(std::get<0>(model->mdl),sampleRate)} {
   finishConstruction(model);
 }
-recognizer::recognizer(int index, float sampleRate, genericModel* model, genericModel* spkModel) : index(index), rec{vosk_recognizer_new_spk(std::get<0>(model->mdl), sampleRate, std::get<1>(spkModel->mdl))} {
+recognizer::recognizer(int index, float sampleRate, genericModel* model, genericModel* spkModel) : index(index), sampleRate{sampleRate}, rec{vosk_recognizer_new_spk(std::get<0>(model->mdl), sampleRate, std::get<1>(spkModel->mdl))} {
   finishConstruction(model, spkModel);
 }
-recognizer::recognizer(int index, float sampleRate, genericModel* model, const std::string& grm, int dummy) : index{index}, rec{vosk_recognizer_new_grm(std::get<0>(model->mdl), sampleRate, grm.c_str())} {
+recognizer::recognizer(int index, float sampleRate, genericModel* model, const std::string& grm, int dummy) : index{index}, sampleRate{sampleRate}, rec{vosk_recognizer_new_grm(std::get<0>(model->mdl), sampleRate, grm.c_str())} {
   finishConstruction(model);
 }
 recognizer::~recognizer() {
-  done.test_and_set(std::memory_order_relaxed);
-  done.notify_one();
+  done = true;
   vosk_recognizer_free(rec);
 }
 void recognizer::reset() {
@@ -25,32 +24,27 @@ void recognizer::finishConstruction(genericModel* model, genericModel* spkModel)
   auto main {[this](){
     emscripten_console_log("Recognizer loaded!");
     fireEv(index, &state, dataBuf);
-    int sample{};
-    char buffer[22480];
-    ALCdevice* mic{alcCaptureOpenDevice("Emscripten OpenAL capture", sampleRate, AL_FORMAT_MONO16, 22480)};
-    alcCaptureStart(mic);
-    while(!done.test(std::memory_order_relaxed)) {
-      alcGetIntegerv(mic, ALC_CAPTURE_SAMPLES, 4, &sample);
-      alcCaptureSamples(mic, buffer, sample);
-      switch(vosk_recognizer_accept_waveform(rec, buffer, 22480)) {
+    while(!done) {
+      switch(vosk_recognizer_accept_waveform_f(rec, dataBuf, 512)) {
         case 0:
           fireEv(index, vosk_recognizer_result(rec), "result");
           break;
         case 1:
           fireEv(index, vosk_recognizer_partial_result(rec), "partialResult");
       }
+      state = 0;
+      state.wait(0, std::memory_order_relaxed);
     }
-    alcCaptureCloseDevice(mic);
   }};
-  if(!model->thrdConsumed) {
-    model->thrdConsumed = true;
+  if(!model->resourceUsed) {
+    model->resourceUsed = true;
     model->func = main;
     model->blocker.unlock();
     emscripten_console_log("Using model's thread");
     return;
   }
-  if(spkModel != nullptr && !spkModel->thrdConsumed) {
-    spkModel->thrdConsumed = true;
+  if(spkModel != nullptr && !spkModel->resourceUsed) {
+    spkModel->resourceUsed = true;
     spkModel->func = main;
     spkModel->blocker.unlock();
     emscripten_console_log("Using speaker model's thread");

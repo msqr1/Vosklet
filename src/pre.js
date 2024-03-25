@@ -95,7 +95,7 @@ class Recognizer extends EventTarget {
       rec.addEventListener("0", ev => {
         if(ev.detail.indexOf(",") !== -1) {
           let loadInfo = ev.detail.split(",")
-          rec.state = Module.HEAP8.subarray(parseInt(loadInfo[0]), parseInt(loadInfo[0]) + 1) // State is an array with 1 element, there is no other way to get a reference to a single element
+          rec.state = Module.HEAP32.subarray(parseInt(loadInfo[0]), parseInt(loadInfo[0]) + 1) // State is an array with 1 element, there is no other way to get a reference to a single element
           rec.dataBuf = Module.HEAPF32.subarray(parseInt(loadInfo[1]), parseInt(loadInfo[1]) + 128)
           return resolve(rec)
         }
@@ -167,9 +167,9 @@ let processorUrl = URL.createObjectURL(new Blob(['(',
         this.state = options.processorOptions.state
       }
       process(inputs, outputs, params) {
-        while(state[0])
+        Atomics.wait(state, 0)
         inputs.copyFromChannel(this.dataBuf, this.channelIndex)
-        state[0] = 1
+        
         return true
       }
     })
