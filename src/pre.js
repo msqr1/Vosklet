@@ -29,13 +29,9 @@ class genericModel extends EventTarget {
     let mdl = new genericModel(url, storepath, id, normalMdl)
     let result = new Promise((resolve, reject) => {
       mdl.addEventListener("0", ev => {
-        switch(ev.detail) {
-          case "0":
-            return resolve(mdl)
-          default:
-            mdl.delete()
-            reject(ev.detail)
-        }
+        if(ev.detail === "0") return resolve(mdl)
+        mdl.delete()
+        reject(ev.detail)
       }, { once : true })
     })
     let tar
@@ -93,12 +89,7 @@ class Recognizer extends EventTarget {
     let rec = new Recognizer()
     let result = new Promise((resolve, reject) => {
       rec.addEventListener("0", ev => {
-        if(ev.detail.indexOf(",") !== -1) {
-          let loadInfo = ev.detail.split(",")
-          rec.state = Module.HEAP32.subarray(parseInt(loadInfo[0]), parseInt(loadInfo[0]) + 1) // State is an array with 1 element, there is no other way to get a reference to a single element
-          rec.dataBuf = Module.HEAPF32.subarray(parseInt(loadInfo[1]), parseInt(loadInfo[1]) + 128)
-          return resolve(rec)
-        }
+        if(ev.detail === "0") return resolve(rec)
         rec.delete()
         reject(ev.detail)
       }, { once : true })
@@ -115,16 +106,15 @@ class Recognizer extends EventTarget {
     }
     return result
   } 
-  async getNode(ctx, channelIndex = 0) {
+  async getNode(ctx) {
     if(typeof this.node === "undefined") {
-      await ctx.audioWorklet.addModule(processorUrl)
-      this.node = new AudioWorkletNode(ctx, 'VoskletProcessor', { channelCountMode: "max", numberOfInputs: 1, numberOfOutputs: 0, processorOptions: { dataBuf: this.dataBuf, state: this.state, channel: channelIndex }})
+      await ctx.audioWorklet.addModule("../src/processor.js", { credentials : "omit"})
+      this.node = new AudioWorkletNode(ctx, 'VoskletProcessor', { channelCountMode: "explicit", channelCount: 1, numberOfInputs: 1, numberOfOutputs: 1, processorOptions: { dataBuf: this.dataBuf, state: this.state }})
     }
     return this.node
   }
-  recognize(buf, channelIndex = 0) {
-    Module.HEAPF32.set(buf.getChannelData(channelIndex).subarray(0, 512), this.ptr)
-    this.obj.acceptWaveForm()
+  recognize(buf) {
+    Module.HEAPF32.set(buf.getChannelData(0).subarray(0, 512), this.ptr)
   }
   delete() {
     if (this.obj) this.obj.delete()
@@ -158,7 +148,7 @@ Module.makeRecognizerWithSpkModel = (model, sampleRate, spkModel) => {
 Module.makeRecognizerWithGrm = (model, sampleRate, grammar) => {
   return Recognizer._init(model.obj, sampleRate, 3, grammar, null)
 } 
-let processorUrl = URL.createObjectURL(new Blob(['(',
+/*let processorURL = URL.createObjectURL(new Blob(['(',
   (() => {
     registerProcessor("VoskletProcessor", class extends AudioWorkletProcessor {
       constructor(options) {
@@ -167,15 +157,14 @@ let processorUrl = URL.createObjectURL(new Blob(['(',
         this.state = options.processorOptions.state
       }
       process(inputs, outputs, params) {
-        Atomics.wait(state, 0)
-        inputs.copyFromChannel(this.dataBuf, this.channelIndex)
-        
+        while(state[0])
+        inputs.copyFromChannel(this.dataBuf, 0)
         return true
       }
     })
-  }).toString()
-, ')()'], {type : "text/javascript"}))
-/*let pthreadUrl = URL.createObjectURL(new Blob(['(',
+  }).toString(),
+  ')()'], {type : "text/javascript"}))
+let pthreadURL = URL.createObjectURL(new Blob(['(',
   (() => {
     { PTHREAD_SCRIPT }
   }).toString()

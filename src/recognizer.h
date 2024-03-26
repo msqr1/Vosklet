@@ -1,12 +1,16 @@
 #pragma once
 #include "genericModel.h"
-#include <condition_variable>
 
+#include <condition_variable>
+#include <queue>
+struct audioData {
+  float* data;
+  int len;
+  audioData(int start, int len) : data{reinterpret_cast<float*>(start)}, len{len} {}
+};
 struct recognizer {
   std::atomic_bool done;
-  std::atomic_int state; // 0: Copying data from JS, 1: Processing from C++
-  float dataBuf[128];
-  float sampleRate;
+  std::queue<audioData> dataQ{};
   int index;
   VoskRecognizer* rec;
   recognizer(int index, float sampleRate, genericModel* model);
@@ -14,6 +18,7 @@ struct recognizer {
   recognizer(int index, float sampleRate, genericModel* model, const std::string& grm, int dummy);
   ~recognizer();
   void finishConstruction(genericModel* model, genericModel* spkModel = nullptr);
+  void acceptWaveform(int start, int len);
   void reset();
   void setEndpointerMode(VoskEndpointerMode mode);
   void setEndpointerDelays(float tStartMax, float tEnd, float tMax);

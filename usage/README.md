@@ -21,8 +21,7 @@
 ## ```Recognizer``` object 
 | Function/Object | Description |
 |---|---|
-| ```Promise<AudioWorkletNode> getNode(ctx: AudioContext, channelIndex = 0: int)``` | Get a node that process audio. It has 1 input and no output, **channelIndex** must point to a 16-bit mono channel of the input |
-| ```recognize(buf: AudioBuffer, channelIndex = 0: int)``` | Recognize an AudioBuffer, usually from something like ```BaseAudioContext.decodeAudioData()```, **channelIndex** must point to a 16-bit mono channel of **buf**
+| ```acceptWaveform(buf: AudioBuffer || Float32Array )``` | Recognize an AudioBuffer, usually from something like ```BaseAudioContext.decodeAudioData()```, **channelIndex** must point to a 16-bit mono channel of **buf**
 | ```setPartialWords(partialWords: bool)``` | See Vosk's description (default: false) |
 | ```setWords(words: bool)``` | See Vosk's description (default: false) |
 | ```setNLSML(nlsml: bool)``` | See Vosk's description (default: false) |

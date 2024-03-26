@@ -49,7 +49,7 @@ void genericModel::extractAndLoad(int tarStart, int tarSize) {
     archive_read_free(src);
     if(normalMdl) mdl = vosk_model_new(storepath.c_str());
     else vosk_spk_model_new(storepath.c_str());
-    emscripten_console_log("Loading finished!");
+    emscripten_console_log("Model loaded!");
     if(normalMdl ? std::get<0>(mdl) == nullptr : std::get<1>(mdl) == nullptr) fireEv(index, "Unable to load model for recognition");
     else fireEv(index, "0");
   };

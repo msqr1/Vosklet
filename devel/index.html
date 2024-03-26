@@ -3,8 +3,20 @@
   <head>
     <script src="Vosklet.js"></script>
     <script>
-      window.onload = async () => {
-        window.ctx = new AudioContext()
+      async function func() {
+        let processorURL = URL.createObjectURL(new Blob(['(',
+          (() => {
+            registerProcessor('processor', class extends AudioWorkletProcessor {
+              process(inputs, outputs) {
+                for (let channel = 0; channel < outputs[0].length; ++channel) {
+                  outputs[0][channel].set(inputs[0][channel])
+                }
+                return true
+              }
+            })
+          }).toString(),
+        ')()'], { type : "text/javascript" }))
+        window.ctx = new AudioContext({sampleRate : 16000})
         let micNode = ctx.createMediaStreamSource(await navigator.mediaDevices.getUserMedia({
           video: false,
           audio: {
@@ -14,17 +26,26 @@
             sampleRate: 16000
           },
         }))
-        window.module = await loadVosklet()
+        await ctx.audioWorklet.addModule(processorURL)
+        window.node = new AudioWorkletNode(ctx, "processor", { channelCountMode: "explicit", numberOfInputs : 1, numberOfOutputs : 1})
+        micNode.connect(node).connect(ctx.destination)
+        ctx.resume()
+      }
+      window.onload = async () => {
+        /*window.module = await loadVosklet()
         window.model = await module.makeModel("../usage/en-model.tgz","model","ID")
-        window.recognizer = await module.makeRecognizer(model, ctx.sampleRate)
+        window.recognizer = await module.makeRecognizer(model, 16000)
         recognizer.addEventListener("result", e => {
           console.log("Result: ", e.detail)
         })
         recognizer.addEventListener("partialResult", e => {
           console.log("Partial result: ", e.detail)
-        })
-        //let recNode = recognizer.getNode(ctx);
+        })*/
+        //let recNode = await recognizer.getNode(ctx)
+        //recNode.connect(ctx.destination)
+        //micNode.connect(recNode)
       }
     </script>
+    <button onclick="func()">Just another button</button>
   </head>
 </html>
