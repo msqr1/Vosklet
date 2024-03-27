@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script src="../Vosklet.js" async defer></script>
+    <script>
+      window.onload = async () => {
+        let ctx = new AudioContext({sampleRate : 16000})
+        let module = await loadVosklet()
+        let model = await module.createModel("en-model.tgz","model","ID")
+        let recognizer = await module.createRecognizer(model, 16000)
+        recognizer.addEventListener("result", ev => {
+          console.log("Result: ", ev.detail)
+        })
+        recognizer.addEventListener("partialResult", ev => {
+          console.log("Partial result: ", ev.detail)
+        })
+        let wav = await fetch("example.wav")
+        let audioBuf = await ctx.decodeAudioData(await wav.arrayBuffer())
+        recognizer.acceptWaveform(audioBuf.getChannelData(0))
+      }
+    </script>
+  </head>
+</html>

@@ -19,7 +19,10 @@ void recognizer::finishConstruction(genericModel* model, genericModel* spkModel)
     return;
   }
   auto main {[this](){
+    fireEv(index, "0");
     while(!done) {
+      blocker.acquire();
+      blocker.release();
       while(!dataQ.empty()) {
         switch(vosk_recognizer_accept_waveform_f(rec, dataQ.front().data, dataQ.front().len)) {
         case 0:
@@ -36,23 +39,22 @@ void recognizer::finishConstruction(genericModel* model, genericModel* spkModel)
   if(!model->resourceUsed) {
     model->resourceUsed = true;
     model->func = main;
-    model->blocker.unlock();
-    emscripten_console_log("Using model's thread");
+    model->blocker.release();
     return;
   }
   if(spkModel != nullptr && !spkModel->resourceUsed) {
     spkModel->resourceUsed = true;
     spkModel->func = main;
-    spkModel->blocker.unlock();
-    emscripten_console_log("Using speaker model's thread");
+    spkModel->blocker.release();
     return;
   }
-  emscripten_console_log("New recognizer thread");
   std::thread t{main};
   t.detach();
 }
-void recognizer::acceptWaveform(int start, int len) {
+void recognizer::pushData(int start, int len) {
   dataQ.emplace(start, len);
+  blocker.release();
+  blocker.acquire();
 }
 void recognizer::reset() {
   vosk_recognizer_reset(rec);

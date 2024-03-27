@@ -21,7 +21,7 @@ EMSCRIPTEN_BINDINGS() {
   .constructor<int, float, genericModel*>(allow_raw_pointers())
   .constructor<int, float, genericModel*, genericModel*>(allow_raw_pointers())
   .constructor<int, float, genericModel*, std::string, int>(allow_raw_pointers())
-  .function("acceptWaveform", &recognizer::acceptWaveform, allow_raw_pointers())
+  .function("pushData", &recognizer::pushData, allow_raw_pointers())
   .function("reset", &recognizer::reset, allow_raw_pointers())
   .function("setEndpointerMode", &recognizer::setEndpointerMode, allow_raw_pointers())
   .function("setEndpointerDelays", &recognizer::setEndpointerDelays, allow_raw_pointers())

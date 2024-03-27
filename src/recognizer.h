@@ -1,8 +1,7 @@
 #pragma once
 #include "genericModel.h"
-
-#include <condition_variable>
 #include <queue>
+
 struct audioData {
   float* data;
   int len;
@@ -10,15 +9,16 @@ struct audioData {
 };
 struct recognizer {
   std::atomic_bool done;
-  std::queue<audioData> dataQ{};
   int index;
+  std::binary_semaphore blocker{1};
+  std::queue<audioData> dataQ{};
   VoskRecognizer* rec;
   recognizer(int index, float sampleRate, genericModel* model);
   recognizer(int index, float sampleRate, genericModel* model, genericModel* spkModel);
   recognizer(int index, float sampleRate, genericModel* model, const std::string& grm, int dummy);
   ~recognizer();
   void finishConstruction(genericModel* model, genericModel* spkModel = nullptr);
-  void acceptWaveform(int start, int len);
+  void pushData(int start, int len);
   void reset();
   void setEndpointerMode(VoskEndpointerMode mode);
   void setEndpointerDelays(float tStartMax, float tEnd, float tMax);

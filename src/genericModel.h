@@ -5,6 +5,7 @@
 #include <filesystem>
 #include <variant>
 #include <thread>
+#include <semaphore>
 #include <fcntl.h>
 
 #include <emscripten/console.h>
@@ -20,8 +21,8 @@ struct genericModel {
   std::string storepath;
   std::string id;
   std::variant<VoskModel*, VoskSpkModel*> mdl;
+  std::binary_semaphore blocker{1};
   std::function<void()> func;
-  std::mutex blocker{};
   archive_entry* entry;
   void extractAndLoad(int tarStart, int tarSize);
   genericModel(int index, bool normalMdl, std::string storepath, std::string id);
