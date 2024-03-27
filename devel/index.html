@@ -24,7 +24,6 @@
           console.log("Partial result: ", ev.detail)
         })
         let transferer = await module.createTransferer(ctx)
-        console.log(transferer)
         transferer.port.onmessage = ev => {
           recognizer.acceptWaveform(ev.data)
         }
