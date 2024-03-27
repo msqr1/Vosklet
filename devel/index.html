@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <script src="Vosklet.js"></script>
+    <script src="Vosklet.js" async defer></script>
     <script>
       async function start() {
         let ctx = new AudioContext({sampleRate : 16000})
@@ -15,7 +15,7 @@
           },
         }))
         let module = await loadVosklet()
-        let model = await module.createModel("../usage/en-model.tgz","model","ID")
+        let model = await module.createModel("en-model.tgz","model","ID")
         let recognizer = await module.createRecognizer(model, 16000)
         recognizer.addEventListener("result", ev => {
           console.log("Result: ", ev.detail)
@@ -23,7 +23,7 @@
         recognizer.addEventListener("partialResult", ev => {
           console.log("Partial result: ", ev.detail)
         })
-        let transferer = await module.createTransferer(ctx)
+        let transferer = await module.createTransferer(ctx, 25600)
         transferer.port.onmessage = ev => {
           recognizer.acceptWaveform(ev.data)
         }

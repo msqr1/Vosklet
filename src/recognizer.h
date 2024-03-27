@@ -1,6 +1,9 @@
 #pragma once
 #include "genericModel.h"
+
 #include <queue>
+
+#include <emscripten/console.h>
 
 struct audioData {
   float* data;
@@ -8,11 +11,11 @@ struct audioData {
   audioData(int start, int len) : data{reinterpret_cast<float*>(start)}, len{len} {}
 };
 struct recognizer {
-  std::atomic_bool done;
+  std::atomic_bool done{};
+  std::atomic_bool blocker{};
   int index;
-  std::binary_semaphore blocker{1};
-  std::queue<audioData> dataQ{};
   VoskRecognizer* rec;
+  std::queue<audioData> dataQ{};
   recognizer(int index, float sampleRate, genericModel* model);
   recognizer(int index, float sampleRate, genericModel* model, genericModel* spkModel);
   recognizer(int index, float sampleRate, genericModel* model, const std::string& grm, int dummy);

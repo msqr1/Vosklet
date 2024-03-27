@@ -21,8 +21,8 @@ void recognizer::finishConstruction(genericModel* model, genericModel* spkModel)
   auto main {[this](){
     fireEv(index, "0");
     while(!done) {
-      blocker.acquire();
-      blocker.release();
+      blocker.wait(done, std::memory_order_relaxed);
+      blocker = false;
       while(!dataQ.empty()) {
         switch(vosk_recognizer_accept_waveform_f(rec, dataQ.front().data, dataQ.front().len)) {
         case 0:
@@ -39,13 +39,15 @@ void recognizer::finishConstruction(genericModel* model, genericModel* spkModel)
   if(!model->resourceUsed) {
     model->resourceUsed = true;
     model->func = main;
-    model->blocker.release();
+    model->blocker = true;
+    model->blocker.notify_one();
     return;
   }
   if(spkModel != nullptr && !spkModel->resourceUsed) {
     spkModel->resourceUsed = true;
     spkModel->func = main;
-    spkModel->blocker.release();
+    spkModel->blocker = true;
+    model->blocker.notify_one();
     return;
   }
   std::thread t{main};
@@ -53,8 +55,8 @@ void recognizer::finishConstruction(genericModel* model, genericModel* spkModel)
 }
 void recognizer::pushData(int start, int len) {
   dataQ.emplace(start, len);
-  blocker.release();
-  blocker.acquire();
+  blocker = true;
+  blocker.notify_one();
 }
 void recognizer::reset() {
   vosk_recognizer_reset(rec);

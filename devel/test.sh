@@ -8,7 +8,7 @@ OPENFST=$(realpath openfst) &&
 LIBARCHIVE=$(realpath libarchive) &&
 CLAPACK_WASM=$(realpath clapack-wasm) &&
 
-MAX_MEMORY=${MAX_MEMORY:-500mb} &&
+MAX_MEMORY=${MAX_MEMORY:-375mb} &&
 MAX_THREADS=${MAX_THREADS:-1} &&
 EMSDK=${EMSDK:-$(realpath emsdk)} &&
 

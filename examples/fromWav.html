@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <script src="../Vosklet.js" async defer></script>
+    <script src="Vosklet.js" async defer></script>
     <script>
-      window.onload = async () => {
+       async function start() {
         let ctx = new AudioContext({sampleRate : 16000})
         let module = await loadVosklet()
         let model = await module.createModel("en-model.tgz","model","ID")
@@ -20,4 +20,5 @@
       }
     </script>
   </head>
+  <button onclick="start()">Start</button>
 </html>

@@ -1,27 +1,24 @@
 #pragma once
 #include "link.h"
 
-#include <string>
 #include <filesystem>
 #include <variant>
-#include <thread>
-#include <semaphore>
 #include <fcntl.h>
 
-#include <emscripten/console.h>
 #include <vosk_api.h>
 #include <archive.h>
 #include <archive_entry.h>
 namespace fs = std::filesystem;
 
+extern void free(void*);
 struct genericModel {
   bool normalMdl;
   bool resourceUsed{};
+  std::atomic_bool blocker{};
   int index;
   std::string storepath;
   std::string id;
   std::variant<VoskModel*, VoskSpkModel*> mdl;
-  std::binary_semaphore blocker{1};
   std::function<void()> func;
   archive_entry* entry;
   void extractAndLoad(int tarStart, int tarSize);

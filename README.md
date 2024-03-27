@@ -13,7 +13,7 @@
 - Shorter from-scratch build time
 - Faster loading and processing time
 
-# Basic usage
+# Basic usage (microphone recognition)
 ```
 <!DOCTYPE html>
 <html>
@@ -40,7 +40,7 @@
         recognizer.addEventListener("partialResult", ev => {
           console.log("Partial result: ", ev.detail)
         })
-        let transferer = await module.createTransferer(ctx)
+        let transferer = await module.createTransferer(ctx, 128 * 150)
         transferer.port.onmessage = ev => {
           recognizer.acceptWaveform(ev.data)
         }

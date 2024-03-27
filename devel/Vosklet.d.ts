@@ -23,12 +23,15 @@ export interface genericModel {
 }
 
 export interface recognizer {
+  reset(): void;
+  setEndpointerMode(_0: epMode): void;
   setSpkModel(_0: genericModel): void;
-  acceptWaveForm(): void;
   setWords(_0: boolean): void;
   setPartialWords(_0: boolean): void;
   setNLSML(_0: boolean): void;
+  pushData(_0: number, _1: number): void;
   setMaxAlternatives(_0: number): void;
+  setEndpointerDelays(_0: number, _1: number, _2: number): void;
   setGrm(_0: ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string): void;
   delete(): void;
 }

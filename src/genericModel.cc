@@ -1,8 +1,6 @@
 #include "genericModel.h"
 
-genericModel::genericModel(int index, bool normalMdl, std::string storepath, std::string id) : index{index}, normalMdl{normalMdl}, storepath{std::move(storepath)}, id{std::move(id)}, entry{archive_entry_new()} {
-  blocker.acquire();
-}
+genericModel::genericModel(int index, bool normalMdl, std::string storepath, std::string id) : index{index}, normalMdl{normalMdl}, storepath{std::move(storepath)}, id{std::move(id)}, entry{archive_entry_new()} {}
 void genericModel::extractAndLoad(int tarStart, int tarSize) {
   static fs::path path{};
   static int fd{};
@@ -50,8 +48,7 @@ void genericModel::extractAndLoad(int tarStart, int tarSize) {
   };
   std::thread t{[this](){
     func();
-    blocker.acquire();
-    blocker.release();
+    blocker.wait(false, std::memory_order_relaxed);
     func();
   }};
   t.detach();

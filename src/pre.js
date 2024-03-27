@@ -1,8 +1,20 @@
 let objs = [] 
 let processorURL = URL.createObjectURL(new Blob(['(', (() => {
   registerProcessor("VoskletTransferer", class extends AudioWorkletProcessor {
+    constructor(opts) {
+      super()
+      this.count = 0
+      this.maxCount = opts.processorOptions.maxCount
+      this.buffer = new Float32Array(this.maxCount * 128)
+    }
     process(inputs) {
-      this.port.postMessage(inputs[0][0].buffer, [inputs[0][0].buffer])
+      this.buffer.set(inputs[0][0], this.count * 128)
+      this.count++
+      if(this.count >= this.maxCount) {
+        this.count = 0
+        this.port.postMessage(this.buffer, [this.buffer.buffer])
+        this.buffer = new Float32Array(this.maxCount * 128)
+      }
       return true
     }
   })
@@ -176,13 +188,14 @@ Module.cleanUp = () => {
   URL.revokeObjectURL(pthreadURL)
   URL.revokeObjectURL(processorURL)
 }
-Module.createTransferer = async (ctx) => {
+Module.createTransferer = async (ctx, bufferSize) => {
   await ctx.audioWorklet.addModule(processorURL)
   return new AudioWorkletNode(ctx, "VoskletTransferer", { 
     channelCountMode : "explicit", 
     numberOfInputs : 1,
-    numberOfOutputs : 0,
-    channelCount : 1
+    numberOfOutputs : 1,
+    channelCount : 1,
+    processorOptions : { maxCount: bufferSize / 128 }
   })
 }
 Module.locateFile = (path, scriptDir) => {
