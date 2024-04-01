@@ -6,7 +6,6 @@
 #include <fcntl.h>
 
 #include <vosk_api.h>
-#include <emscripten/console.h>
 #include <archive.h>
 #include <archive_entry.h>
 namespace fs = std::filesystem;
