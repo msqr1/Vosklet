@@ -46,15 +46,16 @@ Vosklet require SharedArrayBuffer to share threads' data, so these response head
 If you can't set them, you may use a hacky workaround at *src/addCOI.js*.
 
 # Compilation
-Changing any option to non-default values requires recompilation
+- Changing any option to non-default values requires recompilation
+- To re-make a specific target, erase its directory in the repo root and run ```./make``` again
 ```
 git clone --depth=1 https://github.com/msqr1/Vosklet &&
 cd Vosklet/src &&
-[Options] make
+[Options] ./make
 ```
 | Option | Description | Default value |
 |---|---|---|
 | MAX_MEMORY | Set max memory, valid suffixes: kb, mb, gb, tb or none (bytes) | ```375mb```, 300mb as [recommended](https://alphacephei.com/vosk/models) plus 75mb typical uncompressed model size (loaded to memory) |
 | MAX_THREADS | Set the max number of threads (>=1), this should be equal to the number of model or speaker model that is used in the program | ```1``` (1 recognizer, 1 model, 0 speaker model) |
-| COMPILE_JOBS | Set the number of jobs (threads) when building | ```$(nproc)```   |
+| JOBS | Set the number of jobs (threads) when building | ```$(nproc)```   |
 | EMSDK | Set EMSDK's path (will install EMSDK in root folder if unset) | ```../emsdk``` |
