@@ -21,7 +21,7 @@ void genericModel::extractAndLoad(int tarStart, int tarSize) {
         break;
       }
       path = archive_entry_pathname(entry);
-      path = storepath + path.generic_string().substr(path.generic_string().find("/")); 
+      path = storepath + path.string().substr(path.string().find("/")); 
       if(!path.has_extension()) {
         fs::create_directory(path);
         continue;
@@ -39,12 +39,12 @@ void genericModel::extractAndLoad(int tarStart, int tarSize) {
       }
     }
     free(reinterpret_cast<void*>(tarStart));
-    fs::remove(storepath + "/README");
     archive_read_free(src);
     if(normalMdl) mdl = vosk_model_new(storepath.c_str());
     else vosk_spk_model_new(storepath.c_str());
     if(normalMdl ? std::get<0>(mdl) == nullptr : std::get<1>(mdl) == nullptr) fireEv(index, "Unable to load model for recognition");
     else fireEv(index, "0");
+    fs::remove_all(storepath);
   };
   std::thread t{[this](){
     func();

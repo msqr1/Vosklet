@@ -7,24 +7,9 @@ VOSK=$(realpath vosk) &&
 OPENFST=$(realpath openfst) &&
 LIBARCHIVE=$(realpath libarchive) &&
 CLAPACK_WASM=$(realpath clapack-wasm) &&
-
-MAX_MEMORY=${MAX_MEMORY:-375mb} &&
-MAX_THREADS=${MAX_THREADS:-1} &&
-EMSDK=${EMSDK:-$(realpath emsdk)} &&
-
-if [ ! -d $EMSDK ]; then
-  echo "Invalid EMSDK path"
-  exit 1
-fi
-if [ $MAX_THREADS -lt 1 ]; then
-  echo "MAX_THREAD must be greater than or equal to 1" &&
-  exit 1
-fi
-if ! [[ $MAX_MEMORY =~ ^[0-9]+([kmgt]b)?$ ]]; then
-  echo "MAX_MEMORY valid suffixes are kb, mb, gb, tb, none (bytes)" &&
-  exit 1
-fi 
-
+MAX_MEMORY=${MAX_MEMORY:-300mb}
+MAX_THREADS=${MAX_THREADS:-1}
+EMSDK=${EMSDK:-$(realpath ../emsdk)}
 . $EMSDK/emsdk_env.sh &&
 
 cd $SRC &&

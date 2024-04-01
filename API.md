@@ -55,7 +55,7 @@ cd Vosklet/src &&
 ```
 | Option | Description | Default value |
 |---|---|---|
-| MAX_MEMORY | Set max memory, valid suffixes: kb, mb, gb, tb or none (bytes) | ```375mb```, 300mb as [recommended](https://alphacephei.com/vosk/models) plus 75mb typical uncompressed model size (loaded to memory) |
+| MAX_MEMORY | Set max memory, valid suffixes: kb, mb, gb, tb or none (bytes) | ```375mb```, 300mb as [recommended](https://alphacephei.com/vosk/models) |
 | MAX_THREADS | Set the max number of threads (>=1), this should be equal to the number of model or speaker model that is used in the program | ```1``` (1 recognizer, 1 model, 0 speaker model) |
 | JOBS | Set the number of jobs (threads) when building | ```$(nproc)```   |
 | EMSDK | Set EMSDK's path (will install EMSDK in root folder if unset) | ```../emsdk``` |
