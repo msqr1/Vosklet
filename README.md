@@ -10,8 +10,9 @@
 - Has models' ID management (for model updates)
 - Has smaller JS size (>3.1MB vs 1.4MB gzipped)
 - All related files (pthread worker, audio worklet processor,...) are merged
+- Has Faster processing time
 - Has shorter from-scratch build time
-- Has faster startup time
+- Has most Vosk functions exposed
 
 # Basic usage (microphone recognition)
 - Result are logged to the console.
