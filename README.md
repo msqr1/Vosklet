@@ -2,6 +2,7 @@
 - A speech recognizer built on Vosk that can be run on the browser, inspired by [vosk-browser](https://github.com/ccoreilly/vosk-browser), but built from scratch and no code taken!
 - Designed with basic/nothrow exception safety
 - See the *examples* folder for examples on using the API.
+- See *API.md* for the API reference
 - See the *devel* folder for the newest build (not guaranteed to work) and the JS build script
 
 # Compared to vosk-browser
@@ -16,6 +17,7 @@
 
 # Basic usage (microphone recognition)
 - Result are logged to the console.
+- Copied from *examples/fromMic.html*
 ```
 <!DOCTYPE html>
 <html>
@@ -52,9 +54,11 @@
         transferer.port.onmessage = ev => {
           recognizer.acceptWaveform(ev.data)
         }
+        // Connect to microphone
         micNode.connect(transferer)
       }
     </script>
+    <!-- Start and create audio context only as a result of user's action -->
     <button onclick="start()">Start</button>
   </head>
 </html>

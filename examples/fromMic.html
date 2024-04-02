@@ -1,7 +1,6 @@
-<!DOCTYPE html>
 <html>
   <head>
-    <script src="Vosklet.js" async defer></script>
+    <script src="https://cdn.jsdelivr.net/gh/msqr1/Vosklet@1.0.0/Vosklet.js" async defer></script>
     <script>
       async function start() {
         // Make sure sample rate matches that in the training data
@@ -27,14 +26,17 @@
         recognizer.addEventListener("partialResult", ev => {
           console.log("Partial result: ", ev.detail)
         })
-        // Create a transferer node to get audio data
+        // Create a transferer node to get audio data on the main thread
         let transferer = await module.createTransferer(ctx, 128 * 150)
+        // Recognize data on arrival
         transferer.port.onmessage = ev => {
           recognizer.acceptWaveform(ev.data)
         }
+        // Connect to microphone
         micNode.connect(transferer)
       }
     </script>
+    <!-- Start and create audio context only as a result of user's action -->
     <button onclick="start()">Start</button>
   </head>
 </html>

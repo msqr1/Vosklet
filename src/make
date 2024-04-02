@@ -4,7 +4,6 @@ MAX_THREADS=${MAX_THREADS:-1}
 EMSDK=${EMSDK:-../emsdk}
 JOBS=${JOBS:-$(nproc)}
 
-sudo apt install shtool libtool autogen autotools-dev pkg-config make &&
 if [ $EMSDK != ../emsdk && ! -d $EMSDK ]; then
   echo "Invalid emsdk path"
   exit 1
