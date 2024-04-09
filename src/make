@@ -4,7 +4,7 @@ MAX_THREADS=${MAX_THREADS:-1}
 EMSDK=${EMSDK:-../emsdk}
 JOBS=${JOBS:-$(nproc)}
 
-if [ $EMSDK != ../emsdk && ! -d $EMSDK ]; then
+if [ $EMSDK != ../emsdk ] && [ ! -d $EMSDK ]; then
   echo "Invalid emsdk path"
   exit 1
 fi
