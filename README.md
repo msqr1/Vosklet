@@ -10,15 +10,15 @@
 - Has models' storage path management
 - Has models' ID management (for model updates)
 - Has smaller JS size (>3.1MB vs 1.4MB gzipped)
-- All related files (pthread worker, audio worklet processor,...) are merged
-- Has Faster processing time
+- Has all related files (pthread worker, audio worklet processor,...) merged
+- Has faster processing time
 - Has shorter from-scratch build time
-- Has most Vosk functions exposed
+- Has more Vosk functions exposed
 
 # Basic usage (microphone recognition)
 - Result are logged to the console.
 - Copied from *examples/fromMic.html*
-```
+```js
 <!DOCTYPE html>
 <html>
   <head>
