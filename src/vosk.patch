@@ -91,17 +91,17 @@ index 7fc09df..608d28a 100644
  using namespace kaldi;
  using namespace std;
 diff --git a/src/recognizer.cc b/src/recognizer.cc
-index 1da6e6b..5e0652a 100644
+index 1da6e6b..44c4d8c 100644
 --- a/src/recognizer.cc
 +++ b/src/recognizer.cc
-@@ -384,8 +384,10 @@ bool Recognizer::AcceptWaveform(const float *fdata, int len)
+@@ -384,8 +384,9 @@ bool Recognizer::AcceptWaveform(const float *fdata, int len)
  {
      Vector<BaseFloat> wave;
      wave.Resize(len, kUndefined);
 -    for (int i = 0; i < len; i++)
+-        wave(i) = fdata[i];
 +    for (int i = 0; i < len; i++) {
-         wave(i) = fdata[i];
-+        wave(i) *= 32768;
++        wave(i) = fdata[i] * 32768.0f;
 +    }
      return AcceptWaveform(wave);
  }
