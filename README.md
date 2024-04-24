@@ -3,7 +3,7 @@
 - Designed with basic/nothrow exception safety
 - See the *examples* folder for examples on using the API.
 - See *API.md* for the API reference
-- See the *devel* folder for the newest build (not guaranteed to work) and the JS build script
+- See the *devel* folder for the build script for development
 
 # Compared to vosk-browser
 - Support multiple models
@@ -18,7 +18,7 @@
 # Basic usage (microphone recognition)
 - Result are logged to the console.
 - Copied from *examples/fromMic.html*
-```js
+```html
 <!DOCTYPE html>
 <html>
   <head>

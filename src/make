@@ -75,7 +75,7 @@ if [ ! -d $KALDI ]; then
 fi
 
 if [ ! -d $VOSK ]; then
-  git clone -b go/v0.3.46 --depth=1 https://github.com/alphacep/vosk-api $VOSK &&
+  git clone -b v0.3.50 --depth=1 https://github.com/alphacep/vosk-api $VOSK &&
   cd $VOSK/src &&
   git apply $SRC/vosk.patch &&
   VOSK_FILES="recognizer.cc language_model.cc model.cc spk_model.cc vosk_api.cc" &&

@@ -49,7 +49,7 @@ If you can't set them, you may use a hacky workaround at *src/addCOI.js*.
 - Requires ```autotools```'s commands in PATH
 - Changing any option to non-default values requires recompilation
 - To re-make a specific target, erase its directory in the repo root and run ```./make``` again. Doing this will also re-make the final JS
-```
+```shell
 git clone --depth=1 https://github.com/msqr1/Vosklet &&
 cd Vosklet/src &&
 [Options] ./make

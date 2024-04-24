@@ -4,12 +4,13 @@ genericModel::genericModel(int index, bool normalMdl, std::string storepath, std
 void genericModel::extractAndLoad(int tarStart, int tarSize) {
   static fs::path path{};
   static int fd{};
-  func = [this, tarStart, tarSize](){
+  void* tar{reinterpret_cast<void*>(tarStart)};
+  func = [this, tar, tarSize](){
     archive* src {archive_read_new()};
     archive_read_support_format_tar(src);
-    archive_read_open_memory(src, reinterpret_cast<void*>(tarStart), tarSize);
+    archive_read_open_memory(src, tar, tarSize);
     if(archive_errno(src) != 0) {
-      free(reinterpret_cast<void*>(tarStart));
+      free(tar);
       fireEv(index, "Unable to open tar in WASM memory");
       return;
     }
@@ -38,12 +39,12 @@ void genericModel::extractAndLoad(int tarStart, int tarSize) {
         return;
       }
     }
-    free(reinterpret_cast<void*>(tarStart));
+    free(tar);
     archive_read_free(src);
     if(normalMdl) mdl = vosk_model_new(storepath.c_str());
-    else vosk_spk_model_new(storepath.c_str());
-    if(normalMdl ? std::get<0>(mdl) == nullptr : std::get<1>(mdl) == nullptr) fireEv(index, "Unable to load model for recognition");
-    else fireEv(index, "0");
+    else mdl = vosk_spk_model_new(storepath.c_str());
+    if(normalMdl ? std::get<VoskModel*>(mdl) != nullptr : std::get<VoskSpkModel*>(mdl) != nullptr) fireEv(index, "0");
+    else fireEv(index, "Unable to load model for recognition");
     fs::remove_all(storepath);
   };
   std::thread t{[this](){
@@ -55,6 +56,6 @@ void genericModel::extractAndLoad(int tarStart, int tarSize) {
 }
 genericModel::~genericModel() {
   archive_entry_free(entry);
-  if(normalMdl) vosk_model_free(std::get<0>(mdl));
-  else vosk_spk_model_free(std::get<1>(mdl));
+  if(normalMdl) vosk_model_free(std::get<VoskModel*>(mdl));
+  else vosk_spk_model_free(std::get<VoskSpkModel*>(mdl));
 }

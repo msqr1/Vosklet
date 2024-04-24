@@ -1,12 +1,12 @@
 #include "recognizer.h" 
 
-recognizer::recognizer(int index, float sampleRate, genericModel* model) : index{index}, rec{vosk_recognizer_new(std::get<0>(model->mdl),sampleRate)} {
+recognizer::recognizer(int index, float sampleRate, genericModel* model) : index{index}, rec{vosk_recognizer_new(std::get<VoskModel*>(model->mdl),sampleRate)} {
   finishConstruction(model);
 }
-recognizer::recognizer(int index, float sampleRate, genericModel* model, genericModel* spkModel) : index{index}, rec{vosk_recognizer_new_spk(std::get<0>(model->mdl), sampleRate, std::get<1>(spkModel->mdl))} {
+recognizer::recognizer(int index, float sampleRate, genericModel* model, genericModel* spkModel) : index{index}, rec{vosk_recognizer_new_spk(std::get<VoskModel*>(model->mdl), sampleRate, std::get<VoskSpkModel*>(spkModel->mdl))} {
   finishConstruction(model, spkModel);
 }
-recognizer::recognizer(int index, float sampleRate, genericModel* model, const std::string& grm, int dummy) : index{index}, rec{vosk_recognizer_new_grm(std::get<0>(model->mdl), sampleRate, grm.c_str())} {
+recognizer::recognizer(int index, float sampleRate, genericModel* model, const std::string& grm, int dummy) : index{index}, rec{vosk_recognizer_new_grm(std::get<VoskModel*>(model->mdl), sampleRate, grm.c_str())} {
   finishConstruction(model);
 }
 recognizer::~recognizer() {
@@ -71,7 +71,7 @@ void recognizer::setGrm(const std::string& grm) {
   vosk_recognizer_set_grm(rec, grm.c_str());
 }
 void recognizer::setSpkModel(genericModel* spkModel) {
-  vosk_recognizer_set_spk_model(rec, std::get<1>(spkModel->mdl));
+  vosk_recognizer_set_spk_model(rec, std::get<VoskSpkModel*>(spkModel->mdl));
 }
 void recognizer::setWords(bool words) {
   vosk_recognizer_set_words(rec,words);

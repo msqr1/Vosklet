@@ -2,6 +2,7 @@
 #include "link.h"
 
 #include <filesystem>
+#include <functional>
 #include <variant>
 #include <fcntl.h>
 
