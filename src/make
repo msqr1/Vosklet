@@ -24,8 +24,8 @@ if [ $EMSDK = ../emsdk ] && [ ! -d $EMSDK ]; then
   echo "Installing emsdk + Emscripten..."
   git clone --depth=1 https://github.com/emscripten-core/emsdk.git ../emsdk &&
   cd ../emsdk &&
-  ./emsdk install tot &&
-  ./emsdk activate tot
+  ./emsdk install 3.1.58 &&
+  ./emsdk activate 3.1.58
 fi
 . $(realpath $EMSDK)/emsdk_env.sh && 
 export PATH=:$PATH:$(realpath $EMSDK)/upstream/bin
