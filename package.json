@@ -1,6 +1,6 @@
 {
   "name": "vosklet",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "A speech recognizer that can run on the browser, inspired by vosk-browser",
   "main": "Vosklet.js",
   "directories": {
