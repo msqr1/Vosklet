@@ -15,7 +15,8 @@ EMSCRIPTEN_BINDINGS() {
 
   class_<genericModel>("genericModel")
   .constructor<int, bool, std::string, std::string>(allow_raw_pointers())
-  .function("extractAndLoad", &genericModel::extractAndLoad, allow_raw_pointers());
+  .function("extractAndLoad", &genericModel::extractAndLoad, allow_raw_pointers())
+  .function("findWord", &genericModel::findWord, allow_raw_pointers());
   
   class_<recognizer>("recognizer") 
   .constructor<int, float, genericModel*>(allow_raw_pointers())

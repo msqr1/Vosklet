@@ -3,7 +3,7 @@
 - Designed with basic/nothrow exception safety
 - See the *examples* folder for examples on using the API.
 - See *API.md* for the API reference
-- See the *devel* folder for the build script for development
+- See *test* for a developer build script for just the JS
 
 # Compared to vosk-browser
 - Support multiple models
@@ -22,7 +22,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <script src="https://cdn.jsdelivr.net/gh/msqr1/Vosklet@1.0.0/Vosklet.js" async defer></script>
+    <script src="https://cdn.jsdelivr.net/gh/msqr1/Vosklet@1.0.2/Vosklet.js" async defer></script>
     <script>
       async function start() {
         // Make sure sample rate matches that in the training data

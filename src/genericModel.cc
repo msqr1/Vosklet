@@ -54,6 +54,9 @@ void genericModel::extractAndLoad(int tarStart, int tarSize) {
   }};
   t.detach();
 }
+int genericModel::findWord(std::string word) {
+  return vosk_model_find_word(std::get<VoskModel*>(mdl), word.c_str());
+}
 genericModel::~genericModel() {
   archive_entry_free(entry);
   if(normalMdl) vosk_model_free(std::get<VoskModel*>(mdl));

@@ -23,6 +23,7 @@ struct genericModel {
   std::function<void()> func;
   archive_entry* entry;
   void extractAndLoad(int tarStart, int tarSize);
+  int findWord(std::string word);
   genericModel(int index, bool normalMdl, std::string storepath, std::string id);
   ~genericModel();
 };

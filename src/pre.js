@@ -19,28 +19,30 @@ let processorURL = URL.createObjectURL(new Blob(['(', (() => {
     }
   })
 }).toString(), ')()'], { type : "text/javascript" }))
+
 Module.cleanUp = () => {
   objs.forEach(obj => obj.obj.delete())
   URL.revokeObjectURL(processorURL)
 }
+
 Module.createTransferer = async (ctx, bufferSize) => {
   await ctx.audioWorklet.addModule(processorURL)
   return new AudioWorkletNode(ctx, "VoskletTransferer", { 
     channelCountMode : "explicit", 
     numberOfInputs : 1,
-    numberOfOutputs : 1,
+    numberOfOutputs : 0,
     channelCount : 1,
     processorOptions : { maxCount: bufferSize / 128 }
   })
 }
+
 async function getFileHandle(path, create = false) {
   let components = path.split("/")
   let prevDir = await navigator.storage.getDirectory()
-  for(let component of components.slice(0, -1)) {
-    prevDir = await prevDir.getDirectoryHandle(component, { create : create })
-  }
+  for(let component of components.slice(0, -1)) prevDir = await prevDir.getDirectoryHandle(component, { create : create })
   return prevDir.getFileHandle(components[components.length - 1], { create : create })
 }
+
 class genericModel extends EventTarget {
   constructor() {
     super()
@@ -50,7 +52,10 @@ class genericModel extends EventTarget {
     let mdl = new genericModel()
     let result = new Promise((resolve, reject) => {
       mdl.addEventListener("0", ev => {
-        if(ev.detail === "0") return resolve(mdl)
+        if(ev.detail == "0") {
+          if(normalMdl) mdl.findWord = (word) => mdl.obj.findWord(word)
+          return resolve(mdl)
+        }
         mdl.delete()
         reject(ev.detail)
       }, { once : true })
@@ -60,15 +65,13 @@ class genericModel extends EventTarget {
     try {
       let dataFile = await (await getFileHandle(storepath + "/model.tgz")).getFile()
       let idFile = await (await getFileHandle(storepath + "/id")).getFile()
-      if(await idFile.text() !== id) throw ""
+      if(await idFile.text() != id) throw ""
       tar = dataFile.stream()  
     }
     catch {
       try {
         let res = await fetch(url)
-        if(!res.ok) {
-          throw "Unable to download model"
-        }
+        if(!res.ok) throw "Unable to download model"
         let teedBody = res.body.tee()
         let newDataFile = await (await getFileHandle(storepath + "/model.tgz", true)).createWritable()
         await newDataFile.write(await new Response(teedBody[0]).arrayBuffer())
@@ -79,7 +82,7 @@ class genericModel extends EventTarget {
         tar = teedBody[1]
       }
       catch(e) {
-        mdl.obj.delete()
+        mdl.delete()
         throw e
       }
     }
@@ -93,12 +96,15 @@ class genericModel extends EventTarget {
     this.obj.delete()
   }
 }
+
 Module.createModel = async (url, storepath, id) => {
   return genericModel.create(url, storepath, id, true)
 }
+
 Module.createSpkModel = async (url, storepath, id) => {
   return genericModel.create(url, storepath, id, false)
 }
+
 class recognizer extends EventTarget {
   constructor() {
     super()
@@ -113,7 +119,7 @@ class recognizer extends EventTarget {
     let rec = new recognizer()
     let result = new Promise((resolve, reject) => {
       rec.addEventListener("0", ev => {
-        if(ev.detail === "0") return resolve(rec)
+        if(ev.detail == "0") return resolve(rec)
         rec.delete()
         reject(ev.detail)
       }, { once : true })
@@ -136,12 +142,15 @@ class recognizer extends EventTarget {
     this.obj.pushData(start, audioData.length)
   }
 }
+
 Module.createRecognizer = (model, sampleRate) => {
   return recognizer.create(model.obj, sampleRate, 1)
 }
+
 Module.createRecognizerWithSpkModel = (model, sampleRate, spkModel) => {
   return recognizer.create(model.obj, sampleRate, 2, null, spkModel)
-} 
+}
+
 Module.createRecognizerWithGrm = (model, sampleRate, grammar) => {
   return recognizer.create(model.obj, sampleRate, 3, grammar, null)
-} 
+}
