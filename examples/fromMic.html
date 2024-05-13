@@ -17,7 +17,7 @@
         }))
         // Load Vosklet module, model and recognizer
         let module = await loadVosklet()
-        let model = await module.createModel("en-model.tgz","model","ID")
+        let model = await module.createModel("https://github.com/msqr1/Vosklet/raw/main/examples/en-model.tgz","model","ID")
         let recognizer = await module.createRecognizer(model, 16000)
         // Listen for result and partial result
         recognizer.addEventListener("result", ev => {

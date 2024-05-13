@@ -24,8 +24,8 @@ if [ $EMSDK = ../emsdk ] && [ ! -d $EMSDK ]; then
   echo "Installing emsdk + Emscripten..."
   git clone --depth=1 https://github.com/emscripten-core/emsdk.git ../emsdk &&
   cd ../emsdk &&
-  ./emsdk install 3.1.58 &&
-  ./emsdk activate 3.1.58
+  ./emsdk install 3.1.59 &&
+  ./emsdk activate 3.1.59
 fi
 . $(realpath $EMSDK)/emsdk_env.sh && 
 export PATH=:$PATH:$(realpath $EMSDK)/upstream/bin
@@ -40,12 +40,11 @@ CLAPACK_WASM=$(realpath clapack-wasm)
 
 if [ ! -d $LIBARCHIVE ]; then
   rm -rf /tmp/libarchive &&
-  git clone -b v3.7.3 --depth=1 https://github.com/libarchive/libarchive /tmp/libarchive &&
+  git clone -b v3.7.4 --depth=1 https://github.com/libarchive/libarchive /tmp/libarchive &&
   cd /tmp/libarchive &&
   build/autogen.sh &&
   CFLAGS="-O3 -flto -msimd128 -mreference-types -mnontrapping-fptoint -mextended-const -msign-ext -mmutable-globals" LDFLAGS="-O3 -flto" emconfigure ./configure --prefix=$LIBARCHIVE --without-lz4 --without-lzma --without-zlib --without-bz2lib --without-xml2 --without-expat --without-cng --without-openssl --without-libb2 --without-zstd --disable-bsdunzip --disable-xattr --disable-acl --disable-bsdcpio --disable-bsdcat --disable-rpath --disable-maintainer-mode --disable-dependency-tracking --enable-static --disable-shared &&
-  emmake make -j$JOBS install &&
-  rm -rf /tmp/libarchive
+  emmake make -j$JOBS install
 fi
 
 if [ ! -d $OPENFST ]; then
@@ -55,8 +54,7 @@ if [ ! -d $OPENFST ]; then
   autoreconf -is &&
   CXXFLAGS="-r -O3 -flto -msimd128 -mreference-types -mnontrapping-fptoint -mextended-const -msign-ext -mmutable-globals" LDFLAGS="-O3 -flto" emconfigure ./configure --prefix=$OPENFST --enable-static --disable-shared --enable-lookahead-fsts --enable-ngram-fsts --disable-bin &&
   emmake make -j$JOBS install &&
-  echo "PACKAGE_VERSION = 1.8.0" >> $OPENFST/Makefile &&
-  rm -rf /tmp/openfst
+  echo "PACKAGE_VERSION = 1.8.0" >> $OPENFST/Makefile
 fi
 
 if [ ! -d $CLAPACK_WASM ]; then
@@ -84,5 +82,7 @@ if [ ! -d $VOSK ]; then
 fi
 
 cd $SRC &&
-em++ -O3 link.cc genericModel.cc recognizer.cc bindings.cc -sWASMFS -sWASM_BIGINT -sSINGLE_FILE -sMODULARIZE -sEMBIND_STD_STRING_IS_UTF8 -sPTHREAD_POOL_DELAY_LOAD -sTEXTDECODER=2 -sPTHREAD_POOL_SIZE_STRICT=2 -sINITIAL_MEMORY=$MAX_MEMORY -sPTHREAD_POOL_SIZE=$MAX_THREADS -sPOLYFILL=0 -sEXIT_RUNTIME=0 -sINVOKE_RUN=0 -sSUPPORT_LONGJMP=0 -sEXPORTED_FUNCTIONS=_malloc -sEXPORT_NAME=loadVosklet -sMALLOC=emmalloc -sEXPORTED_RUNTIME_METHODS=UTF8ToString,stringToUTF8OnStack -sENVIRONMENT=web,worker -I. -I$LIBARCHIVE/include -I$VOSK/src -L$LIBARCHIVE/lib -larchive -L$KALDI/src -l:online2/kaldi-online2.a -l:decoder/kaldi-decoder.a -l:ivector/kaldi-ivector.a -l:gmm/kaldi-gmm.a -l:tree/kaldi-tree.a -l:feat/kaldi-feat.a -l:cudamatrix/kaldi-cudamatrix.a -l:lat/kaldi-lat.a -l:lm/kaldi-lm.a -l:rnnlm/kaldi-rnnlm.a -l:hmm/kaldi-hmm.a -l:nnet3/kaldi-nnet3.a -l:transform/kaldi-transform.a -l:matrix/kaldi-matrix.a -l:fstext/kaldi-fstext.a -l:util/kaldi-util.a -l:base/kaldi-base.a -L$OPENFST/lib -l:libfst.a -l:libfstngram.a -L$CLAPACK_WASM -l:CBLAS/lib/cblas.a -l:CLAPACK-3.2.1/lapack.a -l:CLAPACK-3.2.1/libcblaswr.a -l:f2c_BLAS-3.8.0/blas.a -l:libf2c/libf2c.a -L$VOSK/src -l:vosk.a -lembind -pthread -flto -msimd128 -mreference-types -mnontrapping-fptoint -mextended-const -msign-ext -mmutable-globals --pre-js pre.js -o ../Vosklet.js &&
-rm -f Vosklet.worker.js
+em++ -O3 link.cc genericModel.cc recognizer.cc bindings.cc -sWASMFS -sWASM_BIGINT -sSINGLE_FILE -sMODULARIZE -sEMBIND_STD_STRING_IS_UTF8 -sPTHREAD_POOL_DELAY_LOAD -sTEXTDECODER=2 -sPTHREAD_POOL_SIZE_STRICT=2 -sINITIAL_MEMORY=$MAX_MEMORY -sPTHREAD_POOL_SIZE=$MAX_THREADS -sPOLYFILL=0 -sEXIT_RUNTIME=0 -sINVOKE_RUN=0 -sSUPPORT_LONGJMP=0 -sEXPORTED_FUNCTIONS=_malloc -sEXPORT_NAME=loadVosklet -sMALLOC=emmalloc -sEXPORTED_RUNTIME_METHODS=UTF8ToString,stringToUTF8OnStack -sENVIRONMENT=web,worker -I. -I$LIBARCHIVE/include -I$VOSK/src -L$LIBARCHIVE/lib -larchive -L$KALDI/src -l:online2/kaldi-online2.a -l:decoder/kaldi-decoder.a -l:ivector/kaldi-ivector.a -l:gmm/kaldi-gmm.a -l:tree/kaldi-tree.a -l:feat/kaldi-feat.a -l:cudamatrix/kaldi-cudamatrix.a -l:lat/kaldi-lat.a -l:lm/kaldi-lm.a -l:rnnlm/kaldi-rnnlm.a -l:hmm/kaldi-hmm.a -l:nnet3/kaldi-nnet3.a -l:transform/kaldi-transform.a -l:matrix/kaldi-matrix.a -l:fstext/kaldi-fstext.a -l:util/kaldi-util.a -l:base/kaldi-base.a -L$OPENFST/lib -l:libfst.a -l:libfstngram.a -L$CLAPACK_WASM -l:CBLAS/lib/cblas.a -l:CLAPACK-3.2.1/lapack.a -l:CLAPACK-3.2.1/libcblaswr.a -l:f2c_BLAS-3.8.0/blas.a -l:libf2c/libf2c.a -L$VOSK/src -l:vosk.a -lembind -pthread -flto -msimd128 -mreference-types -mnontrapping-fptoint -mextended-const -msign-ext -mmutable-globals --pre-js pre.js -o ../Vosklet.js
+rm -f ../Vosklet.worker.js
+rm -rf /tmp/libarchive
+rm -rf /tmp/openfst
