@@ -1,13 +1,15 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <script src="https://cdn.jsdelivr.net/gh/msqr1/Vosklet@1.0.2/Vosklet.js" async defer></script>
+    <script src="Vosklet.js" async defer>
+      // Has to host this file on your own server, because Worker constructor doesn't allow CDN
+    </script>
     <script>
        async function start() {
         // Make sure sample rate matches that in the training data
         let ctx = new AudioContext({sampleRate : 16000})
         let module = await loadVosklet()
-        let model = await module.createModel("https://github.com/msqr1/Vosklet/raw/main/examples/en-model.tgz","model","ID")
+        let model = await module.createModel("https://raw.githubusercontent.com/msqr1/Vosklet/main/examples/en-model.tgz","model","ID")
         let recognizer = await module.createRecognizer(model, 16000)
         recognizer.addEventListener("result", ev => {
           console.log("Result: ", ev.detail)
@@ -16,7 +18,7 @@
           console.log("Partial result: ", ev.detail)
         })
         // Fetch, decode, and recognize .wav
-        let wav = await fetch("https://github.com/msqr1/Vosklet/raw/main/examples/example.wav")
+        let wav = await fetch("https://raw.githubusercontent.com/msqr1/Vosklet/main/examples/example.wav")
         let audioBuf = await ctx.decodeAudioData(await wav.arrayBuffer())
         recognizer.acceptWaveform(audioBuf.getChannelData(0))
       }

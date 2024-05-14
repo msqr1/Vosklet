@@ -58,7 +58,7 @@ If you can't set them, you may use a hacky workaround at *src/addCOI.js*.
 git clone --depth=1 https://github.com/msqr1/Vosklet &&
 cd Vosklet/src &&
 [Options] ./make
-# Example: MAX_MEMORY=350mb MAX_THREADS=2 ./make
+# Example: MAX_MEMORY=350mb MAX_THREADS=3 ./make
 ```
 | Option | Description | Default value |
 |---|---|---|

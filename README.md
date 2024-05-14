@@ -22,7 +22,9 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <script src="https://cdn.jsdelivr.net/gh/msqr1/Vosklet@1.0.2/Vosklet.js" async defer></script>
+    <script src="Vosklet.js" async defer>
+      // Has to host this file on your own server, because Worker constructor doesn't allow CDN
+    </script>
     <script>
       async function start() {
         // Make sure sample rate matches that in the training data
