@@ -19,10 +19,9 @@
 - Result are logged to the console.
 - Copied from *examples/fromMic.html*
 ```html
-<!DOCTYPE html>
 <html>
   <head>
-    <script src="https://cdn.jsdelivr.net/gh/msqr1/Vosklet@1.0.3/Vosklet.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/msqr1/Vosklet@1.0.3/Vosklet.min.js" async defer></script>
     <script>
       async function start() {
         // Make sure sample rate matches that in the training data
@@ -39,7 +38,7 @@
         }))
         // Load Vosklet module, model and recognizer
         let module = await loadVosklet()
-        let model = await module.createModel("https://github.com/msqr1/Vosklet/raw/main/examples/en-model.tgz","model","ID")
+        let model = await module.createModel("https://raw.githubusercontent.com/msqr1/Vosklet/main/examples/en-model.tgz","model","ID")
         let recognizer = await module.createRecognizer(model, 16000)
         // Listen for result and partial result
         recognizer.addEventListener("result", ev => {
