@@ -66,27 +66,26 @@ class genericModel extends EventTarget {
       let dataFile = await (await getFileHandle(storepath + "/model.tgz")).getFile()
       let idFile = await (await getFileHandle(storepath + "/id")).getFile()
       if(await idFile.text() != id) throw ""
-      tar = dataFile.stream()  
+      tar = await new Response(dataFile.stream().pipeThrough(new DecompressionStream("gzip"))).arrayBuffer()  
     }
     catch {
       try {
         let res = await fetch(url)
-        if(!res.ok) throw "Unable to download model"
+        if (!res.ok) throw "Unable to download model"
         let teedBody = res.body.tee()
         let newDataFile = await (await getFileHandle(storepath + "/model.tgz", true)).createWritable()
-        await newDataFile.write(await new Response(teedBody[0]).arrayBuffer())
+        await newDataFile.write(await new Response(teedBody[0].pipeThrough(new CompressionStream("gzip"))).arrayBuffer())
         await newDataFile.close()
         let newIDFile = await (await getFileHandle(storepath + "/id", true)).createWritable()
         await newIDFile.write(id)
         await newIDFile.close()
-        tar = teedBody[1]
+        tar = await new Response(teedBody[1]).arrayBuffer()
       }
       catch(e) {
         mdl.delete()
         throw e
       }
     }
-    tar = await new Response(tar.pipeThrough(new DecompressionStream("gzip"))).arrayBuffer()
     let tarStart = Module._malloc(tar.byteLength)
     Module.HEAPU8.set(new Uint8Array(tar), tarStart)
     mdl.obj.extractAndLoad(tarStart, tar.byteLength)

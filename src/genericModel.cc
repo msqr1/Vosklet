@@ -1,6 +1,6 @@
 #include "genericModel.h"
 
-genericModel::genericModel(int index, bool normalMdl, std::string storepath, std::string id) : index{index}, normalMdl{normalMdl}, storepath{std::move(storepath)}, id{std::move(id)}, entry{archive_entry_new()} {}
+genericModel::genericModel(int index, bool normalMdl, std::string storepath, std::string id) : normalMdl{normalMdl}, index{index}, storepath{std::move(storepath)}, id{std::move(id)}, entry{archive_entry_new()} {}
 void genericModel::extractAndLoad(int tarStart, int tarSize) {
   static fs::path path{};
   static int fd{};
@@ -18,8 +18,9 @@ void genericModel::extractAndLoad(int tarStart, int tarSize) {
       int headerRes {archive_read_next_header2(src, entry)};
       if(headerRes == ARCHIVE_EOF) break;
       if(headerRes < ARCHIVE_OK) {
+        free(tar);
         fireEv(index, archive_error_string(src));
-        break;
+        return;
       }
       path = archive_entry_pathname(entry);
       path = storepath + path.string().substr(path.string().find("/")); 
@@ -27,14 +28,16 @@ void genericModel::extractAndLoad(int tarStart, int tarSize) {
         fs::create_directory(path);
         continue;
       }
-      fd = creat(path.c_str(),0777);
+      fd = open(path.c_str(), O_CREAT | O_WRONLY | O_TRUNC, 0777);
       if(fd == -1) {
+        free(tar);
         fireEv(index, "Unable to create model files");
         return;
       }
       archive_read_data_into_fd(src, fd);
       close(fd);
       if(archive_errno(src) != 0) {
+        free(tar);
         fireEv(index, "Cannot write into model files");
         return;
       }

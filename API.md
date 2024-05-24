@@ -42,14 +42,19 @@
 | ```partialResult``` | There is a partial recognition result, check the event's ```detail``` property |
 | ```result``` | There is a full recognition result, check the event's ```detail``` property |
 
-# User agent notes
+# Response headers
 ## SharedArrayBuffer
 SharedArrayBuffer is necessary to share data between threads, so these response headers must be set:
 - ```Cross-Origin-Embedder-Policy``` ⟶ ```require-corp```
 - ```Cross-Origin-Opener-Policy``` ⟶ ```same-origin```
-
 If you can't set them, you may use a hacky workaround at *src/addCOI.js*.
 
+## CSP headers
+Pthread worker construction must be from a blob (see [Emscripten issue](https://github.com/emscripten-core/emscripten/issues/21937)), so the CSP: 
+- ```worker-src``` must include ```blob:```
+
+## Model headers
+Fetched models must arrive uncompressed. Set your ```Content-Encoding``` response header appropriately
 # Compilation
 - Requires ```autotools```'s commands in PATH
 - Changing any option to non-default values requires recompilation
