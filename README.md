@@ -4,6 +4,7 @@
 - See the *examples* folder for examples on using the API.
 - See *API.md* for the API reference
 - See *test* for a developer build script for just the JS
+- Note: The examples uses *examples/Vosklet.js* because I can't set the Response headers for my model for browsers to decompress correctly. Instead, I used DecompressionStream to decompress manually, so *examples/Vosklet.js* only works for the examples. In practice, please use the outside Vosklet.js instead.
 
 # Compared to vosk-browser
 - Support multiple models
@@ -21,7 +22,7 @@
 ```html
 <html>
   <head>
-    <script src="https://cdn.jsdelivr.net/gh/msqr1/Vosklet@1.0.3/Vosklet.min.js" async defer></script>
+    <script src="https://cdn.jsdelivr.net/gh/msqr1/Vosklet@1.0.3/examples/Vosklet.min.js" async defer></script>
     <script>
       async function start() {
         // Make sure sample rate matches that in the training data

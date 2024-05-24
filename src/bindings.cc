@@ -7,7 +7,7 @@ using namespace emscripten;
 EMSCRIPTEN_BINDINGS() {
   function("setLogLevel", &vosk_set_log_level, allow_raw_pointers());
   
-  enum_<VoskEndpointerMode>("epMode")
+  enum_<VoskEndpointerMode>("EpMode")
   .value("ANSWER_DEFAULT", VOSK_EP_ANSWER_DEFAULT)
   .value("ANSWER_SHORT", VOSK_EP_ANSWER_SHORT)
   .value("ANSWER_LONG", VOSK_EP_ANSWER_LONG)

@@ -17,7 +17,7 @@
 | ```setLogLevel(lvl: int)``` | Set log level for Kaldi messages (default: ```0```: Info) <br>```-2```: Error<br>```-1```: Warning<br>```1```: Verbose<br>```2```: More verbose<br>```3```: Debug |
 | ```Promise<AudioWorkletNode> createTransferer(ctx: AudioContext, bufferSize: int)``` | Create a node that transfer its inputs back to the main thread with custom buffer size (must be multiple of 128). Its port's ```onmessage``` handler can be set to get audio data. Has 1 input with 1 channel and no output. The the higher the size, the lesser the audio breaks up, but the higher the latency. Recomended value is around ```128 * 150```. |
 | ```cleanUp()``` | A convenience function that call ```delete()``` on all objects and revoke all URLs. **Put this at the end of your code!** |
-| ```epMode``` | Enum for endpointer modes | See Vosk's description |
+| ```EpMode``` | Enum for endpointer modes | See Vosk's description |
 
 ## ```Model``` object
 | Function/Object | Description |
@@ -31,10 +31,10 @@
 | ```setWords(words: bool)``` | Enables words with times in the output (default: ```false```) |
 | ```setPartialWords(partialWords: bool)``` | Like above return words and confidences in partial results (default: ```false```) |
 | ```setNLSML(nlsml: bool)``` | Set NLSML output (default: ```false```) |
-| ```setMaxAlternatives(alts: int)``` | Configures recognizer to output n-best results (default: ```false```) |
+| ```setMaxAlternatives(alts: int)``` | Configures recognizer to output n-best results (default: ```0```) |
 | ```setGrm(grm: string)``` | Reconfigures recognizer to use grammar |
 | ```setSpkModel(mdl: SpkModel)``` | Adds speaker model to already initialized recognizer |
-| ```setEndpointerMode(mode: epMode)``` | Set endpointer scaling factor (default: ```ANSWER_DEFAULT```) |
+| ```setEndpointerMode(mode: EpMode)``` | Set endpointer scaling factor (default: ```ANSWER_DEFAULT```) |
 | ```setEndpointerDelays(tStartMax: float, tEnd: float, tMax: float)``` | Set endpointer delays | 
 
 | Event | Description |
@@ -54,7 +54,7 @@ Pthread worker construction must be from a blob (see [Emscripten issue](https://
 - ```worker-src``` must include ```blob:```
 
 ## Model headers
-Fetched models must arrive uncompressed. Set your ```Content-Encoding``` response header appropriately
+Fetched models must arrive uncompressed. Set your ```Content-Encoding``` response header appropriately so browers can decompress them.
 # Compilation
 - Requires ```autotools```'s commands in PATH
 - Changing any option to non-default values requires recompilation

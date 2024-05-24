@@ -131,7 +131,7 @@ class recognizer extends EventTarget {
         rec.obj = new Module.recognizer(objs.length -1, sampleRate, model, spkModel) 
         break
       default:
-        rec.obj = new Module.recognizer(objs.length - 1, sampleRate, grammar, 0)  
+        rec.obj = new Module.recognizer(objs.length - 1, sampleRate, model, grammar, 0)  
     }
     return result
   } 
@@ -147,7 +147,7 @@ Module.createRecognizer = (model, sampleRate) => {
 }
 
 Module.createRecognizerWithSpkModel = (model, sampleRate, spkModel) => {
-  return recognizer.create(model.obj, sampleRate, 2, null, spkModel)
+  return recognizer.create(model.obj, sampleRate, 2, null, spkModel.obj)
 }
 
 Module.createRecognizerWithGrm = (model, sampleRate, grammar) => {
