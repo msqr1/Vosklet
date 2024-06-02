@@ -12,7 +12,7 @@
 ## ```Module``` object 
 | Function/Object | Description |
 |---|---|
-| ```Promise<Model> createModel(url: string, path: string, id: string)```<br><br>```Promise<SpkModel> createSpkModel(url: string, path: string, id: string)``` | Create a ```Model``` or ```SpkModel```, model files must be directly under the model root, and compressed model must be in .tgz format. If:<br>- ```path``` contains valid model files and ```id``` is the same, there will not be a fetch from ```url```.<br>- ```path``` doesn't contain valid model files, or if it contains valid model files but ```id``` is different, there will be a fetch from ```url```, and the model is stored with ```id```. Models are thread-safe and reusable across recognizers.|
+| ```Promise<Model> createModel(url: string, path: string, id: string)```<br><br>```Promise<SpkModel> createSpkModel(url: string, path: string, id: string)``` | Create a ```Model``` or ```SpkModel```, model files must be directly under the model root, and compressed model must be in ```.tar.gz```/```.tgz``` format. Tar format must be USTAR. If:<br>- ```path``` contains valid model files and ```id``` is the same, there will not be a fetch from ```url```.<br>- ```path``` doesn't contain valid model files, or if it contains valid model files but ```id``` is different, there will be a fetch from ```url```, and the model is stored with ```id```. Models are thread-safe and reusable across recognizers. |
 | ```Promise<Recognizer> createRecognizer(model: Model, sampleRate: float)```<br><br>```Promise<Recognizer> createRecognizerWithSpkModel(model: Model, spkModel: spkModel, sampleRate: float)```<br><br>```Promise<Recognizer> createRecognizerWithGrm(model: Model, grammar: string, sampleRate: float)``` | Create a ```Recognizer```, it will reuse the thread from ```model``` if it's the first user of ```model```, else it will use a new thread. |
 | ```setLogLevel(lvl: int)``` | Set log level for Kaldi messages (default: ```0```: Info) <br>```-2```: Error<br>```-1```: Warning<br>```1```: Verbose<br>```2```: More verbose<br>```3```: Debug |
 | ```Promise<AudioWorkletNode> createTransferer(ctx: AudioContext, bufferSize: int)``` | Create a node that transfer its inputs back to the main thread with custom buffer size (must be multiple of 128). Its port's ```onmessage``` handler can be set to get audio data. Has 1 input with 1 channel and no output. The the higher the size, the lesser the audio breaks up, but the higher the latency. Recomended value is around ```128 * 150```. |
@@ -54,11 +54,14 @@ Pthread worker construction must be from a blob (see [Emscripten issue](https://
 - ```worker-src``` must include ```blob:```
 
 ## Model headers
-Fetched models must arrive uncompressed. Set your ```Content-Encoding``` response header appropriately so browers can decompress them.
+Model response from ```fetch()``` must be an uncompressed model. Set your ```Content-Encoding``` response header and ```Accept-Encoding``` request header appropriately so browers can decompress.
+
 # Compilation
-- Requires ```autotools```'s commands in PATH
+- Requires all Autotools commands in PATH, ```make```, and ```pkg-config```. Install with ```apt```, for example:
+
+  ```sudo apt install autotools-dev autoconf libtool make pkg-config```
 - Changing any option to non-default values requires recompilation
-- To re-make a specific target, erase its directory in the repo root and run ```./make``` again. Doing this will also re-make the final JS
+- To remake a specific target, erase its directory in the repo root and run ```./make``` again. Doing this will also remake the final JS
 ```shell
 git clone --depth=1 https://github.com/msqr1/Vosklet &&
 cd Vosklet/src &&

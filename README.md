@@ -10,7 +10,7 @@
 - Support multiple models
 - Has models' storage path management
 - Has models' ID management (for model updates)
-- Has smaller JS size (>3.1MB vs 1.4MB gzipped)
+- Has smaller JS size (>3.1MB vs 1.2MB gzipped)
 - Has all related files (pthread worker, audio worklet processor,...) merged
 - Has faster processing time
 - Has shorter from-scratch build time
@@ -20,13 +20,15 @@
 - Result are logged to the console.
 - Copied from *examples/fromMic.html*
 ```html
+<!DOCTYPE html>
 <html>
   <head>
-    <script src="https://cdn.jsdelivr.net/gh/msqr1/Vosklet@1.0.3/examples/Vosklet.min.js" async defer></script>
+    <script src="https://cdn.jsdelivr.net/gh/msqr1/Vosklet@1.0.4/examples/Vosklet.min.js" async defer></script>
     <script>
-      async function start() {
+      async function start(spkModel = false) {
         // Make sure sample rate matches that in the training data
         let ctx = new AudioContext({sampleRate : 16000})
+
         // Setup mic with correct sample rate
         let micNode = ctx.createMediaStreamSource(await navigator.mediaDevices.getUserMedia({
           video: false,
@@ -37,10 +39,12 @@
             sampleRate: 16000
           },
         }))
+
         // Load Vosklet module, model and recognizer
         let module = await loadVosklet()
-        let model = await module.createModel("https://raw.githubusercontent.com/msqr1/Vosklet/main/examples/en-model.tgz","model","ID")
+        let model = await module.createModel("https://raw.githubusercontent.com/ccoreilly/vosk-browser/master/examples/react/public/models/vosk-model-small-en-us-0.15.tar.gz","model","ID")
         let recognizer = await module.createRecognizer(model, 16000)
+
         // Listen for result and partial result
         recognizer.addEventListener("result", ev => {
           console.log("Result: ", ev.detail)
@@ -48,8 +52,10 @@
         recognizer.addEventListener("partialResult", ev => {
           console.log("Partial result: ", ev.detail)
         })
+
         // Create a transferer node to get audio data on the main thread
         let transferer = await module.createTransferer(ctx, 128 * 150)
+
         // Recognize data on arrival
         transferer.port.onmessage = ev => {
           recognizer.acceptWaveform(ev.data)
