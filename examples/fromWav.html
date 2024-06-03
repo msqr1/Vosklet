@@ -19,7 +19,7 @@
         })
 
         // Fetch, decode, and recognize .wav
-        let wav = await fetch("https://raw.githubusercontent.com/msqr1/Vosklet/main/examples/example.wav")
+        let wav = await fetch("https://cdn.jsdelivr.net/gh/msqr1/Vosklet/examples/example.wav")
         let audioBuf = await ctx.decodeAudioData(await wav.arrayBuffer())
         recognizer.acceptWaveform(audioBuf.getChannelData(0))
       }
