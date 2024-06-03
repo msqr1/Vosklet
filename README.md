@@ -16,7 +16,7 @@
 - Has shorter from-scratch build time
 - Has more Vosk functions exposed
 
-# Basic usage (microphone recognition)
+# Basic usage (microphone recognition in English)
 - Result are logged to the console.
 - Copied from *examples/fromMic.html*
 ```html
@@ -42,7 +42,7 @@
 
         // Load Vosklet module, model and recognizer
         let module = await loadVosklet()
-        let model = await module.createModel("https://raw.githubusercontent.com/ccoreilly/vosk-browser/master/examples/react/public/models/vosk-model-small-en-us-0.15.tar.gz","model","ID")
+        let model = await module.createModel("https://ccoreilly.github.io/vosk-browser/models/vosk-model-small-en-us-0.15.tar.gz","model","ID")
         let recognizer = await module.createRecognizer(model, 16000)
 
         // Listen for result and partial result
