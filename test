@@ -33,7 +33,6 @@ export PATH=:$PATH:$(realpath $EMSDK)/upstream/bin
 KALDI=$(realpath kaldi)
 VOSK=$(realpath vosk)
 OPENFST=$(realpath openfst)
-LIBARCHIVE=$(realpath libarchive)
 CLAPACK_WASM=$(realpath clapack-wasm)
 
 cd src &&

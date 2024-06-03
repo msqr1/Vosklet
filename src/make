@@ -81,5 +81,4 @@ cp Vosklet.js examples/Vosklet.js &&
 # Can't serve files from raw.githubusercontent with Content-Encoding: gzip header so the browser won't decompress automatically. Manually decompressing instead.
 sed -i 's/res.body/new Response(res.body.pipeThrough(new DecompressionStream("gzip"))).body/' examples/Vosklet.js &&
 
-rm -rf /tmp/libarchive
 rm -rf /tmp/openfst
