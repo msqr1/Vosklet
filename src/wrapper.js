@@ -139,7 +139,7 @@ class recognizer extends EventTarget {
   acceptWaveform(audioData) {
     let start = Module._malloc(audioData.length * 4)
     Module.HEAPF32.set(audioData, start / 4)
-    this.obj.pushData(start, audioData.length)
+    return this.obj.acceptWaveformS(start, audioData.length)
   }
 }
 

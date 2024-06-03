@@ -1,62 +1,28 @@
 #include "recognizer.h" 
 
 recognizer::recognizer(int index, float sampleRate, genericModel* model) : index{index}, rec{vosk_recognizer_new(std::get<VoskModel*>(model->mdl),sampleRate)} {
-  finishConstruction(model);
+  fireEv(index, "0");
 }
 recognizer::recognizer(int index, float sampleRate, genericModel* model, genericModel* spkModel) : index{index}, rec{vosk_recognizer_new_spk(std::get<VoskModel*>(model->mdl), sampleRate, std::get<VoskSpkModel*>(spkModel->mdl))} {
-  finishConstruction(model, spkModel);
+  fireEv(index, "0");
 }
 recognizer::recognizer(int index, float sampleRate, genericModel* model, const std::string& grm, int dummy) : index{index}, rec{vosk_recognizer_new_grm(std::get<VoskModel*>(model->mdl), sampleRate, grm.c_str())} {
-  finishConstruction(model);
+  fireEv(index, "0");
+}
+std::string recognizer::acceptWaveformS(int data, int len) {
+  std::string res{};
+  switch(vosk_recognizer_accept_waveform_f(rec, (float*)data, len)) {
+  case 0:
+    res = vosk_recognizer_result(rec);
+    break;
+  case 1:
+    res = vosk_recognizer_partial_result(rec);
+  }
+  free((void*)data);
+  return res;
 }
 recognizer::~recognizer() {
-  done = true;
   vosk_recognizer_free(rec);
-}
-void recognizer::finishConstruction(genericModel* model, genericModel* spkModel) {
-  if(rec == nullptr) {
-    fireEv(index, "Unable to initialize recognizer");
-    return;
-  }
-  auto main {[this](){
-    fireEv(index, "0");
-    while(!done) {
-      blocker.wait(done, std::memory_order_relaxed);
-      blocker = false;
-      while(!dataQ.empty()) {
-        switch(vosk_recognizer_accept_waveform_f(rec, dataQ.front().data, dataQ.front().len)) {
-        case 0:
-          fireEv(index, vosk_recognizer_result(rec), "result");
-          break;
-        case 1:
-          fireEv(index, vosk_recognizer_partial_result(rec), "partialResult");
-        }
-        free(dataQ.front().data);
-        dataQ.pop();
-      }
-    }
-  }};
-  if(!model->resourceUsed) {
-    model->resourceUsed = true;
-    model->func = main;
-    model->blocker = true;
-    model->blocker.notify_one();
-    return;
-  }
-  if(spkModel != nullptr && !spkModel->resourceUsed) {
-    spkModel->resourceUsed = true;
-    spkModel->func = main;
-    spkModel->blocker = true;
-    model->blocker.notify_one();
-    return;
-  }
-  std::thread t{main};
-  t.detach();
-}
-void recognizer::pushData(int start, int len) {
-  dataQ.emplace(start, len);
-  blocker = true;
-  blocker.notify_one();
 }
 void recognizer::reset() {
   vosk_recognizer_reset(rec);
