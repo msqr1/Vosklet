@@ -25,7 +25,7 @@
   <head>
     <script src="https://cdn.jsdelivr.net/gh/msqr1/Vosklet@1.0.4/examples/Vosklet.min.js" async defer></script>
     <script>
-      async function start(spkModel = false) {
+      async function start() {
         // Make sure sample rate matches that in the training data
         let ctx = new AudioContext({sampleRate : 16000})
 
