@@ -4,7 +4,6 @@
 - See the *examples* folder for examples on using the API.
 - See *API.md* for the API reference
 - See *test* for a developer build script for just the JS
-- Note: The examples uses *examples/Vosklet.js* because I can't set the Response headers for my model for browsers to decompress correctly. Instead, I used DecompressionStream to decompress manually, so *examples/Vosklet.js* only works for the examples. In practice, please use the outside Vosklet.js instead.
 
 # Compared to vosk-browser
 - Support multiple models
@@ -19,6 +18,7 @@
 # Basic usage (microphone recognition in English)
 - Result are logged to the console.
 - Copied from *examples/fromMic.html*
+- **Note: The example folder and this piece of code uses *examples/Vosklet.js* because I can't set the Response headers for my model for browsers to decompress correctly. Instead, I used DecompressionStream to decompress manually, so *examples/Vosklet.js* only works for the examples. In production, please use the top-level Vosklet.js instead.**
 ```html
 <!DOCTYPE html>
 <html>

@@ -1,0 +1,1 @@
+**Note: Examples in this folder uses its own *Vosklet.js* because I can't set the Response headers for my model for browsers to decompress correctly. Instead, I used DecompressionStream to decompress manually, so this *Vosklet.js* only works for the examples. In production, please use the top-level Vosklet.js instead.**
