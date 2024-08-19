@@ -57,7 +57,7 @@ Pthread worker construction must be from a blob (see [Emscripten issue](https://
 Model response from ```fetch()``` must be an uncompressed model. Set your ```Content-Encoding``` response header and ```Accept-Encoding``` request header appropriately so browers can decompress.
 
 # Compilation
-- Requires all Autotools commands in PATH, ```make```, and ```pkg-config```. Install with ```apt```, for example:
+- Requires all Autotools commands in PATH, ```make```, and ```pkg-config```. Installing with ```apt```, for example:
 
   ```sudo apt install autotools-dev autoconf libtool make pkg-config```
 - Changing any option to non-default values requires recompilation
@@ -66,11 +66,11 @@ Model response from ```fetch()``` must be an uncompressed model. Set your ```Con
 git clone --depth=1 https://github.com/msqr1/Vosklet &&
 cd Vosklet/src &&
 [Options] ./make
-# Example: MAX_MEMORY=350mb MAX_THREADS=3 ./make
+# Example: INITIAL_MEMORY=350mb MAX_THREADS=3 ./make
 ```
 | Option | Description | Default value |
 |---|---|---|
-| MAX_MEMORY | Set max memory, valid suffixes: kb, mb, gb, tb or none (bytes) | ```300mb``` as [recommended](https://alphacephei.com/vosk/models) |
-| MAX_THREADS | Set the max number of threads (>=1), this should be equal to the number of model or speaker model that is used in the program | ```1``` (1 recognizer, 1 model, no speaker model) |
+| INITIAL_MEMORY | Set inital memory, valid suffixes: kb, mb, gb, tb or none (bytes) | ```300mb``` as [recommended](https://alphacephei.com/vosk/models). This memory will grow if usage exceeds this value, but can [affect performance](https://emscripten.org/docs/porting/pthreads.html#special-considerations:~:text=memory%20support%20available.-,Pthreads,-%2B%20memory%20growth%20(). |
+| MAX_THREADS | Set the max number of threads (>=1), this should be equal to the number of model and speaker model that is used in the program | ```1``` (1 recognizer, 1 model, no speaker model) |
 | JOBS | Set the number of jobs (threads) when building | ```$(nproc)```   |
 | EMSDK | Set EMSDK's path (will install EMSDK in root folder if unset) | ```../emsdk``` |

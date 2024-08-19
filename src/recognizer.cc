@@ -6,7 +6,7 @@ recognizer::recognizer(int index, float sampleRate, genericModel* model) : index
 recognizer::recognizer(int index, float sampleRate, genericModel* model, genericModel* spkModel) : index{index}, rec{vosk_recognizer_new_spk(std::get<VoskModel*>(model->mdl), sampleRate, std::get<VoskSpkModel*>(spkModel->mdl))} {
   finishConstruction(model, spkModel);
 }
-recognizer::recognizer(int index, float sampleRate, genericModel* model, const std::string& grm, int dummy) : index{index}, rec{vosk_recognizer_new_grm(std::get<VoskModel*>(model->mdl), sampleRate, grm.c_str())} {
+recognizer::recognizer(int index, float sampleRate, genericModel* model, const std::string& grm, int) : index{index}, rec{vosk_recognizer_new_grm(std::get<VoskModel*>(model->mdl), sampleRate, grm.c_str())} {
   finishConstruction(model);
 }
 recognizer::~recognizer() {

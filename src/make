@@ -1,5 +1,5 @@
 #!/bin/bash
-MAX_MEMORY=${MAX_MEMORY:-300mb}
+INITIAL_MEMORY=${INITIAL_MEMORY:-300mb}
 MAX_THREADS=${MAX_THREADS:-1}
 EMSDK=${EMSDK:-../emsdk}
 JOBS=${JOBS:-$(nproc)}
@@ -16,16 +16,16 @@ if [ $JOBS -lt 1 ]; then
   echo "JOBS must be greater than or equal to 1"
   exit 1
 fi
-if ! [[ $MAX_MEMORY =~ ^[0-9]+([kmgt]b)?$ ]]; then
-  echo "MAX_MEMORY valid suffixes are kb, mb, gb, tb, none (bytes)"
+if ! [[ $INITIAL_MEMORY =~ ^[0-9]+([kmgt]b)?$ ]]; then
+  echo "INITIAL_MEMORY valid suffixes are kb, mb, gb, tb, none (bytes)"
   exit 1
 fi
 if [ $EMSDK = ../emsdk ] && [ ! -d $EMSDK ]; then
   echo "Installing emsdk + Emscripten..."
   git clone --depth=1 https://github.com/emscripten-core/emsdk.git ../emsdk &&
   cd ../emsdk &&
-  ./emsdk install 3.1.59 &&
-  ./emsdk activate 3.1.59
+  ./emsdk install 3.1.64 &&
+  ./emsdk activate 3.1.64
 fi
 . $(realpath $EMSDK)/emsdk_env.sh && 
 export PATH=:$PATH:$(realpath $EMSDK)/upstream/bin &&
@@ -41,6 +41,7 @@ if [ ! -d $OPENFST ]; then
   rm -rf /tmp/openfst &&
   git clone --depth=1 https://github.com/alphacep/openfst /tmp/openfst &&
   cd /tmp/openfst &&
+  git apply $SRC/openfst.patch
   autoreconf -is &&
   CXXFLAGS="-r -O3 -flto -msimd128 -mreference-types -mnontrapping-fptoint -mextended-const -msign-ext -mmutable-globals" LDFLAGS="-O3 -flto" emconfigure ./configure --prefix=$OPENFST --enable-static --disable-shared --enable-lookahead-fsts --enable-ngram-fsts --disable-bin &&
   emmake make -j$JOBS install &&
@@ -72,7 +73,7 @@ if [ ! -d $VOSK ]; then
 fi
 
 cd $SRC &&
-em++ util.cc genericModel.cc recognizer.cc bindings.cc -O3 -sWASMFS -sWASM_BIGINT -sSINGLE_FILE -sMODULARIZE -sEMBIND_STD_STRING_IS_UTF8 -sPTHREAD_POOL_DELAY_LOAD -sTEXTDECODER=2 -sPTHREAD_POOL_SIZE_STRICT=2 -sINITIAL_MEMORY=$MAX_MEMORY -sPTHREAD_POOL_SIZE=$MAX_THREADS -sPOLYFILL=0 -sEXIT_RUNTIME=0 -sINVOKE_RUN=0 -sSUPPORT_LONGJMP=0 -sEXPORTED_FUNCTIONS=_malloc -sEXPORT_NAME=loadVosklet -sMALLOC=emmalloc -sEXPORTED_RUNTIME_METHODS=UTF8ToString,stringToUTF8OnStack -sENVIRONMENT=web,worker -I. -I"$VOSK"/src -L$KALDI/src -l:online2/kaldi-online2.a -l:decoder/kaldi-decoder.a -l:ivector/kaldi-ivector.a -l:gmm/kaldi-gmm.a -l:tree/kaldi-tree.a -l:feat/kaldi-feat.a -l:cudamatrix/kaldi-cudamatrix.a -l:lat/kaldi-lat.a -l:lm/kaldi-lm.a -l:rnnlm/kaldi-rnnlm.a -l:hmm/kaldi-hmm.a -l:nnet3/kaldi-nnet3.a -l:transform/kaldi-transform.a -l:matrix/kaldi-matrix.a -l:fstext/kaldi-fstext.a -l:util/kaldi-util.a -l:base/kaldi-base.a -L"$OPENFST"/lib -l:libfst.a -l:libfstngram.a -L"$CLAPACK_WASM" -l:CBLAS/lib/cblas.a -l:CLAPACK-3.2.1/lapack.a -l:CLAPACK-3.2.1/libcblaswr.a -l:f2c_BLAS-3.8.0/blas.a -l:libf2c/libf2c.a -L$VOSK/src -l:vosk.a -lembind -pthread -flto -msimd128 -mreference-types -mnontrapping-fptoint -mextended-const -msign-ext -mmutable-globals --pre-js wrapper.js -o ../Vosklet.js &&
+em++ util.cc genericModel.cc recognizer.cc bindings.cc -O3 -sWASMFS -sWASM_BIGINT -sSINGLE_FILE -sMODULARIZE -sEMBIND_STD_STRING_IS_UTF8 -sPTHREAD_POOL_DELAY_LOAD -sALLOW_MEMORY_GROWTH -sTEXTDECODER=2 -sPTHREAD_POOL_SIZE_STRICT=2 -sINITIAL_MEMORY=$INITIAL_MEMORY -sPTHREAD_POOL_SIZE=$MAX_THREADS -sPOLYFILL=0 -sEXIT_RUNTIME=0 -sINVOKE_RUN=0 -sSUPPORT_LONGJMP=0 -sEXPORTED_FUNCTIONS=_malloc -sEXPORT_NAME=loadVosklet -sMALLOC=emmalloc -sEXPORTED_RUNTIME_METHODS=UTF8ToString,stringToUTF8OnStack -sENVIRONMENT=web,worker -I. -I"$VOSK"/src -L$KALDI/src -l:online2/kaldi-online2.a -l:decoder/kaldi-decoder.a -l:ivector/kaldi-ivector.a -l:gmm/kaldi-gmm.a -l:tree/kaldi-tree.a -l:feat/kaldi-feat.a -l:cudamatrix/kaldi-cudamatrix.a -l:lat/kaldi-lat.a -l:lm/kaldi-lm.a -l:rnnlm/kaldi-rnnlm.a -l:hmm/kaldi-hmm.a -l:nnet3/kaldi-nnet3.a -l:transform/kaldi-transform.a -l:matrix/kaldi-matrix.a -l:fstext/kaldi-fstext.a -l:util/kaldi-util.a -l:base/kaldi-base.a -L"$OPENFST"/lib -l:libfst.a -l:libfstngram.a -L"$CLAPACK_WASM" -l:CBLAS/lib/cblas.a -l:CLAPACK-3.2.1/lapack.a -l:CLAPACK-3.2.1/libcblaswr.a -l:f2c_BLAS-3.8.0/blas.a -l:libf2c/libf2c.a -L$VOSK/src -l:vosk.a -lembind -pthread -flto -msimd128 -mreference-types -mnontrapping-fptoint -mextended-const -msign-ext -mmutable-globals --pre-js wrapper.js -o ../Vosklet.js &&
 cd .. &&
 rm -f Vosklet.worker.js
 

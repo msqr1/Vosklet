@@ -18,7 +18,7 @@ struct recognizer {
   std::queue<audioData> dataQ{};
   recognizer(int index, float sampleRate, genericModel* model);
   recognizer(int index, float sampleRate, genericModel* model, genericModel* spkModel);
-  recognizer(int index, float sampleRate, genericModel* model, const std::string& grm, int dummy);
+  recognizer(int index, float sampleRate, genericModel* model, const std::string& grm, int);
   ~recognizer();
   void finishConstruction(genericModel* model, genericModel* spkModel = nullptr);
   void pushData(int start, int len);
