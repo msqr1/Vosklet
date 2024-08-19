@@ -141,6 +141,9 @@ class recognizer extends EventTarget {
     Module.HEAPF32.set(audioData, start / 4)
     this.obj.pushData(start, audioData.length)
   }
+  delete() {
+    this.obj.delete()
+  }
 }
 
 Module.createRecognizer = (model, sampleRate) => {

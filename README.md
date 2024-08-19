@@ -1,5 +1,5 @@
 # Overview
-- A speech recognizer built on Vosk that can be run on the browser, inspired by [vosk-browser](https://github.com/ccoreilly/vosk-browser), but built from scratch and no code taken!
+- A lightweight speech recognizer built on Vosk that can be run on the browser, inspired by [vosk-browser](https://github.com/ccoreilly/vosk-browser), but built from scratch and no code taken!
 - Designed with basic/nothrow exception safety
 - See the *examples* folder for examples on using the API.
 - See *API.md* for the API reference
@@ -42,9 +42,9 @@
 
         // Load Vosklet module, model and recognizer
         let module = await loadVosklet()
-        let model = await module.createModel("https://ccoreilly.github.io/vosk-browser/models/vosk-model-small-en-us-0.15.tar.gz","model","ID")
-        let recognizer = await module.createRecognizer(model, 16000)
-
+        let model2 = await module.createModel("https://ccoreilly.github.io/vosk-browser/models/vosk-model-small-en-us-0.15.tar.gz","model","ID")
+        let recognizer2 = await module.createRecognizer(model, 16000)
+    
         // Listen for result and partial result
         recognizer.addEventListener("result", ev => {
           console.log("Result: ", ev.detail)
