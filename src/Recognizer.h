@@ -1,5 +1,5 @@
 #pragma once
-#include "genericModel.h"
+#include "CommonModel.h"
 
 #include <queue>
 
@@ -10,22 +10,23 @@ struct audioData {
   int len;
   audioData(int start, int len) : data{reinterpret_cast<float*>(start)}, len{len} {}
 };
-struct recognizer {
+struct Recognizer {
   std::atomic_bool done{};
   std::atomic_bool blocker{};
   int index;
+  std::thread t;
   VoskRecognizer* rec;
-  std::queue<audioData> dataQ{};
-  recognizer(int index, float sampleRate, genericModel* model);
-  recognizer(int index, float sampleRate, genericModel* model, genericModel* spkModel);
-  recognizer(int index, float sampleRate, genericModel* model, const std::string& grm, int);
-  ~recognizer();
-  void finishConstruction(genericModel* model, genericModel* spkModel = nullptr);
+  std::queue<audioData> dataQ;
+  Recognizer(int index, float sampleRate, CommonModel* model);
+  Recognizer(int index, float sampleRate, CommonModel* model, CommonModel* spkModel);
+  Recognizer(int index, float sampleRate, CommonModel* model, const std::string& grm, int);
+  ~Recognizer();
+  void finishConstruction(CommonModel* model, CommonModel* spkModel = nullptr);
   void pushData(int start, int len);
   void reset();
   void setEndpointerMode(VoskEndpointerMode mode);
   void setEndpointerDelays(float tStartMax, float tEnd, float tMax);
-  void setSpkModel(genericModel* model);
+  void setSpkModel(CommonModel* model);
   void setGrm(const std::string& grm);
   void setWords(bool words);
   void setPartialWords(bool partialWords);

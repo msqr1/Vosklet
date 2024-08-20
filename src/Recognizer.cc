@@ -1,57 +1,60 @@
 #include "recognizer.h" 
 
-recognizer::recognizer(int index, float sampleRate, genericModel* model) : index{index}, rec{vosk_recognizer_new(std::get<VoskModel*>(model->mdl),sampleRate)} {
+recognizer::recognizer(int index, float sampleRate, CommonModel* model) : index{index}, rec{vosk_recognizer_new(std::get<VoskModel*>(model->mdl),sampleRate)}, t{std::move(model->t)} {
   finishConstruction(model);
 }
-recognizer::recognizer(int index, float sampleRate, genericModel* model, genericModel* spkModel) : index{index}, rec{vosk_recognizer_new_spk(std::get<VoskModel*>(model->mdl), sampleRate, std::get<VoskSpkModel*>(spkModel->mdl))} {
+recognizer::recognizer(int index, float sampleRate, CommonModel* model, CommonModel* spkModel) : index{index}, rec{vosk_recognizer_new_spk(std::get<VoskModel*>(model->mdl), sampleRate, std::get<VoskSpkModel*>(spkModel->mdl))}, t{std::move(model->t)} {
   finishConstruction(model, spkModel);
 }
-recognizer::recognizer(int index, float sampleRate, genericModel* model, const std::string& grm, int) : index{index}, rec{vosk_recognizer_new_grm(std::get<VoskModel*>(model->mdl), sampleRate, grm.c_str())} {
+recognizer::recognizer(int index, float sampleRate, CommonModel* model, const std::string& grm, int) : index{index}, rec{vosk_recognizer_new_grm(std::get<VoskModel*>(model->mdl), sampleRate, grm.c_str())}, t{std::move(model->t)} {
   finishConstruction(model);
 }
 recognizer::~recognizer() {
   done = true;
   vosk_recognizer_free(rec);
+  if(t.joinable()) t.join();
 }
-void recognizer::finishConstruction(genericModel* model, genericModel* spkModel) {
+void recognizer::finishConstruction(CommonModel* model, CommonModel* spkModel) {
   if(rec == nullptr) {
     fireEv(index, "Unable to initialize recognizer");
     return;
   }
   auto main {[this](){
     fireEv(index, "0");
+    audioData* next;
     while(!done) {
       blocker.wait(done, std::memory_order_relaxed);
       blocker = false;
+      next = &dataQ.front();
       while(!dataQ.empty()) {
-        switch(vosk_recognizer_accept_waveform_f(rec, dataQ.front().data, dataQ.front().len)) {
+        switch(vosk_recognizer_accept_waveform_f(rec, next->data, next->len)) {
         case 0:
           fireEv(index, vosk_recognizer_result(rec), "result");
           break;
         case 1:
           fireEv(index, vosk_recognizer_partial_result(rec), "partialResult");
         }
-        free(dataQ.front().data);
+        free(next->data);
         dataQ.pop();
       }
     }
   }};
-  if(!model->resourceUsed) {
-    model->resourceUsed = true;
+  if(!model->thrdUsed) {
+    model->thrdUsed = true;
     model->func = main;
     model->blocker = true;
     model->blocker.notify_one();
     return;
   }
-  if(spkModel != nullptr && !spkModel->resourceUsed) {
-    spkModel->resourceUsed = true;
+  if(spkModel != nullptr && !spkModel->thrdUsed) {
+    spkModel->thrdUsed = true;
     spkModel->func = main;
     spkModel->blocker = true;
     model->blocker.notify_one();
     return;
   }
-  std::thread t{main};
-  t.detach();
+  blocker.is_always_lock_free
+  std::thread{main}.detach();
 }
 void recognizer::pushData(int start, int len) {
   dataQ.emplace(start, len);
@@ -70,11 +73,11 @@ void recognizer::setEndpointerDelays(float tStartMax, float tEnd, float tMax) {
 void recognizer::setGrm(const std::string& grm) {
   vosk_recognizer_set_grm(rec, grm.c_str());
 }
-void recognizer::setSpkModel(genericModel* spkModel) {
+void recognizer::setSpkModel(CommonModel* spkModel) {
   vosk_recognizer_set_spk_model(rec, std::get<VoskSpkModel*>(spkModel->mdl));
 }
 void recognizer::setWords(bool words) {
-  vosk_recognizer_set_words(rec,words);
+  vosk_recognizer_set_words(rec, words);
 }
 void recognizer::setPartialWords(bool partialWords) {
   vosk_recognizer_set_partial_words(rec, partialWords);

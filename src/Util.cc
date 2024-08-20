@@ -1,12 +1,11 @@
-#include "util.h"
-
+#include "Util.h"
 void fireEv(int index, const char* content, const char* type) {
   MAIN_THREAD_EM_ASM({
     objs[$0].dispatchEvent(new CustomEvent($2 === 0 ? "0" : UTF8ToString($2), { "detail" : UTF8ToString($1) }));
   }, index, content, type);
 }
 int untar(unsigned char* tar, int tarSize, const std::string& storepath) {
-  if(memcmp(tar + 257, "ustar", 5)) return 1;
+  if(memcmp(tar + 257, "ustar", 5)) return IncorrectFormat;
   unsigned char* ptr = tar;
   size_t size{0};
   std::string path{};
@@ -15,7 +14,7 @@ int untar(unsigned char* tar, int tarSize, const std::string& storepath) {
   while(ptr <= end) {
     if(ptr[156] != '5' && ptr[156] != 0  && 
       ptr[156] != '0') {
-      return 2;
+      return IncorrectFiletype;
     }
     path.clear();
     path += reinterpret_cast<char*>(ptr + 345);
@@ -36,12 +35,12 @@ int untar(unsigned char* tar, int tarSize, const std::string& storepath) {
     if(size == 0) fs::create_directory(path);
     else {
       int fd {open(path.c_str(), O_CREAT | O_WRONLY | O_TRUNC, 0777)};
-      if(fd == -1) return 3;
+      if(fd == -1) return FailedOpen;
       int res = write(fd, ptr, size);
-      if(res == -1) return 4;
-      if(close(fd) == -1) return 5;
+      if(res == -1) return FailedWrite;
+      if(close(fd) == -1) return FailedClose;
       ptr += size + 512 - size % 512;
     }
   }
-  return 0;
+  return Successful;
 }

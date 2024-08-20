@@ -44,25 +44,23 @@ async function getFileHandle(path, create = false) {
   return prevDir.getFileHandle(components[components.length - 1], { create : create })
 }
 
-class genericModel extends EventTarget {
+class CommonModel extends EventTarget {
   constructor() {
     super()
     objs.push(this)
   }
   static async create(url, storepath, id, normalMdl) {
-    let mdl = new genericModel()
+    let mdl = new CommonModel()
     let result = new Promise((resolve, reject) => {
       mdl.addEventListener("0", ev => {
         if(ev.detail == "0") {
           if(normalMdl) mdl.findWord = (word) => mdl.obj.findWord(word)
           return resolve(mdl)
         }
-        mdl.delete()
         reject(ev.detail)
       }, { once : true })
     })
     let tar
-    mdl.obj = new Module.genericModel(objs.length - 1, normalMdl, "/" + storepath, id)
     try {
       let dataFile = await (await getFileHandle(storepath + "/model.tgz")).getFile()
       let idFile = await (await getFileHandle(storepath + "/id")).getFile()
@@ -89,7 +87,7 @@ class genericModel extends EventTarget {
     }
     let tarStart = Module._malloc(tar.byteLength)
     Module.HEAPU8.set(new Uint8Array(tar), tarStart)
-    mdl.obj.extractAndLoad(tarStart, tar.byteLength)
+    mdl.obj = new Module.CommonModel(objs.length - 1, normalMdl, "/" + storepath, id, tarStart, tar.byteLength)
     return result
   }
   delete() {
@@ -98,14 +96,14 @@ class genericModel extends EventTarget {
 }
 
 Module.createModel = async (url, storepath, id) => {
-  return genericModel.create(url, storepath, id, true)
+  return CommonModel.create(url, storepath, id, true)
 }
 
 Module.createSpkModel = async (url, storepath, id) => {
-  return genericModel.create(url, storepath, id, false)
+  return CommonModel.create(url, storepath, id, false)
 }
 
-class recognizer extends EventTarget {
+class Recognizer extends EventTarget {
   constructor() {
     super()
     objs.push(this)
@@ -116,7 +114,7 @@ class recognizer extends EventTarget {
     })
   }
   static async create(model, sampleRate, mode, grammar, spkModel) {
-    let rec = new recognizer()
+    let rec = new Recognizer()
     let result = new Promise((resolve, reject) => {
       rec.addEventListener("0", ev => {
         if(ev.detail == "0") return resolve(rec)
@@ -126,13 +124,13 @@ class recognizer extends EventTarget {
     })
     switch(mode) {
       case 1:
-        rec.obj = new Module.recognizer(objs.length - 1, sampleRate, model)
+        rec.obj = new Module.Recognizer(objs.length - 1, sampleRate, model)
         break
       case 2:
-        rec.obj = new Module.recognizer(objs.length -1, sampleRate, model, spkModel) 
+        rec.obj = new Module.Recognizer(objs.length -1, sampleRate, model, spkModel) 
         break
       default:
-        rec.obj = new Module.recognizer(objs.length - 1, sampleRate, model, grammar, 0)  
+        rec.obj = new Module.Recognizer(objs.length - 1, sampleRate, model, grammar, 0)  
     }
     return result
   } 
@@ -147,15 +145,15 @@ class recognizer extends EventTarget {
 }
 
 Module.createRecognizer = (model, sampleRate) => {
-  return recognizer.create(model.obj, sampleRate, 1)
+  return Recognizer.create(model.obj, sampleRate, 1)
 }
 
 Module.createRecognizerWithSpkModel = (model, sampleRate, spkModel) => {
-  return recognizer.create(model.obj, sampleRate, 2, null, spkModel.obj)
+  return Recognizer.create(model.obj, sampleRate, 2, null, spkModel.obj)
 }
 
 Module.createRecognizerWithGrm = (model, sampleRate, grammar) => {
-  return recognizer.create(model.obj, sampleRate, 3, grammar, null)
+  return Recognizer.create(model.obj, sampleRate, 3, grammar, null)
 }
 
 // See Emscripten issue #21937
