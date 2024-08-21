@@ -5,23 +5,22 @@
 
 #include <emscripten/console.h>
 
-struct audioData {
-  float* data;
-  int len;
-  audioData(int start, int len) : data{reinterpret_cast<float*>(start)}, len{len} {}
-};
+// Prevent naming conflicts with Vosk's Recognizer class
+#define Recognizer Recognizer_
+
 struct Recognizer {
-  std::atomic_bool done{};
+  bool done{};
   std::atomic_bool blocker{};
   int index;
   std::thread t;
   VoskRecognizer* rec;
-  std::queue<audioData> dataQ;
+  std::queue<AudioData> dataQ;
   Recognizer(int index, float sampleRate, CommonModel* model);
   Recognizer(int index, float sampleRate, CommonModel* model, CommonModel* spkModel);
   Recognizer(int index, float sampleRate, CommonModel* model, const std::string& grm, int);
   ~Recognizer();
   void finishConstruction(CommonModel* model, CommonModel* spkModel = nullptr);
+  void main();
   void pushData(int start, int len);
   void reset();
   void setEndpointerMode(VoskEndpointerMode mode);

@@ -3,13 +3,16 @@
 #include <filesystem>
 #include <functional>
 #include <variant>
-#include <unistd.h>
-
-#include <fcntl.h>
+#include <fstream>
 #include <emscripten/em_asm.h>
 #include <emscripten/console.h>
 
 namespace fs = std::filesystem;
+struct AudioData {
+  float* data;
+  int len;
+  AudioData(int start, int len) : data{reinterpret_cast<float*>(start)}, len{len} {}
+};
 enum UntarStatus {
   Successful,
   IncorrectFormat,

@@ -1,90 +1,100 @@
-#include "recognizer.h" 
+#include "Recognizer.h" 
 
-recognizer::recognizer(int index, float sampleRate, CommonModel* model) : index{index}, rec{vosk_recognizer_new(std::get<VoskModel*>(model->mdl),sampleRate)}, t{std::move(model->t)} {
+Recognizer::Recognizer(int index, float sampleRate, CommonModel* model) : 
+  index{index}, 
+  t{std::move(model->t)},
+  rec{vosk_recognizer_new(std::get<VoskModel*>(model->mdl), sampleRate)} {
   finishConstruction(model);
 }
-recognizer::recognizer(int index, float sampleRate, CommonModel* model, CommonModel* spkModel) : index{index}, rec{vosk_recognizer_new_spk(std::get<VoskModel*>(model->mdl), sampleRate, std::get<VoskSpkModel*>(spkModel->mdl))}, t{std::move(model->t)} {
+Recognizer::Recognizer(int index, float sampleRate, CommonModel* model, CommonModel* spkModel) : 
+  index{index},
+  t{std::move(model->t)},
+  rec{vosk_recognizer_new_spk(std::get<VoskModel*>(model->mdl), sampleRate, std::get<VoskSpkModel*>(spkModel->mdl))} {
   finishConstruction(model, spkModel);
 }
-recognizer::recognizer(int index, float sampleRate, CommonModel* model, const std::string& grm, int) : index{index}, rec{vosk_recognizer_new_grm(std::get<VoskModel*>(model->mdl), sampleRate, grm.c_str())}, t{std::move(model->t)} {
+Recognizer::Recognizer(int index, float sampleRate, CommonModel* model, const std::string& grm, int) : 
+  index{index}, 
+  t{std::move(model->t)},
+  rec{vosk_recognizer_new_grm(std::get<VoskModel*>(model->mdl), sampleRate, grm.c_str())} {
   finishConstruction(model);
 }
-recognizer::~recognizer() {
-  done = true;
+Recognizer::~Recognizer() {
   vosk_recognizer_free(rec);
-  if(t.joinable()) t.join();
+  if(t.joinable()) {
+    done = true;
+    blocker.store(true, std::memory_order_relaxed);
+    blocker.notify_one();
+    t.join();
+  }
 }
-void recognizer::finishConstruction(CommonModel* model, CommonModel* spkModel) {
+void Recognizer::finishConstruction(CommonModel* model, CommonModel* spkModel) {
   if(rec == nullptr) {
     fireEv(index, "Unable to initialize recognizer");
     return;
   }
-  auto main {[this](){
-    fireEv(index, "0");
-    audioData* next;
-    while(!done) {
-      blocker.wait(done, std::memory_order_relaxed);
-      blocker = false;
-      next = &dataQ.front();
-      while(!dataQ.empty()) {
-        switch(vosk_recognizer_accept_waveform_f(rec, next->data, next->len)) {
-        case 0:
-          fireEv(index, vosk_recognizer_result(rec), "result");
-          break;
-        case 1:
-          fireEv(index, vosk_recognizer_partial_result(rec), "partialResult");
-        }
-        free(next->data);
-        dataQ.pop();
-      }
-    }
-  }};
-  if(!model->thrdUsed) {
-    model->thrdUsed = true;
-    model->func = main;
-    model->blocker = true;
-    model->blocker.notify_one();
+  if(!model->thrdUsed.load(std::memory_order_relaxed)) {
+    model->recognizerMain = [this]{main();};
+    model->thrdUsed.store(true, std::memory_order_relaxed);
+    model->thrdUsed.notify_one();
     return;
   }
-  if(spkModel != nullptr && !spkModel->thrdUsed) {
-    spkModel->thrdUsed = true;
-    spkModel->func = main;
-    spkModel->blocker = true;
-    model->blocker.notify_one();
+  if(spkModel != nullptr && !spkModel->thrdUsed.load(std::memory_order_relaxed)) {
+    spkModel->recognizerMain = [this]{main();};
+    spkModel->thrdUsed.store(true, std::memory_order_relaxed);
+    spkModel->thrdUsed.notify_one();
     return;
   }
-  blocker.is_always_lock_free
-  std::thread{main}.detach();
+  t = std::thread{&Recognizer::main, this};
 }
-void recognizer::pushData(int start, int len) {
+void Recognizer::main() {
+  fireEv(index, "0");
+  while(!done) {
+    blocker.wait(false, std::memory_order_relaxed);  
+    blocker.store(false, std::memory_order_relaxed);
+    while(!dataQ.empty()) {
+      AudioData& next = dataQ.front();
+      // If done we free the rest of the data by skipping this block
+      switch(vosk_recognizer_accept_waveform_f(rec, next.data, next.len)) {
+      case 0: [[likely]]
+        fireEv(index, vosk_recognizer_partial_result(rec), "partialResult");
+        break;
+      case 1: [[unlikely]]
+        fireEv(index, vosk_recognizer_result(rec), "result");
+      }
+      free(next.data);
+      dataQ.pop();
+    }
+  }
+}
+void Recognizer::pushData(int start, int len) {
   dataQ.emplace(start, len);
-  blocker = true;
+  blocker.store(true, std::memory_order_relaxed);
   blocker.notify_one();
 }
-void recognizer::reset() {
+void Recognizer::reset() {
   vosk_recognizer_reset(rec);
 }
-void recognizer::setEndpointerMode(VoskEndpointerMode mode) {
+void Recognizer::setEndpointerMode(VoskEndpointerMode mode) {
   vosk_recognizer_set_endpointer_mode(rec, mode);
 }
-void recognizer::setEndpointerDelays(float tStartMax, float tEnd, float tMax) {
+void Recognizer::setEndpointerDelays(float tStartMax, float tEnd, float tMax) {
   vosk_recognizer_set_endpointer_delays(rec, tStartMax, tEnd, tMax);
 }
-void recognizer::setGrm(const std::string& grm) {
+void Recognizer::setGrm(const std::string& grm) {
   vosk_recognizer_set_grm(rec, grm.c_str());
 }
-void recognizer::setSpkModel(CommonModel* spkModel) {
+void Recognizer::setSpkModel(CommonModel* spkModel) {
   vosk_recognizer_set_spk_model(rec, std::get<VoskSpkModel*>(spkModel->mdl));
 }
-void recognizer::setWords(bool words) {
+void Recognizer::setWords(bool words) {
   vosk_recognizer_set_words(rec, words);
 }
-void recognizer::setPartialWords(bool partialWords) {
+void Recognizer::setPartialWords(bool partialWords) {
   vosk_recognizer_set_partial_words(rec, partialWords);
 }
-void recognizer::setNLSML(bool nlsml) {
+void Recognizer::setNLSML(bool nlsml) {
   vosk_recognizer_set_nlsml(rec, nlsml);
 }
-void recognizer::setMaxAlternatives(int alts) {
+void Recognizer::setMaxAlternatives(int alts) {
   vosk_recognizer_set_max_alternatives(rec, alts);
 }

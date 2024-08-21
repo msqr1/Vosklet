@@ -18,7 +18,7 @@
 # Basic usage (microphone recognition in English)
 - Result are logged to the console.
 - Copied from *examples/fromMic.html*
-- **Note: The example folder and this piece of code uses *examples/Vosklet.js* because I can't set the Response headers for my model for browsers to decompress correctly. Instead, I used DecompressionStream to decompress manually, so *examples/Vosklet.js* only works for the examples. In production, please use the top-level Vosklet.js instead.**
+- **Note: The example folder and this piece of code uses *examples/Vosklet.js* because I can't set the Response headers for my model for browsers to decompress correctly. Instead, I used DecompressionStream to decompress manually, so *examples/Vosklet.js* only works for the examples. In production, use the top-level Vosklet.js instead.**
 ```html
 <!DOCTYPE html>
 <html>
@@ -42,8 +42,8 @@
 
         // Load Vosklet module, model and recognizer
         let module = await loadVosklet()
-        let model2 = await module.createModel("https://ccoreilly.github.io/vosk-browser/models/vosk-model-small-en-us-0.15.tar.gz","model","ID")
-        let recognizer2 = await module.createRecognizer(model, 16000)
+        let model = await module.createModel("https://ccoreilly.github.io/vosk-browser/models/vosk-model-small-en-us-0.15.tar.gz","model","ID")
+        let recognizer = await module.createRecognizer(model, 16000)
     
         // Listen for result and partial result
         recognizer.addEventListener("result", ev => {
