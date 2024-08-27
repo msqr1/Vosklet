@@ -1,18 +1,12 @@
 #pragma once
 #include "CommonModel.h"
 
-#include <queue>
-
-#include <emscripten/console.h>
-
 // Prevent naming conflicts with Vosk's Recognizer class
 #define Recognizer Recognizer_
-
 struct Recognizer {
+  int haveData{};
   bool done{};
-  std::atomic_bool blocker{};
   int index;
-  std::thread t;
   VoskRecognizer* rec;
   std::queue<AudioData> dataQ;
   Recognizer(int index, float sampleRate, CommonModel* model);

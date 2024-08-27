@@ -1,65 +1,50 @@
 #include "Recognizer.h" 
-
+#include "emscripten/atomic.h"
 Recognizer::Recognizer(int index, float sampleRate, CommonModel* model) : 
   index{index}, 
-  t{std::move(model->t)},
-  rec{vosk_recognizer_new(std::get<VoskModel*>(model->mdl), sampleRate)} {
+  rec{vosk_recognizer_new(std::get<VoskModel*>(model->mdl), sampleRate)}
+{
   finishConstruction(model);
 }
 Recognizer::Recognizer(int index, float sampleRate, CommonModel* model, CommonModel* spkModel) : 
   index{index},
-  t{std::move(model->t)},
   rec{vosk_recognizer_new_spk(std::get<VoskModel*>(model->mdl), sampleRate, std::get<VoskSpkModel*>(spkModel->mdl))} {
   finishConstruction(model, spkModel);
 }
 Recognizer::Recognizer(int index, float sampleRate, CommonModel* model, const std::string& grm, int) : 
   index{index}, 
-  t{std::move(model->t)},
   rec{vosk_recognizer_new_grm(std::get<VoskModel*>(model->mdl), sampleRate, grm.c_str())} {
   finishConstruction(model);
 }
 Recognizer::~Recognizer() {
-  vosk_recognizer_free(rec);
-  if(t.joinable()) {
-    done = true;
-    blocker.store(true, std::memory_order_relaxed);
-    blocker.notify_one();
-    t.join();
+  done = true;
+  emscripten_atomic_store_u32(&haveData, true);
+  emscripten_atomic_notify(&haveData, 1);
+  while(!dataQ.empty()) {
+    free(dataQ.front().data);
+    dataQ.pop();
   }
+  vosk_recognizer_free(rec);
 }
 void Recognizer::finishConstruction(CommonModel* model, CommonModel* spkModel) {
-  if(rec == nullptr) {
-    fireEv(index, "Unable to initialize recognizer");
-    return;
-  }
-  if(!model->thrdUsed.load(std::memory_order_relaxed)) {
-    model->recognizerMain = [this]{main();};
-    model->thrdUsed.store(true, std::memory_order_relaxed);
-    model->thrdUsed.notify_one();
-    return;
-  }
-  if(spkModel != nullptr && !spkModel->thrdUsed.load(std::memory_order_relaxed)) {
-    spkModel->recognizerMain = [this]{main();};
-    spkModel->thrdUsed.store(true, std::memory_order_relaxed);
-    spkModel->thrdUsed.notify_one();
-    return;
-  }
-  t = std::thread{&Recognizer::main, this};
+  if(rec == nullptr) fireEv(index, "Unable to initialize recognizer");
+  else globalPool.exec([this]{main();});
 }
 void Recognizer::main() {
   fireEv(index, "0");
   while(!done) {
-    blocker.wait(false, std::memory_order_relaxed);  
-    blocker.store(false, std::memory_order_relaxed);
-    while(!dataQ.empty()) {
+    if(dataQ.empty()) {
+      emscripten_atomic_store_u32(&haveData, false);
+      emscripten_atomic_wait_u32(&haveData, false, -1);
+    }
+    else {
       AudioData& next = dataQ.front();
-      // If done we free the rest of the data by skipping this block
       switch(vosk_recognizer_accept_waveform_f(rec, next.data, next.len)) {
-      case 0: [[likely]]
-        fireEv(index, vosk_recognizer_partial_result(rec), "partialResult");
-        break;
-      case 1: [[unlikely]]
-        fireEv(index, vosk_recognizer_result(rec), "result");
+        case 0: [[likely]]
+          fireEv(index, vosk_recognizer_partial_result(rec), "partialResult");
+          break;
+        case 1: [[unlikely]]
+          fireEv(index, vosk_recognizer_result(rec), "result");
       }
       free(next.data);
       dataQ.pop();
@@ -68,8 +53,8 @@ void Recognizer::main() {
 }
 void Recognizer::pushData(int start, int len) {
   dataQ.emplace(start, len);
-  blocker.store(true, std::memory_order_relaxed);
-  blocker.notify_one();
+  emscripten_atomic_store_u32(&haveData, true);
+  emscripten_atomic_notify(&haveData, 1);
 }
 void Recognizer::reset() {
   vosk_recognizer_reset(rec);
