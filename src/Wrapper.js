@@ -90,9 +90,6 @@ class CommonModel extends EventTarget {
     mdl.obj = new Module.CommonModel(objs.length - 1, normalMdl, "/" + storepath, id, tarStart, tar.byteLength)
     return result
   }
-  delete() {
-    this.obj.delete()
-  }
 }
 
 Module.createModel = async (url, storepath, id) => {
@@ -118,7 +115,6 @@ class Recognizer extends EventTarget {
     let result = new Promise((resolve, reject) => {
       rec.addEventListener("0", ev => {
         if(ev.detail == "0") return resolve(rec)
-        rec.delete()
         reject(ev.detail)
       }, { once : true })
     })
@@ -138,9 +134,6 @@ class Recognizer extends EventTarget {
     let start = Module._malloc(audioData.length * 4)
     Module.HEAPF32.set(audioData, start / 4)
     this.obj.pushData(start, audioData.length)
-  }
-  delete() {
-    this.obj.delete()
   }
 }
 
