@@ -9,7 +9,7 @@
 - Support multiple models
 - Has models' storage path management
 - Has models' ID management (for model updates)
-- Has smaller JS size (>3.1MB vs 904KB gzipped)
+- Has smaller JS size (>3.1MB vs 900KB gzipped)
 - Has all related files (pthread worker, audio worklet processor,...) merged
 - Has faster processing time
 - Has shorter from-scratch build time
@@ -23,7 +23,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <script src="https://cdn.jsdelivr.net/gh/msqr1/Vosklet@1.1.1/Examples/Vosklet.min.js" async defer></script>
+    <script src="https://cdn.jsdelivr.net/gh/msqr1/Vosklet@1.1.2/Examples/Vosklet.min.js" async defer></script>
     <script>
       async function start() {
         // Make sure sample rate matches that in the training data
