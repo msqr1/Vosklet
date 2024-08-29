@@ -2,6 +2,7 @@
 #include "Util.h"
 
 #include <vosk_api.h>
+
 struct CommonModel {
   bool normalMdl;
   int index;
@@ -13,4 +14,3 @@ struct CommonModel {
   CommonModel(int index, bool normalMdl, std::string storepath, std::string id, int tarStart, int tarSize);
   ~CommonModel();
 };
-

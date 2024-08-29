@@ -1,18 +1,18 @@
-#include "Recognizer.h" 
+#include "Recognizer.h"
 #include "emscripten/atomic.h"
-Recognizer::Recognizer(int index, float sampleRate, CommonModel* model) : 
-  index{index}, 
+Recognizer::Recognizer(int index, float sampleRate, CommonModel* model) :
+  index{index},
   rec{vosk_recognizer_new(std::get<VoskModel*>(model->mdl), sampleRate)}
 {
   finishConstruction(model);
 }
-Recognizer::Recognizer(int index, float sampleRate, CommonModel* model, CommonModel* spkModel) : 
+Recognizer::Recognizer(int index, float sampleRate, CommonModel* model, CommonModel* spkModel) :
   index{index},
   rec{vosk_recognizer_new_spk(std::get<VoskModel*>(model->mdl), sampleRate, std::get<VoskSpkModel*>(spkModel->mdl))} {
   finishConstruction(model, spkModel);
 }
-Recognizer::Recognizer(int index, float sampleRate, CommonModel* model, const std::string& grm, int) : 
-  index{index}, 
+Recognizer::Recognizer(int index, float sampleRate, CommonModel* model, const std::string& grm, int) :
+  index{index},
   rec{vosk_recognizer_new_grm(std::get<VoskModel*>(model->mdl), sampleRate, grm.c_str())} {
   finishConstruction(model);
 }

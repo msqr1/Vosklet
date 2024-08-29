@@ -9,7 +9,7 @@
 |---|---|
 | ```delete()``` | Delete this object (call C++ destructor), see [why](https://emscripten.org/docs/getting_started/FAQ.html#what-does-exiting-the-runtime-mean-why-don-t-atexit-s-run) this is neccessary. For recognizers, make sure they finished recognizing before deleting them |
 
-## ```Module``` object 
+## ```Module``` object
 | Function/Object | Description |
 |---|---|
 | ```Promise<Model> createModel(url: string, path: string, id: string)```<br><br>```Promise<SpkModel> createSpkModel(url: string, path: string, id: string)``` | Create a ```Model``` or ```SpkModel```, model files must be directly under the model root, and compressed model must be in ```.tar.gz```/```.tgz``` format. Tar format must be USTAR. If:<br>- ```path``` contains valid model files and ```id``` is the same, there will not be a fetch from ```url```.<br>- ```path``` doesn't contain valid model files, or if it contains valid model files but ```id``` is different, there will be a fetch from ```url```, and the model is stored with ```id```. Models are thread-safe and reusable across recognizers. |
@@ -24,7 +24,7 @@
 |---|---|
 | ```int findWord(word: string)``` | Check if a word can be recognized by the model, return the word symbol if ```word``` exists inside the model or ```-1``` otherwise. Word symbol ```0``` is for epsilon. |
 
-## ```Recognizer``` object 
+## ```Recognizer``` object
 | Function/Object | Description |
 |---|---|
 | ```acceptWaveform(audioData: Float32Array)``` | Accept voice data in a ```Float32Array``` with elements from ```-1.0``` to ```1.0```. |
@@ -35,7 +35,7 @@
 | ```setGrm(grm: string)``` | Reconfigures recognizer to use grammar |
 | ```setSpkModel(mdl: SpkModel)``` | Adds speaker model to already initialized recognizer |
 | ```setEndpointerMode(mode: EpMode)``` | Set endpointer scaling factor (default: ```ANSWER_DEFAULT```) |
-| ```setEndpointerDelays(tStartMax: float, tEnd: float, tMax: float)``` | Set endpointer delays | 
+| ```setEndpointerDelays(tStartMax: float, tEnd: float, tMax: float)``` | Set endpointer delays |
 
 | Event | Description |
 |---|---|
@@ -50,7 +50,7 @@ SharedArrayBuffer is necessary to share data between threads, so these response 
 If you can't set them, you may use a hacky workaround in *AddCOI.js*.
 
 ## CSP headers
-Pthread worker construction must be from a blob (see [Emscripten issue](https://github.com/emscripten-core/emscripten/issues/21937)), so the CSP: 
+Pthread worker construction must be from a blob (see [Emscripten issue](https://github.com/emscripten-core/emscripten/issues/21937)), so the CSP:
 - ```worker-src``` must include ```blob:```
 
 ## Model headers

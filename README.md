@@ -9,7 +9,7 @@
 - Support multiple models
 - Has models' storage path management
 - Has models' ID management (for model updates)
-- Has smaller JS size (>3.1MB vs 1.2MB gzipped)
+- Has smaller JS size (>3.1MB vs 904KB gzipped)
 - Has all related files (pthread worker, audio worklet processor,...) merged
 - Has faster processing time
 - Has shorter from-scratch build time
@@ -18,12 +18,12 @@
 # Basic usage (microphone recognition in English)
 - Result are logged to the console.
 - Copied from *examples/fromMic.html*
-- **Note: The example folder and this piece of code uses *examples/Vosklet.js* because I can't set the Response headers for my model for browsers to decompress correctly. Instead, I used DecompressionStream to decompress manually, so *examples/Vosklet.js* only works for the examples. In production, use the top-level Vosklet.js instead.**
+- **Note: The example folder and this piece of code uses *Examples/Vosklet.js* because I can't set the Response headers for my model for browsers to decompress correctly. Instead, I used DecompressionStream to decompress manually, so *Examples/Vosklet.js* only works for the examples. In production, use the top-level Vosklet.js instead.**
 ```html
 <!DOCTYPE html>
 <html>
   <head>
-    <script src="https://cdn.jsdelivr.net/gh/msqr1/Vosklet@1.1.1/examples/Vosklet.min.js" async defer></script>
+    <script src="https://cdn.jsdelivr.net/gh/msqr1/Vosklet@1.1.1/Examples/Vosklet.min.js" async defer></script>
     <script>
       async function start() {
         // Make sure sample rate matches that in the training data
@@ -44,7 +44,7 @@
         let module = await loadVosklet()
         let model = await module.createModel("https://ccoreilly.github.io/vosk-browser/models/vosk-model-small-en-us-0.15.tar.gz","model","ID")
         let recognizer = await module.createRecognizer(model, 16000)
-    
+
         // Listen for result and partial result
         recognizer.addEventListener("result", ev => {
           console.log("Result: ", ev.detail)

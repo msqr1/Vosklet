@@ -13,7 +13,7 @@ int untar(unsigned char* tar, int tarSize, const std::string& storepath) {
   path.reserve(100); // Max length
   unsigned char* end = tar + tarSize;
   while(tar <= end) {
-    if(tar[156] != '5' && tar[156] != 0  && 
+    if(tar[156] != '5' && tar[156] != 0  &&
       tar[156] != '0') {
       return IncorrectFiletype;
     }
@@ -64,7 +64,7 @@ void Thread::startup(ThreadPool* pool) {
     emscripten_atomic_store_u32(&pool->qLock, false);
     emscripten_atomic_notify(&pool->qLock, 1);
     fn();
-  }   
+  }
 }
 ThreadPool::ThreadPool() {
   for(Thread& thrd : threads) {

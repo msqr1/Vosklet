@@ -6,7 +6,7 @@ using namespace emscripten;
 
 EMSCRIPTEN_BINDINGS() {
   function("setLogLevel", &vosk_set_log_level, allow_raw_pointers());
-  
+
   enum_<VoskEndpointerMode>("EpMode")
   .value("ANSWER_DEFAULT", VOSK_EP_ANSWER_DEFAULT)
   .value("ANSWER_SHORT", VOSK_EP_ANSWER_SHORT)
@@ -16,8 +16,8 @@ EMSCRIPTEN_BINDINGS() {
   class_<CommonModel>("CommonModel")
   .constructor<int, bool, std::string, std::string, int, int>(allow_raw_pointers())
   .function("findWord", &CommonModel::findWord, allow_raw_pointers());
-  
-  class_<Recognizer>("Recognizer") 
+
+  class_<Recognizer>("Recognizer")
   .constructor<int, float, CommonModel*>(allow_raw_pointers())
   .constructor<int, float, CommonModel*, CommonModel*>(allow_raw_pointers())
   .constructor<int, float, CommonModel*, std::string, int>(allow_raw_pointers())

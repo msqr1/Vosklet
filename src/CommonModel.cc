@@ -1,9 +1,9 @@
 #include "CommonModel.h"
 
-CommonModel::CommonModel(int index, bool normalMdl, std::string storepath, std::string id, int tarStart, int tarSize) : 
-  normalMdl{normalMdl}, index{index}, 
-  storepath{std::move(storepath)}, 
-  id{std::move(id)} 
+CommonModel::CommonModel(int index, bool normalMdl, std::string storepath, std::string id, int tarStart, int tarSize) :
+  normalMdl{normalMdl}, index{index},
+  storepath{std::move(storepath)},
+  id{std::move(id)}
 {
   globalPool.exec([this, tarStart, tarSize]{
     extractAndLoad(reinterpret_cast<unsigned char*>(tarStart), tarSize);
@@ -22,12 +22,12 @@ void CommonModel::extractAndLoad(unsigned char* tar, int tarSize) {
   case FailedOpen:
     fireEv(index, "Untar: Unable to open file for write");
     return;
-  case FailedWrite: 
+  case FailedWrite:
     fireEv(index, "Untar: Unable to write file");
     return;
   case FailedClose:
     fireEv(index, "Untar: Unable to close file after write");
-    return;  
+    return;
   };
   if(normalMdl) mdl = vosk_model_new(storepath.c_str());
   else mdl = vosk_spk_model_new(storepath.c_str());

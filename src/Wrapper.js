@@ -1,4 +1,4 @@
-let objs = [] 
+let objs = []
 let processorURL = URL.createObjectURL(new Blob(['(', (() => {
   registerProcessor("VoskletTransferer", class extends AudioWorkletProcessor {
     constructor(opts) {
@@ -28,8 +28,8 @@ Module.cleanUp = () => {
 
 Module.createTransferer = async (ctx, bufferSize) => {
   await ctx.audioWorklet.addModule(processorURL)
-  return new AudioWorkletNode(ctx, "VoskletTransferer", { 
-    channelCountMode : "explicit", 
+  return new AudioWorkletNode(ctx, "VoskletTransferer", {
+    channelCountMode : "explicit",
     numberOfInputs : 1,
     numberOfOutputs : 0,
     channelCount : 1,
@@ -37,7 +37,7 @@ Module.createTransferer = async (ctx, bufferSize) => {
   })
 }
 
-async function getFileHandle(path, create = false) {
+getFileHandle = async (path, create = false) => {
   let components = path.split("/")
   let prevDir = await navigator.storage.getDirectory()
   for(let component of components.slice(0, -1)) prevDir = await prevDir.getDirectoryHandle(component, { create : create })
@@ -65,7 +65,7 @@ class CommonModel extends EventTarget {
       let dataFile = await (await getFileHandle(storepath + "/model.tgz")).getFile()
       let idFile = await (await getFileHandle(storepath + "/id")).getFile()
       if(await idFile.text() != id) throw ""
-      tar = await new Response(dataFile.stream().pipeThrough(new DecompressionStream("gzip"))).arrayBuffer()  
+      tar = await new Response(dataFile.stream().pipeThrough(new DecompressionStream("gzip"))).arrayBuffer()
     }
     catch {
       try {
@@ -105,7 +105,7 @@ class Recognizer extends EventTarget {
     super()
     objs.push(this)
     return new Proxy(this, {
-      get(self, prop, receiver) {
+      get(self, prop, _) {
         return self.obj && Object.keys(Object.getPrototypeOf(self.obj)).includes(prop) ? self.obj[prop].bind(self.obj) : self[prop] ? self[prop].bind ? self[prop].bind(self) : self[prop] : undefined
       }
     })
@@ -123,13 +123,13 @@ class Recognizer extends EventTarget {
         rec.obj = new Module.Recognizer(objs.length - 1, sampleRate, model)
         break
       case 2:
-        rec.obj = new Module.Recognizer(objs.length -1, sampleRate, model, spkModel) 
+        rec.obj = new Module.Recognizer(objs.length -1, sampleRate, model, spkModel)
         break
       default:
-        rec.obj = new Module.Recognizer(objs.length - 1, sampleRate, model, grammar, 0)  
+        rec.obj = new Module.Recognizer(objs.length - 1, sampleRate, model, grammar, 0)
     }
     return result
-  } 
+  }
   acceptWaveform(audioData) {
     let start = Module._malloc(audioData.length * 4)
     Module.HEAPF32.set(audioData, start / 4)
