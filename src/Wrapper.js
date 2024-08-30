@@ -148,6 +148,3 @@ Module.createRecognizerWithSpkModel = (model, sampleRate, spkModel) => {
 Module.createRecognizerWithGrm = (model, sampleRate, grammar) => {
   return Recognizer.create(model.obj, sampleRate, 3, grammar, null)
 }
-
-// See Emscripten issue #21937
-if (!ENVIRONMENT_IS_PTHREAD) Module['mainScriptUrlOrBlob'] = new Blob([`importScripts('${_scriptName}')`], { type : "text/javascript" })

@@ -1,10 +1,21 @@
 #include "Util.h"
-#include <emscripten/em_asm.h>
-ThreadPool globalPool;
-void fireEv(int index, const char* content, const char* type) {
-  MAIN_THREAD_EM_ASM({
-    objs[$0].dispatchEvent(new CustomEvent($2 === 0 ? "0" : UTF8ToString($2), { "detail" : UTF8ToString($1) }));
-  }, index, content, type);
+#include <emscripten/em_js.h>
+#include <emscripten/wasm_worker.h>
+
+WorkerPool globalPool;
+EM_JS(void, _fireEv, (int index, int content, int type), {
+  objs[index].dispatchEvent(new CustomEvent(type === 0 ? "0" : UTF8ToString(type), { "detail" : UTF8ToString(content) }));
+})
+void fireEv(int index, const char* _content, const char* _type) {
+  int content = reinterpret_cast<int>(_content);
+  int type = reinterpret_cast<int>(_type);
+  switch(emscripten_wasm_worker_self_id()) {
+  case 0: [[unlikely]]
+    _fireEv(index, content, type);
+    break;
+  case 1: [[likely]]
+    emscripten_wasm_worker_post_function_viii(0, _fireEv, index, content, type);
+  }
 }
 int untar(unsigned char* tar, int tarSize, const std::string& storepath) {
   if(std::memcmp(tar + 257, "ustar", 5)) return IncorrectFormat;
@@ -46,40 +57,41 @@ int untar(unsigned char* tar, int tarSize, const std::string& storepath) {
   }
   return Successful;
 }
-void Thread::startup(ThreadPool* pool) {
-  while(!pool->done) {
+void Worker::startup(int _self, int _pool) {
+  Worker& self = *reinterpret_cast<Worker*>(_self);
+  WorkerPool& pool = *reinterpret_cast<WorkerPool*>(_pool);
+  while(!pool.done) {
     // Wait until unlocked
-    emscripten_atomic_wait_u32(&pool->qLock, true, -1);
-    if(pool->done) break;
+    emscripten_atomic_wait_u32(&pool.qLock, true, -1);
+    if(pool.done) break;
     // If there is no task then everyone has to wait until there is more
-    if(pool->taskQ.empty()) {
-      emscripten_atomic_store_u32(&pool->qLock, true);
+    if(pool.taskQ.empty()) {
+      emscripten_atomic_store_u32(&pool.qLock, true);
       continue;
     }
     // If this locks, the returned (loaded) value will be false, and we move on
-    if(emscripten_atomic_cas_u32(&pool->qLock, false, true)) continue;
-    fn = pool->taskQ.front();
-    pool->taskQ.pop();
+    if(emscripten_atomic_cas_u32(&pool.qLock, false, true)) continue;
+    self.fn = pool.taskQ.front();
+    pool.taskQ.pop();
     // Unlock
-    emscripten_atomic_store_u32(&pool->qLock, false);
-    emscripten_atomic_notify(&pool->qLock, 1);
-    fn();
+    emscripten_atomic_store_u32(&pool.qLock, false);
+    emscripten_atomic_notify(&pool.qLock, 1);
+    self.fn();
   }
 }
-ThreadPool::ThreadPool() {
-  for(Thread& thrd : threads) {
-    thrd.handle = std::thread{&Thread::startup, &thrd, this};
+WorkerPool::WorkerPool() {
+  for(int i = 0; i < workers.size(); i++) {
+    workers[i].handle = emscripten_create_wasm_worker(&stacks[i * workerStack], workerStack);
+    emscripten_wasm_worker_post_function_vii(workers[i].handle, Worker::startup, reinterpret_cast<int>(&workers[i]), reinterpret_cast<int>(this));
   }
 }
-ThreadPool::~ThreadPool() {
+WorkerPool::~WorkerPool() {
   done = true;
   emscripten_atomic_store_u32(&qLock, false);
   emscripten_atomic_notify(&qLock, -1);
-  for(Thread& thrd : threads) {
-    thrd.handle.detach();
-  }
+  emscripten_terminate_all_wasm_workers();
 }
-void ThreadPool::exec(std::function<void()> fn) {
+void WorkerPool::exec(std::function<void()> fn) {
   taskQ.emplace(fn);
   emscripten_atomic_store_u32(&qLock, false);
   emscripten_atomic_notify(&qLock, 1);

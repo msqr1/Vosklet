@@ -71,6 +71,6 @@ cd Vosklet/src &&
 | Option | Description | Default value |
 |---|---|---|
 | INITIAL_MEMORY | Set inital memory, valid suffixes: kb, mb, gb, tb or none (bytes) | ```300mb``` as [recommended](https://alphacephei.com/vosk/models). This memory will grow if usage exceeds this value, but this may [affect performance](https://github.com/WebAssembly/design/issues/1271). |
-| MAX_THREADS | Set the max number of threads (>=1), this should be equal to the number of model and speaker model that is used in the program | ```1``` (1 recognizer, 1 model, no speaker model) |
+| MAX_THREADS | Set the max number of threads (>=1), this should be equal to the number of recognizers used in the program | ```1``` |
 | JOBS | Set the number of jobs (threads) when building | ```$(nproc)```   |
 | EMSDK | Set EMSDK's path (will install EMSDK in root folder if unset) | ```../emsdk``` |

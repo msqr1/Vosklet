@@ -1,19 +1,13 @@
 # Overview
-- A lightweight speech recognizer built on Vosk that can be run on the browser, inspired by [vosk-browser](https://github.com/ccoreilly/vosk-browser), but built from scratch and no code taken!
-- Designed with basic/nothrow exception safety
-- See the *examples* folder for examples on using the API.
-- See *API.md* for the API reference
-- See *test* for a developer build script for just the JS
+- A lightweight, up to date speech recognizer in the browser with total gzipped size of **under a megabyte**
+- Built from scratch, inspired by [vosk-browser](https://github.com/ccoreilly/vosk-browser)
 
-# Compared to vosk-browser
+# Vosklet ...
+- Is regularly maintained
 - Support multiple models
-- Has models' storage path management
-- Has models' ID management (for model updates)
-- Has smaller JS size (>3.1MB vs 900KB gzipped)
-- Has all related files (pthread worker, audio worklet processor,...) merged
-- Has faster processing time
-- Has shorter from-scratch build time
-- Has more Vosk functions exposed
+- Include model storage management
+- Include model ID management (for updates)
+- Wraps all Vosk's functionaly
 
 # Basic usage (microphone recognition in English)
 - Result are logged to the console.

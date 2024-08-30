@@ -1,10 +1,9 @@
 #pragma once
-
-#include <thread>
 #include <filesystem>
 #include <functional>
 #include <variant>
 #include <fstream>
+
 #include <emscripten/atomic.h>
 #include <emscripten/console.h>
 namespace fs = std::filesystem;
@@ -22,26 +21,28 @@ enum UntarStatus {
   FailedWrite,
   FailedClose
 };
-struct ThreadPool;
-struct Thread {
-  std::thread handle;
+struct WorkerPool;
+struct Worker {
+  int handle;
   std::function<void()> fn;
-  void startup(ThreadPool* pool);
+  static void startup(int _self, int _pool);
 };
-struct ThreadPool {
+#ifndef MAX_WORKERS
+#define MAX_WORKERS 1
+#endif
+static constexpr int workerStack{65536};
+static std::array<std::byte, MAX_WORKERS * workerStack> stacks;
+struct WorkerPool {
   bool qLock{true}; // True is locked, false is unlocked
   bool done{};
   std::queue<std::function<void()>> taskQ;
-#ifndef MAX_THREADS
-#define MAX_THREADS 1
-#endif
-  std::array<Thread, MAX_THREADS> threads;
-#undef MAX_THREADS
-  ThreadPool();
-  ~ThreadPool();
+  std::array<Worker, MAX_WORKERS> workers;
+#undef MAX_WORKERS
+  WorkerPool();
+  ~WorkerPool();
   void exec(std::function<void()> fn);
 };
 
-extern ThreadPool globalPool;
-void fireEv(int index, const char* content, const char* type = nullptr);
+extern WorkerPool globalPool;
+void fireEv(int index, const char* _content, const char* _type = nullptr);
 int untar(unsigned char* tar, int tarSize, const std::string& storepath);

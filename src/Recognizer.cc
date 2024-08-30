@@ -1,5 +1,5 @@
 #include "Recognizer.h"
-#include "emscripten/atomic.h"
+
 Recognizer::Recognizer(int index, float sampleRate, CommonModel* model) :
   index{index},
   rec{vosk_recognizer_new(std::get<VoskModel*>(model->mdl), sampleRate)}
