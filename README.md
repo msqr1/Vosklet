@@ -1,5 +1,5 @@
 # Overview
-- A lightweight, up to date speech recognizer in the browser with total gzipped size of **under a megabyte**
+- A lightweight, up to date speech recognizer in the browser with total gzipped size of **under a megabyte** (725 KB)
 - Built from scratch, inspired by [vosk-browser](https://github.com/ccoreilly/vosk-browser)
 
 # Vosklet ...
@@ -17,7 +17,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <script src="https://cdn.jsdelivr.net/gh/msqr1/Vosklet@1.1.2/Examples/Vosklet.min.js" async defer></script>
+    <script src="https://cdn.jsdelivr.net/gh/msqr1/Vosklet@1.1.3/Examples/Vosklet.min.js" async defer></script>
     <script>
       async function start() {
         // Make sure sample rate matches that in the training data
