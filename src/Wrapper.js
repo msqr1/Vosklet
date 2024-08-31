@@ -85,8 +85,8 @@ class CommonModel extends EventTarget {
         throw e
       }
     }
-    let tarStart = Module._malloc(tar.byteLength)
-    Module.HEAPU8.set(new Uint8Array(tar), tarStart)
+    let tarStart = _malloc(tar.byteLength)
+    HEAPU8.set(new Uint8Array(tar), tarStart)
     mdl.obj = new Module.CommonModel(objs.length - 1, normalMdl, "/" + storepath, id, tarStart, tar.byteLength)
     return result
   }
@@ -131,8 +131,8 @@ class Recognizer extends EventTarget {
     return result
   }
   acceptWaveform(audioData) {
-    let start = Module._malloc(audioData.length * 4)
-    Module.HEAPF32.set(audioData, start / 4)
+    let start = _malloc(audioData.length * 4)
+    HEAPF32.set(audioData, start / 4)
     this.obj.pushData(start, audioData.length)
   }
 }

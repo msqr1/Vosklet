@@ -2,7 +2,6 @@
 #include <emscripten/em_js.h>
 #include <emscripten/wasm_worker.h>
 
-WorkerPool globalPool;
 EM_JS(void, _fireEv, (int index, int content, int type), {
   objs[index].dispatchEvent(new CustomEvent(type === 0 ? "0" : UTF8ToString(type), { "detail" : UTF8ToString(content) }));
 })
@@ -79,6 +78,9 @@ void Worker::startup(int _self, int _pool) {
     self.fn();
   }
 }
+static constexpr int workerStack{65536};
+static std::array<std::byte, MAX_WORKERS * workerStack> stacks;
+#undef MAX_WORKERS
 WorkerPool::WorkerPool() {
   for(int i = 0; i < workers.size(); i++) {
     workers[i].handle = emscripten_create_wasm_worker(&stacks[i * workerStack], workerStack);
@@ -96,3 +98,4 @@ void WorkerPool::exec(std::function<void()> fn) {
   emscripten_atomic_store_u32(&qLock, false);
   emscripten_atomic_notify(&qLock, 1);
 }
+WorkerPool globalPool;

@@ -30,19 +30,16 @@ struct Worker {
 #ifndef MAX_WORKERS
 #define MAX_WORKERS 1
 #endif
-static constexpr int workerStack{65536};
-static std::array<std::byte, MAX_WORKERS * workerStack> stacks;
 struct WorkerPool {
   bool qLock{true}; // True is locked, false is unlocked
   bool done{};
   std::queue<std::function<void()>> taskQ;
   std::array<Worker, MAX_WORKERS> workers;
-#undef MAX_WORKERS
   WorkerPool();
   ~WorkerPool();
   void exec(std::function<void()> fn);
 };
-
-extern WorkerPool globalPool;
 void fireEv(int index, const char* _content, const char* _type = nullptr);
 int untar(unsigned char* tar, int tarSize, const std::string& storepath);
+
+extern WorkerPool globalPool;
