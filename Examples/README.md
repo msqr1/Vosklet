@@ -1,1 +1,3 @@
-**Note: Examples in this folder uses its own *Vosklet.js* because I can't set the Response headers for my model for browsers to decompress correctly. Instead, I used DecompressionStream to decompress manually, so this *Vosklet.js* only works for the examples. In production, please use the top-level Vosklet.js instead.**
+#### The file Vosklet.js in this folder, used by the examples and the outer [README.md](../README.md), has been set to decompress manually using ```DecompressionStream``` because I can't set a third-party (Github's) server response header. You can utilize this if you run into the same situation. Otherwise, please use the outer Vosklet.js instead. 
+
+#### The motivation is that it will work right away when put into a HTML file. You can just make a local copy and everything out quickly

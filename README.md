@@ -1,18 +1,22 @@
 # Overview
 - A lightweight, up to date speech recognizer in the browser with total gzipped size of **under a megabyte** (725 KB)
-- Built from scratch, inspired by [vosk-browser](https://github.com/ccoreilly/vosk-browser)
+- Demo: 
+- Inspired by [vosk-browser](https://github.com/ccoreilly/vosk-browser)
+
+# Documentation
+- See [Documentation.md](Documentation.md)
 
 # Vosklet ...
 - Is regularly maintained
 - Support multiple models
-- Include model storage management
-- Include model ID management (for updates)
+- Include model cache path management
+- Include model cache ID management (for updates)
 - Wraps all Vosk's functionaly
 
 # Basic usage (microphone recognition in English)
 - Result are logged to the console.
-- Copied from *examples/fromMic.html*
-- **Note: The example folder and this piece of code uses *Examples/Vosklet.js* because I can't set the Response headers for my model for browsers to decompress correctly. Instead, I used DecompressionStream to decompress manually, so *Examples/Vosklet.js* only works for the examples. In production, use the top-level Vosklet.js instead.**
+- Copied from [Examples/fromMic.html](Examples/fromMic.html)
+- **IMPORTANT:** Please see [Examples/README.md](Examples/README.md)
 ```html
 <!DOCTYPE html>
 <html>
@@ -40,20 +44,15 @@
         let recognizer = await module.createRecognizer(model, 16000)
 
         // Listen for result and partial result
-        recognizer.addEventListener("result", ev => {
-          console.log("Result: ", ev.detail)
-        })
-        recognizer.addEventListener("partialResult", ev => {
-          console.log("Partial result: ", ev.detail)
-        })
+        recognizer.addEventListener("result", ev => console.log("Result: ", ev.detail))
+        recognizer.addEventListener("partialResult", ev => console.log("Partial result: ", ev.detail))
 
         // Create a transferer node to get audio data on the main thread
         let transferer = await module.createTransferer(ctx, 128 * 150)
 
         // Recognize data on arrival
-        transferer.port.onmessage = ev => {
-          recognizer.acceptWaveform(ev.data)
-        }
+        transferer.port.onmessage = ev => recognizer.acceptWaveform(ev.data)
+
         // Connect to microphone
         micNode.connect(transferer)
       }

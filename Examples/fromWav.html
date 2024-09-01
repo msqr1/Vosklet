@@ -11,12 +11,8 @@
         let recognizer = await module.createRecognizer(model, 16000)
         
         // Listen for result and partial result
-        recognizer.addEventListener("result", ev => {
-          console.log("Result: ", ev.detail)
-        })
-        recognizer.addEventListener("partialResult", ev => {
-          console.log("Partial result: ", ev.detail)
-        })
+        recognizer.addEventListener("result", ev => console.log("Result: ", ev.detail))
+        recognizer.addEventListener("partialResult", ev => console.log("Partial result: ", ev.detail))
 
         // Fetch, decode, and recognize .wav
         let wav = await fetch("https://cdn.jsdelivr.net/gh/msqr1/Vosklet/examples/example.wav")

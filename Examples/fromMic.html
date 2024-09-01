@@ -24,20 +24,15 @@
         let recognizer = await module.createRecognizer(model, 16000)
 
         // Listen for result and partial result
-        recognizer.addEventListener("result", ev => {
-          console.log("Result: ", ev.detail)
-        })
-        recognizer.addEventListener("partialResult", ev => {
-          console.log("Partial result: ", ev.detail)
-        })
+        recognizer.addEventListener("result", ev => console.log("Result: ", ev.detail))
+        recognizer.addEventListener("partialResult", ev => console.log("Partial result: ", ev.detail))
 
         // Create a transferer node to get audio data on the main thread
         let transferer = await module.createTransferer(ctx, 128 * 150)
 
         // Recognize data on arrival
-        transferer.port.onmessage = ev => {
-          recognizer.acceptWaveform(ev.data)
-        }
+        transferer.port.onmessage = ev => recognizer.acceptWaveform(ev.data)
+
         // Connect to microphone
         micNode.connect(transferer)
       }
