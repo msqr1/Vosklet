@@ -1,6 +1,5 @@
 # Overview
-- A lightweight, up to date speech recognizer in the browser with total gzipped size of **under a megabyte** (725 KB)
-- Demo: 
+- A lightweight, up to date speech recognizer in the browser with total gzipped size of **under a megabyte** (725 KB) 
 - Inspired by [vosk-browser](https://github.com/ccoreilly/vosk-browser)
 
 # Documentation
