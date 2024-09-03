@@ -1,57 +1,73 @@
 #include "Recognizer.h"
+#include <atomic>
 
 Recognizer::Recognizer(int index, float sampleRate, CommonModel* model) :
-  index{index},
-  rec{vosk_recognizer_new(std::get<VoskModel*>(model->mdl), sampleRate)}
-{
-  finishConstruction(model);
+  rec{vosk_recognizer_new(std::get<VoskModel*>(model->mdl), sampleRate)} {
+  if(rec == nullptr) fireEv(index, Event::status, "Unable to initialize recognizer");
+  else globalPool.exec([this, index]{main(index);});
 }
 Recognizer::Recognizer(int index, float sampleRate, CommonModel* model, CommonModel* spkModel) :
-  index{index},
   rec{vosk_recognizer_new_spk(std::get<VoskModel*>(model->mdl), sampleRate, std::get<VoskSpkModel*>(spkModel->mdl))} {
-  finishConstruction(model, spkModel);
+  if(rec == nullptr) fireEv(index, Event::status, "Unable to initialize recognizer");
+  else globalPool.exec([this, index]{main(index);});
 }
 Recognizer::Recognizer(int index, float sampleRate, CommonModel* model, const std::string& grm, int) :
-  index{index},
   rec{vosk_recognizer_new_grm(std::get<VoskModel*>(model->mdl), sampleRate, grm.c_str())} {
-  finishConstruction(model);
+  if(rec == nullptr) fireEv(index, Event::status, "Unable to initialize recognizer");
+  else globalPool.exec([this, index]{main(index);});
 }
-Recognizer::~Recognizer() {
-  done = true;
+void Recognizer::safeDelete(bool _processCurrent) {
+  emscripten_atomic_store_u8(&processCurrent, _processCurrent);
+  emscripten_atomic_store_u8(&done, true);
   emscripten_atomic_store_u32(&haveData, true);
   emscripten_atomic_notify(&haveData, 1);
-  while(!dataQ.empty()) {
-    free(dataQ.front().data);
-    dataQ.pop();
-  }
-  vosk_recognizer_free(rec);
 }
-void Recognizer::finishConstruction(CommonModel* model, CommonModel* spkModel) {
-  if(rec == nullptr) fireEv(index, "Unable to initialize recognizer");
-  else globalPool.exec([this]{main();});
-}
-void Recognizer::main() {
-  fireEv(index, "0");
-  while(!done) {
+void Recognizer::main(int index) {
+  fireEv(index, Event::status);
+  AudioData* next;
+  while(!emscripten_atomic_load_u8(&done)) {
     if(dataQ.empty()) {
       emscripten_atomic_store_u32(&haveData, false);
       emscripten_atomic_wait_u32(&haveData, false, -1);
     }
     else {
-      AudioData& next = dataQ.front();
-      switch(vosk_recognizer_accept_waveform_f(rec, next.data, next.len)) {
+      next = &dataQ.front();
+      switch(vosk_recognizer_accept_waveform_f(rec, next->data, next->len)) {
         case 0: [[likely]]
-          fireEv(index, vosk_recognizer_partial_result(rec), "partialResult");
+          fireEv(index, Event::partialResult, vosk_recognizer_partial_result(rec));
           break;
         case 1: [[unlikely]]
-          fireEv(index, vosk_recognizer_result(rec), "result");
+          fireEv(index, Event::result, vosk_recognizer_result(rec));
       }
-      free(next.data);
+      free(next->data);
       dataQ.pop();
     }
   }
+  if(emscripten_atomic_load_u8(&processCurrent)) {
+    while(!dataQ.empty()) {
+      free(dataQ.front().data);
+      dataQ.pop();
+    }
+  }
+  else {
+    while(!dataQ.empty()) {
+      next = &dataQ.front();
+      switch(vosk_recognizer_accept_waveform_f(rec, next->data, next->len)) {
+        case 0: [[likely]]
+          fireEv(index, Event::partialResult, vosk_recognizer_partial_result(rec));
+          break;
+        case 1: [[unlikely]]
+          fireEv(index, Event::result, vosk_recognizer_result(rec));
+      }
+      free(next->data);
+      dataQ.pop();
+    }
+  }
+  fireEv(index, Event::result, vosk_recognizer_final_result(rec));
+  vosk_recognizer_free(rec);
+  fireEv(index, Event::status);
 }
-void Recognizer::pushData(int start, int len) {
+void Recognizer::acceptWaveform(int start, int len) {
   dataQ.emplace(start, len);
   emscripten_atomic_store_u32(&haveData, true);
   emscripten_atomic_notify(&haveData, 1);

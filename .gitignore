@@ -1,6 +1,8 @@
 vosk
 kaldi
 .vscode
+Models
+index2.html
 clapack-wasm
 openfst
 emsdk

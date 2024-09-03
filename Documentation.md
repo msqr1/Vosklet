@@ -1,18 +1,13 @@
-<h1 style="text-align:center;">API Reference</h1>
+# API Reference
 
 ## JS ```window``` object
 | Function/Object | Description |
-|---|---|
+|-|-|
 | ```Promise<Module> loadVosklet()``` | Load Vosklet module interface |
-
-## Shared interface
-| Function/Object  | Description |
-|---|---|
-| ```delete()``` | Delete this object (call C++ destructor), see [why](https://emscripten.org/docs/getting_started/FAQ.html#what-does-exiting-the-runtime-mean-why-don-t-atexit-s-run) this is neccessary. For recognizers, make sure they finished recognizing before deleting them |
 
 ## ```Module``` object
 | Function/Object | Description |
-|---|---|
+|-|-|
 | ```Promise<Model> createModel(url: string, path: string, id: string)```<br><br>```Promise<SpkModel> createSpkModel(url: string, path: string, id: string)``` | Create a ```Model``` or ```SpkModel```, model files must be directly under the model root, and compressed model must be in ```.tar.gz```/```.tgz``` format. Tar format must be USTAR. If:<br>- ```path``` contains valid model files and ```id``` is the same, there will not be a fetch from ```url```.<br>- ```path``` doesn't contain valid model files, or if it contains valid model files but ```id``` is different, there will be a fetch from ```url```, and the model is stored with ```id```. Models are thread-safe and reusable across recognizers. |
 | ```Promise<Recognizer> createRecognizer(model: Model, sampleRate: float)```<br><br>```Promise<Recognizer> createRecognizerWithSpkModel(model: Model, spkModel: spkModel, sampleRate: float)```<br><br>```Promise<Recognizer> createRecognizerWithGrm(model: Model, grammar: string, sampleRate: float)``` | Create a ```Recognizer``` |
 | ```setLogLevel(lvl: int)``` | Set log level for Kaldi messages (default: ```0```: Info) <br>```-2```: Error<br>```-1```: Warning<br>```1```: Verbose<br>```2```: More verbose<br>```3```: Debug |
@@ -22,13 +17,14 @@
 
 ## ```Model``` object
 | Function/Object | Description |
-|---|---|
-| ```int findWord(word: string)``` | Check if a word can be recognized by the model, return the word symbol if ```word``` exists inside the model or ```-1``` otherwise. Word symbol ```0``` is for epsilon. |
+|-|-|
+| ```int findWord(word: string)``` | Check if a word can be recognized by the model, return the word symbol if ```word``` exists inside the model or ```-1``` otherwise. Word symbol ```0``` is for epsilon |
+| ```delete()``` | Delete the model |
 
 ## ```Recognizer``` object
 | Function/Object | Description |
-|---|---|
-| ```acceptWaveform(audioData: Float32Array)``` | Accept voice data in a ```Float32Array``` with elements from ```-1.0``` to ```1.0```. |
+|-|-|
+| ```acceptWaveform(audioData: Float32Array)``` | Enqueue an audio block for recognition as a ```Float32Array``` of numbers between ```-1.0``` and ```1.0``` |
 | ```setWords(words: bool)``` | Enables words with times in the output (default: ```false```) |
 | ```setPartialWords(partialWords: bool)``` | Like above return words and confidences in partial results (default: ```false```) |
 | ```setNLSML(nlsml: bool)``` | Set NLSML output (default: ```false```) |
@@ -37,13 +33,15 @@
 | ```setSpkModel(mdl: SpkModel)``` | Adds speaker model to already initialized recognizer |
 | ```setEndpointerMode(mode: EpMode)``` | Set endpointer scaling factor (default: ```ANSWER_DEFAULT```) |
 | ```setEndpointerDelays(tStartMax: float, tEnd: float, tMax: float)``` | Set endpointer delays |
+| ```Promise<void> delete(processCurrent: bool)``` | Delete the recognizer right after it processes its current block if ```processCurrent``` is ```true```; or after processing all remaining blocks if ```processCurrent``` is ```false``` (default: ```false```) |
 
 | Event | Description |
-|---|---|
-| ```partialResult``` | There is a partial recognition result, check the event's ```detail``` property |
-| ```result``` | There is a full recognition result, check the event's ```detail``` property |
-<br>
-<h1 style="text-align:center;">HTTP Remarks</h1>
+|-|-|
+| ```partialResult``` | Partial recognition result (stored in the event's ```detail``` property). This is fired while silence is not detected, ie. still speaking. Its words maybe updated and change in later ```partialResult```s until a ```result``` is fired. |
+| ```result``` | Full, finalized recognition result (stored in the event's ```detail``` property). This is fired when silence is detected. Its words are finalized and won't ever change |
+
+---
+# HTTP Remarks
 
 ## HTTPS
 Vosklet is available only in [secure contexts](https://developer.mozilla.org/en-US/docs/Web/Security/Secure_Contexts) (HTTPS)
@@ -51,14 +49,13 @@ Vosklet is available only in [secure contexts](https://developer.mozilla.org/en-
 SharedArrayBuffer is necessary to share data between workers, so these response headers must be set:
 - ```Cross-Origin-Embedder-Policy``` ⟶ ```require-corp```
 - ```Cross-Origin-Opener-Policy``` ⟶ ```same-origin```
-<br>If you can't set them, you may use a hacky workaround in *AddCOI.js*.
+<br>If you can't set them, you may use a hacky workaround in *AddCOI.js*
 
 ## Content Security Policy (CSP)
-Wasm worker construction will be from a blob so the CSP:
-- ```worker-src``` must include ```blob:```
+For those who are using CSP, Vosklet's Wasm worker construction will be from a ```Blob``` which require the CSP ```worker-src``` to include ```blob:```
 
-<br>
-<h1 style="border:2px ;text-align:center;">Compilation</h1>
+---
+# Compilation
 - Requires all Autotools commands in PATH, ```make```, and ```pkg-config```. For example, installing with ```apt``` would be:
 
   ```sudo apt install autotools-dev autoconf libtool make pkg-config```
@@ -71,8 +68,8 @@ cd Vosklet/src &&
 # Example: INITIAL_MEMORY=350mb MAX_THREADS=3 ./make
 ```
 | Option | Description | Default value |
-|---|---|---|
-| INITIAL_MEMORY | Set inital memory, valid suffixes: kb, mb, gb, tb or none (bytes) | ```300mb``` as [recommended](https://alphacephei.com/vosk/models). This memory will grow if usage exceeds this value. |
+|-|-|-|
+| INITIAL_MEMORY | Set inital memory, valid suffixes: kb, mb, gb, tb or none (bytes) | ```315mb``` as [recommended](https://alphacephei.com/vosk/models) plus a bit of leeway. This memory will grow if usage exceeds this value. |
 | MAX_THREADS | Set the max number of threads (>=1), this should be equal to the number of recognizers used in the program | ```1``` |
 | JOBS | Set the number of jobs (threads) when building | ```$(nproc)```   |
 | EMSDK | Set EMSDK's path (will install EMSDK in root folder if unset) | ```../emsdk``` |

@@ -4,18 +4,17 @@
 // Prevent naming conflicts with Vosk's Recognizer class
 #define Recognizer Recognizer_
 struct Recognizer {
-  int haveData{};
+  int haveData{}; 
+  bool processCurrent{};
   bool done{};
-  int index;
   VoskRecognizer* rec;
   std::queue<AudioData> dataQ;
   Recognizer(int index, float sampleRate, CommonModel* model);
   Recognizer(int index, float sampleRate, CommonModel* model, CommonModel* spkModel);
   Recognizer(int index, float sampleRate, CommonModel* model, const std::string& grm, int);
-  ~Recognizer();
-  void finishConstruction(CommonModel* model, CommonModel* spkModel = nullptr);
-  void main();
-  void pushData(int start, int len);
+  void main(int index);
+  void safeDelete(bool _processCurrent);
+  void acceptWaveform(int start, int len);
   void reset();
   void setEndpointerMode(VoskEndpointerMode mode);
   void setEndpointerDelays(float tStartMax, float tEnd, float tMax);

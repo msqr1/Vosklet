@@ -13,6 +13,14 @@ struct AudioData {
   int len;
   AudioData(int start, int len) : data{reinterpret_cast<float*>(start)}, len{len} {}
 };
+enum Event {
+  // Shared
+  status,
+
+  // Recognizer
+  partialResult,
+  result,
+};
 enum UntarStatus {
   Successful,
   IncorrectFormat,
@@ -39,7 +47,7 @@ struct WorkerPool {
   ~WorkerPool();
   void exec(std::function<void()> fn);
 };
-void fireEv(int index, const char* _content, const char* _type = nullptr);
+void fireEv(int index, int typeIdx, const char* content = nullptr);
 int untar(unsigned char* tar, int tarSize, const std::string& storepath);
 
 extern WorkerPool globalPool;

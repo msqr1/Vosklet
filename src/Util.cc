@@ -2,19 +2,13 @@
 #include <emscripten/em_js.h>
 #include <emscripten/wasm_worker.h>
 
-EM_JS(void, _fireEv, (int index, int content, int type), {
-  objs[index].dispatchEvent(new CustomEvent(type === 0 ? "0" : UTF8ToString(type), { "detail" : UTF8ToString(content) }));
+EM_JS(void, _fireEv, (int index, int typeIdx, int content), {
+  objs[index].dispatchEvent(new CustomEvent(events[typeIdx], { "detail" : content == 0 ? null : UTF8ToString(content) }));
 })
-void fireEv(int index, const char* _content, const char* _type) {
-  int content = reinterpret_cast<int>(_content);
-  int type = reinterpret_cast<int>(_type);
-  switch(emscripten_wasm_worker_self_id()) {
-  case 0: [[unlikely]]
-    _fireEv(index, content, type);
-    break;
-  case 1: [[likely]]
-    emscripten_wasm_worker_post_function_viii(0, _fireEv, index, content, type);
-  }
+void fireEv(int index, int typeIdx, const char* content) {
+  int contentAddr{reinterpret_cast<int>(content)};
+  if(emscripten_wasm_worker_self_id()) emscripten_wasm_worker_post_function_viii(0, _fireEv, index, typeIdx, contentAddr);
+  else _fireEv(index, typeIdx, contentAddr);
 }
 int untar(unsigned char* tar, int tarSize, const std::string& storepath) {
   if(std::memcmp(tar + 257, "ustar", 5)) return IncorrectFormat;

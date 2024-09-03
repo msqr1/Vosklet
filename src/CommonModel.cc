@@ -14,25 +14,25 @@ void CommonModel::extractAndLoad(unsigned char* tar, int tarSize) {
   free(tar);
   switch(res) {
   case IncorrectFormat:
-    fireEv(index, "Untar: Incorrect tar format, must be USTAR");
+    fireEv(index, Event::status, "Untar: Incorrect tar format, must be USTAR");
     return;
   case IncorrectFiletype:
-    fireEv(index, "Untar: Not a directory or regular file");
+    fireEv(index, Event::status, "Untar: Not a directory or regular file");
     return;
   case FailedOpen:
-    fireEv(index, "Untar: Unable to open file for write");
+    fireEv(index, Event::status, "Untar: Unable to open file for write");
     return;
   case FailedWrite:
-    fireEv(index, "Untar: Unable to write file");
+    fireEv(index, Event::status, "Untar: Unable to write file");
     return;
   case FailedClose:
-    fireEv(index, "Untar: Unable to close file after write");
+    fireEv(index, Event::status, "Untar: Unable to close file after write");
     return;
   };
   if(normalMdl) mdl = vosk_model_new(storepath.c_str());
   else mdl = vosk_spk_model_new(storepath.c_str());
-  if(normalMdl ? std::get<VoskModel*>(mdl) != nullptr : std::get<VoskSpkModel*>(mdl) != nullptr) fireEv(index, "0");
-  else fireEv(index, "Unable to load model for recognition");
+  if(normalMdl ? std::get<VoskModel*>(mdl) != nullptr : std::get<VoskSpkModel*>(mdl) != nullptr) fireEv(index, status);
+  else fireEv(index, status, "Unable to load model for recognition");
   fs::remove_all(storepath);
 }
 int CommonModel::findWord(std::string word) {

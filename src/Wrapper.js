@@ -1,4 +1,5 @@
 let objs = []
+let events = ["status", "partialResult", "result"]
 let processorURL = URL.createObjectURL(new Blob(['(', (() => {
   registerProcessor("VoskletTransferer", class extends AudioWorkletProcessor {
     constructor(opts) {
@@ -21,8 +22,8 @@ let processorURL = URL.createObjectURL(new Blob(['(', (() => {
   })
 }).toString(), ')()'], { type : "text/javascript" }))
 
-Module.cleanUp = () => {
-  objs.forEach(obj => obj.obj.delete())
+Module.cleanUp = async () => {
+  for(let obj of objs) await obj.delete()
   URL.revokeObjectURL(processorURL)
 }
 
@@ -49,15 +50,18 @@ class CommonModel extends EventTarget {
     super()
     objs.push(this)
   }
+  delete() {
+    this.obj.delete()
+  }
   static async create(url, storepath, id, normalMdl) {
     let mdl = new CommonModel()
     let result = new Promise((resolve, reject) => {
-      mdl.addEventListener("0", ev => {
-        if(ev.detail == "0") {
+      mdl.addEventListener("status", ev => {
+        if(!ev.detail) {
           if(normalMdl) mdl.findWord = (word) => mdl.obj.findWord(word)
-          return resolve(mdl)
+          resolve(mdl)
         }
-        reject(ev.detail)
+        else reject(ev.detail)
       }, { once : true })
     })
     let tar
@@ -101,21 +105,38 @@ Module.createSpkModel = async (url, storepath, id) => {
 }
 
 class Recognizer extends EventTarget {
-  constructor() {
+  constructor() { 
     super()
     objs.push(this)
     return new Proxy(this, {
       get(self, prop, _) {
-        return self.obj && Object.keys(Object.getPrototypeOf(self.obj)).includes(prop) ? self.obj[prop].bind(self.obj) : self[prop] ? self[prop].bind ? self[prop].bind(self) : self[prop] : undefined
+        if(self[prop] == undefined && self.obj[prop] == undefined) return undefined
+        let p = self[prop]
+        if(p) return p.bind ? p.bind(self) : p
+        p = self.obj[prop]
+        return p.bind ? p.bind(self.obj) : p
       }
     })
+  }
+  acceptWaveform(audioData) {
+    let start = _malloc(audioData.length * 4)
+    HEAPF32.set(audioData, start / 4)
+    this.obj.acceptWaveform(start, audioData.length)
+  }
+  async delete(processCurrent = false) {
+    let result = new Promise((resolve, _) => this.addEventListener("status", _ => {
+      this.obj.delete()
+      resolve()
+    }, { once : true }))
+    this.obj.safeDelete(processCurrent)
+    return result;
   }
   static async create(model, sampleRate, mode, grammar, spkModel) {
     let rec = new Recognizer()
     let result = new Promise((resolve, reject) => {
-      rec.addEventListener("0", ev => {
-        if(ev.detail == "0") return resolve(rec)
-        reject(ev.detail)
+      rec.addEventListener("status", ev => {
+        if(!ev.detail) resolve(rec)
+        else reject(ev.detail)
       }, { once : true })
     })
     switch(mode) {
@@ -129,11 +150,6 @@ class Recognizer extends EventTarget {
         rec.obj = new Module.Recognizer(objs.length - 1, sampleRate, model, grammar, 0)
     }
     return result
-  }
-  acceptWaveform(audioData) {
-    let start = _malloc(audioData.length * 4)
-    HEAPF32.set(audioData, start / 4)
-    this.obj.pushData(start, audioData.length)
   }
 }
 
