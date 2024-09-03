@@ -129,7 +129,7 @@ class Recognizer extends EventTarget {
       resolve()
     }, { once : true }))
     this.obj.safeDelete(processCurrent)
-    return result;
+    return result
   }
   static async create(model, sampleRate, mode, grammar, spkModel) {
     let rec = new Recognizer()
