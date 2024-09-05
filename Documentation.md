@@ -12,7 +12,7 @@
 | ```Promise<Recognizer> createRecognizer(model: Model, sampleRate: float)```<br><br>```Promise<Recognizer> createRecognizerWithSpkModel(model: Model, spkModel: spkModel, sampleRate: float)```<br><br>```Promise<Recognizer> createRecognizerWithGrm(model: Model, grammar: string, sampleRate: float)``` | Create a ```Recognizer``` |
 | ```setLogLevel(lvl: int)``` | Set log level for Kaldi messages (default: ```0```: Info) <br>```-2```: Error<br>```-1```: Warning<br>```1```: Verbose<br>```2```: More verbose<br>```3```: Debug |
 | ```Promise<AudioWorkletNode> createTransferer(ctx: AudioContext, bufferSize: int)``` | Create a node that transfer its inputs back to the main thread with custom buffer size (must be multiple of 128). Its port's ```onmessage``` handler can be set to get audio data. Has 1 input with 1 channel and no output. The the higher the size, the lesser the audio breaks up, but the higher the latency. Recomended value is around ```128 * 150```. |
-| ```cleanUp()``` | A convenience function that call ```delete()``` on all objects and revoke all URLs. **Put this at the end of your code!** |
+| ```Promise<void> cleanUp()``` | A convenience function that call ```delete()``` on all objects and revoke all URLs. **Put this at the end of your code!** |
 | ```EpMode``` | Enum for endpointer modes | See Vosk's description |
 
 ## ```Model``` object
@@ -49,7 +49,8 @@ Vosklet is available only in [secure contexts](https://developer.mozilla.org/en-
 SharedArrayBuffer is necessary to share data between workers, so these response headers must be set:
 - ```Cross-Origin-Embedder-Policy``` ⟶ ```require-corp```
 - ```Cross-Origin-Opener-Policy``` ⟶ ```same-origin```
-<br>If you can't set them, you may use a hacky workaround in *AddCOI.js*
+
+If you can't set them, you may use a hacky workaround in [AddCOI.js](AddCOI.js)
 
 ## Content Security Policy (CSP)
 For those who are using CSP, Vosklet's Wasm worker construction will be from a ```Blob``` which require the CSP ```worker-src``` to include ```blob:```

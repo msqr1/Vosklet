@@ -20,7 +20,7 @@
 
         // Load Vosklet module, model and recognizer
         let module = await loadVosklet()
-        let model = await module.createModel("https://ccoreilly.github.io/vosk-browser/models/vosk-model-small-en-us-0.15.tar.gz","model","ID")
+        let model = await module.createModel("https://ccoreilly.github.io/vosk-browser/models/vosk-model-small-en-us-0.15.tar.gz","English","vosk-model-small-en-us-0.15")
         let recognizer = await module.createRecognizer(model, 16000)
 
         // Listen for result and partial result

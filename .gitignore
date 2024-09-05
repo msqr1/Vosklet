@@ -1,11 +1,9 @@
 vosk
 kaldi
 .vscode
-Models
-index2.html
+index.html
 clapack-wasm
 openfst
 emsdk
-index.html
 test.js
 test.wasm
