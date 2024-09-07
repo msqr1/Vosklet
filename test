@@ -36,7 +36,7 @@ OPENFST=$(realpath openfst)
 CLAPACK_WASM=$(realpath clapack-wasm)
 
 cd src &&
-MODE=0 && # 0: Ultra debug info, 1: Optimized release, else custom
+MODE=1 && # 0: Ultra debug info, 1: Optimized release, else custom
 echo "Mode = $MODE" &&
 if [ "$MODE" = 0 ]; then
   em++ Util.cc CommonModel.cc Recognizer.cc Bindings.cc -O0 -DEMSCRIPTEN_HAS_UNBOUND_TYPE_NAMES=0 -fno-rtti -DMAX_WORKERS="$MAX_THREADS" -sWASMFS -sWASM_BIGINT -sMODULARIZE -sWASM_EXNREF -sTEXTDECODER=2 -sWASM_WORKERS=2 -sEVAL_CTORS=2 -sSTACK_OVERFLOW_CHECK=2 -sASSERTIONS=2 -sINITIAL_MEMORY="$INITIAL_MEMORY" -sALLOW_MEMORY_GROWTH -sRUNTIME_DEBUG -sPOLYFILL=0 -sEXIT_RUNTIME=0 -sINVOKE_RUN=0  -sDISABLE_EXCEPTION_CATCHING=0 -sEXPORTED_FUNCTIONS=_malloc -sEXPORT_NAME=loadVosklet -sMALLOC=emmalloc -sEXPORTED_RUNTIME_METHODS=UTF8ToString -sENVIRONMENT=web,worker -I. -I"$VOSK"/src -L"$KALDI"/src -l:online2/kaldi-online2.a -l:decoder/kaldi-decoder.a -l:ivector/kaldi-ivector.a -l:gmm/kaldi-gmm.a -l:tree/kaldi-tree.a -l:feat/kaldi-feat.a -l:cudamatrix/kaldi-cudamatrix.a -l:lat/kaldi-lat.a -l:lm/kaldi-lm.a -l:rnnlm/kaldi-rnnlm.a -l:hmm/kaldi-hmm.a -l:nnet3/kaldi-nnet3.a -l:transform/kaldi-transform.a -l:matrix/kaldi-matrix.a -l:fstext/kaldi-fstext.a -l:util/kaldi-util.a -l:base/kaldi-base.a -L"$OPENFST"/lib -l:libfst.a -l:libfstngram.a -L"$CLAPACK_WASM" -l:CBLAS/lib/cblas.a -l:CLAPACK-3.2.1/lapack.a -l:CLAPACK-3.2.1/libcblaswr.a -l:f2c_BLAS-3.8.0/blas.a -l:libf2c/libf2c.a -L"$VOSK"/src -l:vosk.a -lembind -flto -msimd128 -mreference-types -mnontrapping-fptoint -mextended-const -msign-ext -mmutable-globals --pre-js Wrapper.js -o ../test.js
