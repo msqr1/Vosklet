@@ -1,25 +1,12 @@
 #include "Util.h"
-#include <emscripten/em_js.h>
 #include <emscripten/wasm_worker.h>
+#include <emscripten/em_js.h>
 
-bool _isWorker() {
-  // First thread to flip this bool is the main thread
-  static bool test{true};
-  if(test) {
-    test = false;
-    return true;
-  }
-  return false;
-}
-thread_local bool isWorker{_isWorker()};
-
-EM_JS(void, _fireEv, (int index, int typeIdx, int content), {
+EM_JS(void, mtFireEv, (int index, int typeIdx, int content), {
   objs[index].dispatchEvent(new CustomEvent(events[typeIdx], { "detail" : content == 0 ? null : UTF8ToString(content) }));
-})
+});
 void fireEv(int index, int typeIdx, const char* content) {
-  int contentAddr{reinterpret_cast<int>(content)};
-  if(isWorker) emscripten_wasm_worker_post_function_viii(0, _fireEv, index, typeIdx, contentAddr);
-  else _fireEv(index, typeIdx, contentAddr);
+  emscripten_wasm_worker_post_function_viii(0, mtFireEv, index, typeIdx, reinterpret_cast<int>(content));
 }
 int untar(unsigned char* tar, int tarSize, const std::string& storepath) {
   if(std::memcmp(tar + 257, "ustar", 5)) return IncorrectFormat;
@@ -61,9 +48,9 @@ int untar(unsigned char* tar, int tarSize, const std::string& storepath) {
   }
   return Successful;
 }
-void Worker::startup(int _self, int _pool) {
-  Worker& self = *reinterpret_cast<Worker*>(_self);
-  WorkerPool& pool = *reinterpret_cast<WorkerPool*>(_pool);
+void Worker::startup(int _fn, int _pool) {
+  WorkerPool& pool{*reinterpret_cast<WorkerPool*>(_pool)};
+  std::function<void()>& fn{*reinterpret_cast<std::function<void()>*>(_fn)};
   while(!pool.done) {
     // Wait until unlocked
     emscripten_atomic_wait_u32(&pool.qLock, true, -1);
@@ -75,12 +62,12 @@ void Worker::startup(int _self, int _pool) {
     }
     // If this locks, the returned (loaded) value will be false, and we move on
     if(emscripten_atomic_cas_u32(&pool.qLock, false, true)) continue;
-    self.fn = pool.taskQ.front();
+    fn = pool.taskQ.front();
     pool.taskQ.pop();
     // Unlock
     emscripten_atomic_store_u32(&pool.qLock, false);
     emscripten_atomic_notify(&pool.qLock, 1);
-    self.fn();
+    fn();
   }
 }
 static constexpr int workerStack{65536};
@@ -89,7 +76,7 @@ static std::array<std::byte, MAX_WORKERS * workerStack> stacks;
 WorkerPool::WorkerPool() {
   for(int i = 0; i < workers.size(); i++) {
     workers[i].handle = emscripten_create_wasm_worker(&stacks[i * workerStack], workerStack);
-    emscripten_wasm_worker_post_function_vii(workers[i].handle, Worker::startup, reinterpret_cast<int>(&workers[i]), reinterpret_cast<int>(this));
+    emscripten_wasm_worker_post_function_vii(workers[i].handle, Worker::startup, reinterpret_cast<int>(&workers[i].fn),reinterpret_cast<int>(this));
   }
 }
 WorkerPool::~WorkerPool() {

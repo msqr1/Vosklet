@@ -6,6 +6,7 @@
 
 #include <emscripten/atomic.h>
 #include <emscripten/console.h>
+
 namespace fs = std::filesystem;
 
 struct AudioData {
@@ -33,7 +34,7 @@ struct WorkerPool;
 struct Worker {
   int handle;
   std::function<void()> fn;
-  static void startup(int _self, int _pool);
+  static void startup(int _fn, int _pool);
 };
 #ifndef MAX_WORKERS
 #define MAX_WORKERS 1
@@ -47,7 +48,12 @@ struct WorkerPool {
   ~WorkerPool();
   void exec(std::function<void()> fn);
 };
+// Must be called from the main thread
+extern "C" void mtFireEv(int index, int typeIdx, int content);
+
+// Must be called from a wasm worker
 void fireEv(int index, int typeIdx, const char* content = nullptr);
+
 int untar(unsigned char* tar, int tarSize, const std::string& storepath);
 
 extern WorkerPool globalPool;
