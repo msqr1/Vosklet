@@ -2,12 +2,23 @@
 #include <emscripten/em_js.h>
 #include <emscripten/wasm_worker.h>
 
+bool _isWorker() {
+  // First thread to flip this bool is the main thread
+  static bool test{true};
+  if(test) {
+    test = false;
+    return true;
+  }
+  return false;
+}
+thread_local bool isWorker{_isWorker()};
+
 EM_JS(void, _fireEv, (int index, int typeIdx, int content), {
   objs[index].dispatchEvent(new CustomEvent(events[typeIdx], { "detail" : content == 0 ? null : UTF8ToString(content) }));
 })
 void fireEv(int index, int typeIdx, const char* content) {
   int contentAddr{reinterpret_cast<int>(content)};
-  if(emscripten_wasm_worker_self_id()) emscripten_wasm_worker_post_function_viii(0, _fireEv, index, typeIdx, contentAddr);
+  if(isWorker) emscripten_wasm_worker_post_function_viii(0, _fireEv, index, typeIdx, contentAddr);
   else _fireEv(index, typeIdx, contentAddr);
 }
 int untar(unsigned char* tar, int tarSize, const std::string& storepath) {
