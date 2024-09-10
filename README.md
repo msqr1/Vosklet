@@ -1,5 +1,6 @@
 # Overview
-- A lightweight, up to date speech recognizer in the browser with total gzipped size of **under a megabyte** (725 KB) 
+- A lightweight, up to date speech recognizer in the browser with total gzipped size of **under a megabyte** (725 KB)
+- Live Demo: https://msqr1-github-io.pages.dev/Vosklet
 - Inspired by [vosk-browser](https://github.com/ccoreilly/vosk-browser)
 
 # Documentation
@@ -13,7 +14,8 @@
 - Wraps all Vosk's functionaly
 
 # Basic usage (microphone recognition in English)
-- Result are logged to the console.
+- Using JsDelivr CDN
+- Result are logged to the console
 - Copied from [Examples/fromMic.html](Examples/fromMic.html)
 - **IMPORTANT:** Please see [Examples/README.md](Examples/README.md)
 ```html
@@ -23,24 +25,23 @@
     <script src="https://cdn.jsdelivr.net/gh/msqr1/Vosklet@1.1.5/Examples/Vosklet.min.js" async defer></script>
     <script>
       async function start() {
-        // Make sure sample rate matches that in the training data
-        let ctx = new AudioContext({sampleRate : 16000})
+        // All data is collected and transfered to the main thread so the AudioContext won't output anything. Set sinkId type to none to save power
+        let ctx = new AudioContext({sinkId: {type: "none"}})
 
-        // Setup mic with correct sample rate
+        // Setup microphone   
         let micNode = ctx.createMediaStreamSource(await navigator.mediaDevices.getUserMedia({
           video: false,
           audio: {
             echoCancellation: true,
             noiseSuppression: true,
-            channelCount: 1,
-            sampleRate: 16000
+            channelCount: 1
           },
         }))
 
         // Load Vosklet module, model and recognizer
         let module = await loadVosklet()
         let model = await module.createModel("https://ccoreilly.github.io/vosk-browser/models/vosk-model-small-en-us-0.15.tar.gz","English","vosk-model-small-en-us-0.15")
-        let recognizer = await module.createRecognizer(model, 16000)
+        let recognizer = await module.createRecognizer(model, ctx.sampleRate)
 
         // Listen for result and partial result
         recognizer.addEventListener("result", ev => console.log("Result: ", ev.detail))
@@ -52,7 +53,7 @@
         // Recognize data on arrival
         transferer.port.onmessage = ev => recognizer.acceptWaveform(ev.data)
 
-        // Connect to microphone
+        // Connect transferer to microphone
         micNode.connect(transferer)
       }
     </script>
