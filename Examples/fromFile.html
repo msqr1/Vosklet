@@ -15,7 +15,7 @@
         recognizer.addEventListener("partialResult", ev => console.log("Partial result: ", ev.detail))
 
         // Fetch, decode, and recognize the .wav
-        let wav = await fetch("https://cdn.jsdelivr.net/gh/msqr1/Vosklet/examples/example.wav")
+        let wav = await fetch("https://cdn.jsdelivr.net/gh/msqr1/Vosklet/examples/1to10-en.wav")
         let audioBuf = await ctx.decodeAudioData(await wav.arrayBuffer())
         recognizer.acceptWaveform(audioBuf.getChannelData(0))
       }
