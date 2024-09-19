@@ -24,8 +24,8 @@ if [ "$EMSDK" = ../emsdk ] && [ ! -d "$EMSDK" ]; then
   echo "Installing emsdk + Emscripten..."
   git clone --depth=1 https://github.com/emscripten-core/emsdk.git ../emsdk &&
   cd ../emsdk &&
-  ./emsdk install 3.1.65 &&
-  ./emsdk activate 3.1.65
+  ./emsdk install 3.1.67 &&
+  ./emsdk activate 3.1.67
 fi
 . $(realpath "$EMSDK")/emsdk_env.sh &&
 export PATH=:$PATH:$(realpath "$EMSDK")/upstream/bin &&
@@ -42,7 +42,7 @@ if [ ! -d "$OPENFST" ]; then
   git clone --depth=1 https://github.com/alphacep/openfst /tmp/openfst &&
   cd /tmp/openfst &&
   autoreconf -is &&
-  CXXFLAGS="-r -O3 -fno-rtti -flto -msimd128 -mreference-types -mnontrapping-fptoint -mextended-const -msign-ext -mmutable-globals" emconfigure ./configure --prefix="$OPENFST" --enable-static --disable-shared --enable-lookahead-fsts --enable-ngram-fsts --disable-bin &&
+  CXXFLAGS="-r -O3 -fno-rtti -flto -msimd128 -mreference-types -mnontrapping-fptoint -mextended-const -msign-ext -mmutable-globals -flto" emconfigure ./configure --prefix="$OPENFST" --enable-static --disable-shared --enable-lookahead-fsts --enable-ngram-fsts --disable-bin &&
   emmake make -j"$JOBS" install &&
   echo "PACKAGE_VERSION = 1.8.0" >> "$OPENFST"/Makefile
 fi
@@ -58,7 +58,7 @@ if [ ! -d "$KALDI" ]; then
   git clone -b vosk --depth=1 https://github.com/alphacep/kaldi "$KALDI" &&
   cd "$KALDI"/src &&
   git apply "$SRC"/Kaldi.patch &&
-  CXXFLAGS="-O3 -UHAVE_EXECINFO_H -fno-rtti -flto -msimd128 -mreference-types -mnontrapping-fptoint -mextended-const -msign-ext -mmutable-globals -Wno-unused-variable -Wno-unused-but-set-variable -g0" LDFLAGS="-O3 -lembind -flto -g0" emconfigure ./configure --use-cuda=no --with-cudadecoder=no --static --static-math=yes --static-fst=yes --debug-level=0 --fst-root="$OPENFST" --clapack-root="$CLAPACK_WASM" --host=WASM &&
+  CXXFLAGS="-O3 -UHAVE_EXECINFO_H -DEMSCRIPTEN_HAS_UNBOUND_TYPE_NAMES=0 -flto -msimd128 -mreference-types -mnontrapping-fptoint -mextended-const -msign-ext -mmutable-globals -Wno-unused-variable -Wno-unused-but-set-variable -g0" LDFLAGS="-lembind" emconfigure ./configure --use-cuda=no --with-cudadecoder=no --static --static-math=yes --static-fst=yes --debug-level=0 --fst-root="$OPENFST" --clapack-root="$CLAPACK_WASM" --host=WASM &&
   emmake make -j"$JOBS" online2 rnnlm
 fi
 
