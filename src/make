@@ -42,7 +42,7 @@ if [ ! -d "$OPENFST" ]; then
   git clone --depth=1 https://github.com/alphacep/openfst /tmp/openfst &&
   cd /tmp/openfst &&
   autoreconf -is &&
-  CXXFLAGS="-r -O3 -fno-rtti -flto -msimd128 -mreference-types -mnontrapping-fptoint -mextended-const -msign-ext -mmutable-globals -flto" emconfigure ./configure --prefix="$OPENFST" --enable-static --disable-shared --enable-lookahead-fsts --enable-ngram-fsts --disable-bin &&
+  CXXFLAGS="-r -O3 -fno-rtti -flto -msimd128 -matomics -mbulk-memory -mreference-types -mnontrapping-fptoint -mextended-const -msign-ext -mmutable-globals -flto" emconfigure ./configure --prefix="$OPENFST" --enable-static --disable-shared --enable-lookahead-fsts --enable-ngram-fsts --disable-bin &&
   emmake make -j"$JOBS" install &&
   echo "PACKAGE_VERSION = 1.8.0" >> "$OPENFST"/Makefile
 fi
@@ -58,7 +58,7 @@ if [ ! -d "$KALDI" ]; then
   git clone -b vosk --depth=1 https://github.com/alphacep/kaldi "$KALDI" &&
   cd "$KALDI"/src &&
   git apply "$SRC"/Kaldi.patch &&
-  CXXFLAGS="-O3 -UHAVE_EXECINFO_H -DEMSCRIPTEN_HAS_UNBOUND_TYPE_NAMES=0 -flto -msimd128 -mreference-types -mnontrapping-fptoint -mextended-const -msign-ext -mmutable-globals -Wno-unused-variable -Wno-unused-but-set-variable -g0" LDFLAGS="-lembind" emconfigure ./configure --use-cuda=no --with-cudadecoder=no --static --static-math=yes --static-fst=yes --debug-level=0 --fst-root="$OPENFST" --clapack-root="$CLAPACK_WASM" --host=WASM &&
+  CXXFLAGS="-O3 -UHAVE_EXECINFO_H -DEMSCRIPTEN_HAS_UNBOUND_TYPE_NAMES=0 -flto -msimd128 -matomics -mbulk-memory -mreference-types -mnontrapping-fptoint -mextended-const -msign-ext -mmutable-globals -Wno-unused-variable -Wno-unused-but-set-variable -g0" LDFLAGS="-lembind" emconfigure ./configure --use-cuda=no --with-cudadecoder=no --static --static-math=yes --static-fst=yes --debug-level=0 --fst-root="$OPENFST" --clapack-root="$CLAPACK_WASM" --host=WASM &&
   emmake make -j"$JOBS" online2 rnnlm
 fi
 
@@ -67,12 +67,12 @@ if [ ! -d "$VOSK" ]; then
   cd "$VOSK"/src &&
   git apply "$SRC"/Vosk.patch &&
   VOSK_FILES="recognizer.cc language_model.cc model.cc spk_model.cc vosk_api.cc" &&
-  em++ -O3 -flto -msimd128 -mreference-types -mnontrapping-fptoint -mextended-const -msign-ext -mmutable-globals -Wno-deprecated -I. -I"$KALDI"/src -I"$OPENFST"/include $VOSK_FILES -c &&
+  em++ -O3 -flto -msimd128 -matomics -mbulk-memory -mreference-types -mnontrapping-fptoint -mextended-const -msign-ext -mmutable-globals -Wno-deprecated -I. -I"$KALDI"/src -I"$OPENFST"/include $VOSK_FILES -c &&
   emar -rcs vosk.a ${VOSK_FILES//.cc/.o}
 fi
 
 cd "$SRC" &&
-  em++ Util.cc CommonModel.cc Recognizer.cc Bindings.cc -O3 -DEMSCRIPTEN_HAS_UNBOUND_TYPE_NAMES=0 -fno-rtti -DMAX_WORKERS="$MAX_THREADS" -sWASMFS -sWASM_BIGINT -sMODULARIZE -sWASM_EXNREF -sTEXTDECODER=2 -sWASM_WORKERS=2 -sEVAL_CTORS=2 -sINITIAL_MEMORY="$INITIAL_MEMORY" -sALLOW_MEMORY_GROWTH -sPOLYFILL=0 -sEXIT_RUNTIME=0 -sINVOKE_RUN=0 -sSUPPORT_LONGJMP=0 -sEXPORTED_FUNCTIONS=_malloc -sEXPORT_NAME=loadVosklet -sMALLOC=emmalloc -sEXPORTED_RUNTIME_METHODS=UTF8ToString -sENVIRONMENT=web,worker -I. -I"$VOSK"/src -L"$KALDI"/src -l:online2/kaldi-online2.a -l:decoder/kaldi-decoder.a -l:ivector/kaldi-ivector.a -l:gmm/kaldi-gmm.a -l:tree/kaldi-tree.a -l:feat/kaldi-feat.a -l:cudamatrix/kaldi-cudamatrix.a -l:lat/kaldi-lat.a -l:lm/kaldi-lm.a -l:rnnlm/kaldi-rnnlm.a -l:hmm/kaldi-hmm.a -l:nnet3/kaldi-nnet3.a -l:transform/kaldi-transform.a -l:matrix/kaldi-matrix.a -l:fstext/kaldi-fstext.a -l:util/kaldi-util.a -l:base/kaldi-base.a -L"$OPENFST"/lib -l:libfst.a -l:libfstngram.a -L"$CLAPACK_WASM" -l:CBLAS/lib/cblas.a -l:CLAPACK-3.2.1/lapack.a -l:CLAPACK-3.2.1/libcblaswr.a -l:f2c_BLAS-3.8.0/blas.a -l:libf2c/libf2c.a -L"$VOSK"/src -l:vosk.a -lembind -flto -msimd128 -mreference-types -mnontrapping-fptoint -mextended-const -msign-ext -mmutable-globals --pre-js Wrapper.js -o ../Vosklet.js
+  em++ Util.cc CommonModel.cc Recognizer.cc Bindings.cc -O3 -DEMSCRIPTEN_HAS_UNBOUND_TYPE_NAMES=0 -fno-rtti -DMAX_WORKERS="$MAX_THREADS" -sWASMFS -sWASM_BIGINT -sMODULARIZE -sWASM_EXNREF -sTEXTDECODER=2 -sWASM_WORKERS=2 -sEVAL_CTORS=2 -sINITIAL_MEMORY="$INITIAL_MEMORY" -sALLOW_MEMORY_GROWTH -sPOLYFILL=0 -sEXIT_RUNTIME=0 -sINVOKE_RUN=0 -sSUPPORT_LONGJMP=0 -sEXPORTED_FUNCTIONS=_malloc -sEXPORT_NAME=loadVosklet -sMALLOC=emmalloc -sEXPORTED_RUNTIME_METHODS=UTF8ToString -sENVIRONMENT=web,worker -I. -I"$VOSK"/src -L"$KALDI"/src -l:online2/kaldi-online2.a -l:decoder/kaldi-decoder.a -l:ivector/kaldi-ivector.a -l:gmm/kaldi-gmm.a -l:tree/kaldi-tree.a -l:feat/kaldi-feat.a -l:cudamatrix/kaldi-cudamatrix.a -l:lat/kaldi-lat.a -l:lm/kaldi-lm.a -l:rnnlm/kaldi-rnnlm.a -l:hmm/kaldi-hmm.a -l:nnet3/kaldi-nnet3.a -l:transform/kaldi-transform.a -l:matrix/kaldi-matrix.a -l:fstext/kaldi-fstext.a -l:util/kaldi-util.a -l:base/kaldi-base.a -L"$OPENFST"/lib -l:libfst.a -l:libfstngram.a -L"$CLAPACK_WASM" -l:CBLAS/lib/cblas.a -l:CLAPACK-3.2.1/lapack.a -l:CLAPACK-3.2.1/libcblaswr.a -l:f2c_BLAS-3.8.0/blas.a -l:libf2c/libf2c.a -L"$VOSK"/src -l:vosk.a -lembind -flto -msimd128 -matomics -mbulk-memory -mreference-types -mnontrapping-fptoint -mextended-const -msign-ext -mmutable-globals --pre-js Wrapper.js -o ../Vosklet.js
 cd .. &&
 rm -f Vosklet.worker.js
 
@@ -80,6 +80,6 @@ cp Vosklet.js Examples/Vosklet.js &&
 cp Vosklet.wasm Examples/Vosklet.wasm &&
 
 # Can't serve files from raw.githubusercontent with Content-Encoding: gzip header so the browser won't decompress automatically. Manually decompressing instead.
-sed -i 's/res.body/new Response(res.body.pipeThrough(new DecompressionStream("gzip"))).body/' Examples/Vosklet.js &&
+sed -i 's/.pipeThrough(new CompressionStream("gzip"))//;s/teed\[1\]/teed[1].pipeThrough(new DecompressionStream("gzip"))/' Examples/Vosklet.js &&
 
 rm -rf /tmp/openfst
