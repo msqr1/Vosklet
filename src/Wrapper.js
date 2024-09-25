@@ -1,3 +1,8 @@
+/**
+ * @fileoverview
+ * @suppress {undefinedVars|checkTypes}
+ */
+
 let objs = [];
 let events = ["status", "partialResult", "result"];
 let storageWorkerURL = URL.createObjectURL(new Blob(['(', (() => {
@@ -61,14 +66,15 @@ let processorURL = URL.createObjectURL(new Blob(['(', (() => {
     }
   })
 }).toString(), ')()'], { type: "text/javascript" }));
-Module.cleanUp = async () => {
+
+Module['cleanUp'] = async () => {
   for(let obj of objs) await obj.delete();
   URL.revokeObjectURL(processorURL);
   URL.revokeObjectURL(storageWorkerURL);
   storageWorker.terminate();
 }
 
-Module.createTransferer = async (ctx, bufferSize) => {
+Module['createTransferer'] = async (ctx, bufferSize) => {
   await ctx.audioWorklet.addModule(processorURL);
   return new AudioWorkletNode(ctx, "VoskletTransferer", {
     channelCountMode: "explicit",
@@ -92,7 +98,7 @@ class CommonModel extends EventTarget {
     let result = new Promise((resolve, reject) => {
       mdl.addEventListener("status", ev => {
         if(!ev.detail) {
-          if(normalMdl) mdl.findWord = word => mdl.obj.findWord(word)
+          if(normalMdl) mdl['findWord'] = word => mdl.obj['findWord'](word)
           resolve(mdl)
         }
         else reject(ev.detail)
@@ -102,7 +108,7 @@ class CommonModel extends EventTarget {
       tar = tar.data;
       let tarStart = _malloc(tar.byteLength);
       HEAPU8.set(new Uint8Array(tar), tarStart);
-      mdl.obj = new Module.CommonModel(objs.length - 1, normalMdl, "/" + storepath, id, tarStart, tar.byteLength);
+      mdl.obj = new Module['CommonModel'](objs.length - 1, normalMdl, "/" + storepath, id, tarStart, tar.byteLength);
     }, { once: true });
     storageWorker.postMessage({
       url: url,
@@ -113,15 +119,21 @@ class CommonModel extends EventTarget {
   }
 }
 
-Module.createModel = async (url, storepath, id) => 
+Module['createModel'] = async (url, storepath, id) =>
   CommonModel.mk(url, storepath, id, true);
 
-Module.createSpkModel = async (url, storepath, id) => 
+Module['createSpkModel'] = async (url, storepath, id) =>
   CommonModel.mk(url, storepath, id, false);
 
 class Recognizer extends EventTarget {
-  constructor() { 
+  constructor() {
     super();
+    // Closure workaround, this is removed if I put it as a regular class function. For some reason delete() doesn't
+    this['acceptWaveform'] = audioData => {
+      let start = _malloc(audioData.length * 4);
+      HEAPF32.set(audioData, start / 4);
+      this.obj['acceptWaveform'](start, audioData.length);
+    }
     objs.push(this);
     return new Proxy(this, {
       get(self, prop, _) {
@@ -132,11 +144,6 @@ class Recognizer extends EventTarget {
         return p.bind ? p.bind(self.obj) : p;
       }
     })
-  }
-  acceptWaveform(audioData) {
-    let start = _malloc(audioData.length * 4);
-    HEAPF32.set(audioData, start / 4);
-    this.obj.acceptWaveform(start, audioData.length);
   }
   async delete(processCurrent = false) {
     let result = new Promise((resolve, _) => this.addEventListener("status", _ => {
@@ -156,22 +163,25 @@ class Recognizer extends EventTarget {
     })
     switch(mode) {
       case 1:
-        rec.obj = new Module.Recognizer(objs.length - 1, sampleRate, model);
+        rec.obj = new Module['Recognizer'](objs.length - 1, sampleRate, model);
         break;
       case 2:
-        rec.obj = new Module.Recognizer(objs.length -1, sampleRate, model, spkModel);
+        rec.obj = new Module['Recognizer'](objs.length -1, sampleRate, model, spkModel);
         break;
       default:
-        rec.obj = new Module.Recognizer(objs.length - 1, sampleRate, model, grammar, 0);
+        rec.obj = new Module['Recognizer'](objs.length - 1, sampleRate, model, grammar, 0);
     }
     return result;
   }
 }
-Module.createRecognizer = (model, sampleRate) => 
+
+Module['createRecognizer'] = (model, sampleRate) =>
   Recognizer.mk(model.obj, sampleRate, 1);
 
-Module.createRecognizerWithSpkModel = (model, sampleRate, spkModel) =>
+Module['createRecognizerWithSpkModel'] = (model, sampleRate, spkModel) =>
   Recognizer.mk(model.obj, sampleRate, 2, null, spkModel.obj);
 
-Module.createRecognizerWithGrm = (model, sampleRate, grammar) =>
+Module['createRecognizerWithGrm'] = (model, sampleRate, grammar) =>
   Recognizer.mk(model.obj, sampleRate, 3, grammar, null);
+
+
