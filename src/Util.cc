@@ -70,11 +70,11 @@ void Worker::startup(int _fn, int _pool) {
     fn();
   }
 }
-static constexpr int workerStack{65536};
+static constexpr int workerStack{32768};
 static std::array<std::byte, MAX_WORKERS * workerStack> stacks;
 #undef MAX_WORKERS
 WorkerPool::WorkerPool() {
-  for(int i = 0; i < workers.size(); i++) {
+  for(unsigned int i = 0; i < workers.size(); i++) {
     workers[i].handle = emscripten_create_wasm_worker(&stacks[i * workerStack], workerStack);
     emscripten_wasm_worker_post_function_vii(workers[i].handle, Worker::startup, reinterpret_cast<int>(&workers[i].fn),reinterpret_cast<int>(this));
   }

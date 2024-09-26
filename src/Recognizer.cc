@@ -34,10 +34,10 @@ void Recognizer::main(int index) {
     else {
       next = &dataQ.front();
       switch(vosk_recognizer_accept_waveform_f(rec, next->data, next->len)) {
-        case 0: [[likely]]
+        case 0:
           fireEv(index, Event::partialResult, vosk_recognizer_partial_result(rec));
           break;
-        case 1: [[unlikely]]
+        case 1:
           fireEv(index, Event::result, vosk_recognizer_result(rec));
       }
       free(next->data);
