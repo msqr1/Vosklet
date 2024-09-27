@@ -80,17 +80,38 @@ index 035ffee..18edcd3 100644
  #endif
  
 diff --git a/src/recognizer.cc b/src/recognizer.cc
-index 55d9991..4802b92 100644
+index 55d9991..8671b71 100644
 --- a/src/recognizer.cc
 +++ b/src/recognizer.cc
-@@ -384,8 +384,9 @@ bool Recognizer::AcceptWaveform(const float *fdata, int len)
- {
+@@ -17,6 +17,7 @@
+ #include "fstext/fstext-utils.h"
+ #include "lat/sausages.h"
+ #include "language_model.h"
++#include "wasm_simd128.h"
+ 
+ using namespace fst;
+ using namespace kaldi::nnet3;
+@@ -379,13 +380,20 @@ bool Recognizer::AcceptWaveform(const short *sdata, int len)
+         wave(i) = sdata[i];
+     return AcceptWaveform(wave);
+ }
+-
+ bool Recognizer::AcceptWaveform(const float *fdata, int len)
+-{
++{   
++    static v128_t _32768fx4{wasm_f32x4_const_splat(32768.0f)};
      Vector<BaseFloat> wave;
      wave.Resize(len, kUndefined);
 -    for (int i = 0; i < len; i++)
 -        wave(i) = fdata[i];
-+    for (int i = 0; i < len; i++) {
-+        wave(i) = fdata[i] * 32768.0f;
++    float* dst{wave.Data()};
++    int x4Len{len >> 2 << 2};
++    int i{};
++    for(;i < x4Len; i += 4, dst += 4, fdata += 4) {
++        wasm_v128_store(dst, wasm_f32x4_mul(wasm_v128_load(fdata), _32768fx4));
++    }
++    for(i = x4Len; i < len; ++i, ++fdata, ++dst) {
++        *dst = *fdata * 32768.0f;
 +    }
      return AcceptWaveform(wave);
  }
