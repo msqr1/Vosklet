@@ -4,17 +4,18 @@
  */
 
 let objs = [];
-let events = ["status", "partialResult", "result"];
-let storageWorkerURL = URL.createObjectURL(new Blob(['(', (() => {
+let events = ['status', 'partialResult', 'result'];
+let storageWorkerURL = URL.createObjectURL(new Blob(['(', (async () => {
   let txtDecoder = new TextDecoder();
   let txtEncoder = new TextEncoder();
+  let OPFSRoot = await navigator.storage.getDirectory();
   onmessage = async msg => {
     msg = msg.data;
-    let components = msg.storepath.split("/");
-    let prevDir = await navigator.storage.getDirectory();
+    let components = msg.storepath.split('/');
+    let prevDir = OPFSRoot;
     for(let component of components) prevDir = await prevDir.getDirectoryHandle(component, { create: true });
-    let idHandle = await prevDir.getFileHandle("id", { create: true });
-    let mdlHandle = await prevDir.getFileHandle("model.tgz", { create: true });
+    let idHandle = await prevDir.getFileHandle('id', { create: true });
+    let mdlHandle = await prevDir.getFileHandle('model.tgz', { create: true });
     let idFile = await idHandle.createSyncAccessHandle();
     let mdlFile = await mdlHandle.createSyncAccessHandle();
     let oldIdBuf = new ArrayBuffer(idFile.getSize());
@@ -23,16 +24,16 @@ let storageWorkerURL = URL.createObjectURL(new Blob(['(', (() => {
     if(txtDecoder.decode(oldIdBuf) == msg.id) {
       tgz = new ArrayBuffer(mdlFile.getSize());
       mdlFile.read(tgz);
-      tar = await new Response(new Response(tgz).body.pipeThrough(new DecompressionStream("gzip"))).arrayBuffer();
+      tar = await new Response(new Response(tgz).body.pipeThrough(new DecompressionStream('gzip'))).arrayBuffer();
     }
     else {
       let res = await fetch(msg.url);
       if(!res.ok) {
-        postMessage("Unable to download model");
+        postMessage('Unable to download model');
         return;
       }
       let teed = res.body.tee();
-      tgz = await new Response(teed[0].pipeThrough(new CompressionStream("gzip"))).arrayBuffer();
+      tgz = await new Response(teed[0].pipeThrough(new CompressionStream('gzip'))).arrayBuffer();
       mdlFile.write(tgz, { at: 0 });
       mdlFile.truncate(tgz.byteLength);
       let newId = txtEncoder.encode(msg.id);
@@ -44,10 +45,10 @@ let storageWorkerURL = URL.createObjectURL(new Blob(['(', (() => {
     mdlFile.close();
     self.postMessage(tar, [tar]);
   }
-}).toString(), ')()'], { type: "text/javascript" }))
+}).toString(), ')()'], { type: 'text/javascript' }))
 let storageWorker = new Worker(storageWorkerURL);
 let processorURL = URL.createObjectURL(new Blob(['(', (() => {
-  registerProcessor("VoskletTransferer", class extends AudioWorkletProcessor {
+  registerProcessor('VoskletTransferer', class extends AudioWorkletProcessor {
     constructor(opts) {
       super();
       this.count = 0;
@@ -65,7 +66,7 @@ let processorURL = URL.createObjectURL(new Blob(['(', (() => {
       return true;
     }
   })
-}).toString(), ')()'], { type: "text/javascript" }));
+}).toString(), ')()'], { type: 'text/javascript' }));
 
 Module['cleanUp'] = async () => {
   for(let obj of objs) await obj.delete();
@@ -76,8 +77,8 @@ Module['cleanUp'] = async () => {
 
 Module['createTransferer'] = async (ctx, bufferSize) => {
   await ctx.audioWorklet.addModule(processorURL);
-  return new AudioWorkletNode(ctx, "VoskletTransferer", {
-    channelCountMode: "explicit",
+  return new AudioWorkletNode(ctx, 'VoskletTransferer', {
+    channelCountMode: 'explicit',
     numberOfInputs: 1,
     numberOfOutputs: 0,
     channelCount: 1,
@@ -96,19 +97,19 @@ class CommonModel extends EventTarget {
   static async mk(url, storepath, id, normalMdl) {
     let mdl = new CommonModel();
     let result = new Promise((resolve, reject) => {
-      mdl.addEventListener("status", ev => {
+      mdl.addEventListener('status', ev => {
         if(!ev.detail) {
           if(normalMdl) mdl['findWord'] = word => mdl.obj['findWord'](word)
           resolve(mdl)
         }
         else reject(ev.detail)
-      }, { once : true })
+      }, { once: true })
     });
-    storageWorker.addEventListener("message", tar => {
+    storageWorker.addEventListener('message', tar => {
       tar = tar.data;
       let tarStart = _malloc(tar.byteLength);
       HEAPU8.set(new Uint8Array(tar), tarStart);
-      mdl.obj = new Module['CommonModel'](objs.length - 1, normalMdl, "/" + storepath, id, tarStart, tar.byteLength);
+      mdl.obj = new Module['CommonModel'](objs.length - 1, normalMdl, '/' + storepath, id, tarStart, tar.byteLength);
     }, { once: true });
     storageWorker.postMessage({
       url: url,
@@ -128,7 +129,7 @@ Module['createSpkModel'] = async (url, storepath, id) =>
 class Recognizer extends EventTarget {
   constructor() {
     super();
-    // Closure workaround, this is removed if I put it as a regular class function. For some reason delete() doesn't
+    // Closure workaround to prevent acceptWaveform from getting removed
     this['acceptWaveform'] = audioData => {
       let start = _malloc(audioData.length * 4);
       HEAPF32.set(audioData, start / 4);
@@ -146,17 +147,17 @@ class Recognizer extends EventTarget {
     })
   }
   async delete(processCurrent = false) {
-    let result = new Promise((resolve, _) => this.addEventListener("status", _ => {
+    let result = new Promise((resolve, _) => this.addEventListener('status', _ => {
       this.obj.delete();
       resolve();
     }, { once: true }));
-    this.obj.safeDelete(processCurrent);
+    this.obj['safeDelete'](processCurrent);
     return result;
   }
   static async mk(model, sampleRate, mode, grammar, spkModel) {
     let rec = new Recognizer();
     let result = new Promise((resolve, reject) => {
-      rec.addEventListener("status", ev => {
+      rec.addEventListener('status', ev => {
         if(!ev.detail) resolve(rec);
         else reject(ev.detail);
       }, { once: true });
@@ -183,5 +184,3 @@ Module['createRecognizerWithSpkModel'] = (model, sampleRate, spkModel) =>
 
 Module['createRecognizerWithGrm'] = (model, sampleRate, grammar) =>
   Recognizer.mk(model.obj, sampleRate, 3, grammar, null);
-
-
