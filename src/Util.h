@@ -1,11 +1,11 @@
 #pragma once
 #include <filesystem>
-#include <functional>
 #include <variant>
 #include <fstream>
+#include <functional>
 
-#include <emscripten/atomic.h>
-#include <emscripten/console.h>
+#include "emscripten/atomic.h"
+#include "emscripten/console.h"
 
 namespace fs = std::filesystem;
 
@@ -30,12 +30,6 @@ enum UntarStatus {
   FailedWrite,
   FailedClose
 };
-struct WorkerPool;
-struct Worker {
-  int handle;
-  std::function<void()> fn;
-  static void startup(int _fn, int _pool);
-};
 #ifndef MAX_WORKERS
 #define MAX_WORKERS 1
 #endif
@@ -43,7 +37,6 @@ struct WorkerPool {
   bool qLock{true}; // True is locked, false is unlocked
   bool done{};
   std::queue<std::function<void()>> taskQ;
-  std::array<Worker, MAX_WORKERS> workers;
   WorkerPool();
   ~WorkerPool();
   void exec(std::function<void()> fn);

@@ -1,7 +1,7 @@
 #pragma once
 #include "Util.h"
 
-#include <vosk_api.h>
+#include "vosk_api.h"
 
 struct CommonModel {
   bool normalMdl;
