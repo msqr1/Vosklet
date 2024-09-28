@@ -80,7 +80,7 @@ index 035ffee..18edcd3 100644
  #endif
  
 diff --git a/src/recognizer.cc b/src/recognizer.cc
-index 55d9991..02439d1 100644
+index 55d9991..c111038 100644
 --- a/src/recognizer.cc
 +++ b/src/recognizer.cc
 @@ -17,6 +17,7 @@
@@ -91,7 +91,7 @@ index 55d9991..02439d1 100644
  
  using namespace fst;
  using namespace kaldi::nnet3;
-@@ -379,13 +380,21 @@ bool Recognizer::AcceptWaveform(const short *sdata, int len)
+@@ -379,13 +380,20 @@ bool Recognizer::AcceptWaveform(const short *sdata, int len)
          wave(i) = sdata[i];
      return AcceptWaveform(wave);
  }
@@ -107,12 +107,11 @@ index 55d9991..02439d1 100644
 +    float* dst{wave.Data()};
 +    int x4Len{len >> 2 << 2};
 +    int i{};
-+    
-+    for(;i < x4Len; i += 4, dst += 4) {
-+        wasm_v128_store(dst, wasm_f32x4_mul(wasm_v128_load(fdata + i), _32768fx4));
++    for(;i < x4Len; i += 4) {
++        wasm_v128_store(dst + i, wasm_f32x4_mul(wasm_v128_load(fdata + i), _32768fx4));
 +    }
-+    for(i = x4Len; i < len; ++i, ++dst) {
-+        *dst = fdata[i] * 32768.0f;
++    for(i = x4Len; i < len; ++i) {
++        dst[i] = fdata[i] * 32768.0f;
 +    }
      return AcceptWaveform(wave);
  }
