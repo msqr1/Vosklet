@@ -48,17 +48,18 @@ let processorURL = URL.createObjectURL(new Blob(['(', (() => {
   registerProcessor('VoskletTransferer', class extends AudioWorkletProcessor {
     constructor(opts) {
       super();
-      this.count = 0;
-      this.maxCount = opts.processorOptions.maxCount;
-      this.buffer = new Float32Array(this.maxCount * 128);
+      this.filledSize = 0;
+      this.bufferSize = opts.processorOptions;
+      this.buffer = new Float32Array(this.bufferSize);
     }
     process(inputs) {
-      if(!inputs[0][0]) return true;
-      this.buffer.set(inputs[0][0], this.count++ * 128);
-      if(this.count >= this.maxCount) {
-        this.count = 0;
-        this.port.postMessage(this.buffer, [this.buffer.buffer]);
-        this.buffer = new Float32Array(this.maxCount * 128);
+      if(inputs[0][0]) {
+        this.buffer.set(inputs[0][0], this.filledSize += 128);
+        if(this.filledSize >= this.bufferSize) {
+          this.filledSize = 0;
+          this.port.postMessage(this.buffer, [this.buffer.buffer]);
+          this.buffer = new Float32Array(this.bufferSize);
+        }
       }
       return true;
     }
@@ -161,7 +162,7 @@ Module = {
       numberOfInputs: 1,
       numberOfOutputs: 0,
       channelCount: 1,
-      processorOptions: { maxCount: bufferSize / 128 }
+      processorOptions: bufferSize
     });
   },
 
