@@ -28,10 +28,7 @@ let storageWorkerURL = URL.createObjectURL(new Blob(['(', (async () => {
     }
     else {
       let res = await fetch(msg.url);
-      if(!res.ok) {
-        postMessage('Unable to download model');
-        return;
-      }
+      if(!res.ok) throw 'Unable to download model'
       let teed = res.body.tee();
       tgz = await new Response(teed[0].pipeThrough(new CompressionStream('gzip'))).arrayBuffer();
       mdlFile.write(tgz, { at: 0 });
@@ -67,25 +64,6 @@ let processorURL = URL.createObjectURL(new Blob(['(', (() => {
     }
   })
 }).toString(), ')()'], { type: 'text/javascript' }));
-
-Module['cleanUp'] = async () => {
-  for(let obj of objs) await obj.delete();
-  URL.revokeObjectURL(processorURL);
-  URL.revokeObjectURL(storageWorkerURL);
-  storageWorker.terminate();
-}
-
-Module['createTransferer'] = async (ctx, bufferSize) => {
-  await ctx.audioWorklet.addModule(processorURL);
-  return new AudioWorkletNode(ctx, 'VoskletTransferer', {
-    channelCountMode: 'explicit',
-    numberOfInputs: 1,
-    numberOfOutputs: 0,
-    channelCount: 1,
-    processorOptions: { maxCount: bufferSize / 128 }
-  });
-}
-
 class CommonModel extends EventTarget {
   constructor() {
     super();
@@ -119,13 +97,6 @@ class CommonModel extends EventTarget {
     return result;
   }
 }
-
-Module['createModel'] = async (url, storepath, id) =>
-  CommonModel.mk(url, storepath, id, true);
-
-Module['createSpkModel'] = async (url, storepath, id) =>
-  CommonModel.mk(url, storepath, id, false);
-
 class Recognizer extends EventTarget {
   constructor() {
     super();
@@ -175,12 +146,37 @@ class Recognizer extends EventTarget {
     return result;
   }
 }
+Module = {
+  'cleanUp': async () => {
+    for(let obj of objs) await obj.delete();
+    URL.revokeObjectURL(processorURL);
+    URL.revokeObjectURL(storageWorkerURL);
+    storageWorker.terminate();
+  },
 
-Module['createRecognizer'] = (model, sampleRate) =>
-  Recognizer.mk(model.obj, sampleRate, 1);
+  'createTransferer': async (ctx, bufferSize) => {
+    await ctx.audioWorklet.addModule(processorURL);
+    return new AudioWorkletNode(ctx, 'VoskletTransferer', {
+      channelCountMode: 'explicit',
+      numberOfInputs: 1,
+      numberOfOutputs: 0,
+      channelCount: 1,
+      processorOptions: { maxCount: bufferSize / 128 }
+    });
+  },
 
-Module['createRecognizerWithSpkModel'] = (model, sampleRate, spkModel) =>
-  Recognizer.mk(model.obj, sampleRate, 2, null, spkModel.obj);
+  'createModel': (url, storepath, id) =>
+    CommonModel.mk(url, storepath, id, true),
 
-Module['createRecognizerWithGrm'] = (model, sampleRate, grammar) =>
-  Recognizer.mk(model.obj, sampleRate, 3, grammar, null);
+  'createSpkModel': (url, storepath, id) =>
+    CommonModel.mk(url, storepath, id, false),
+
+  'createRecognizer': (model, sampleRate) =>
+    Recognizer.mk(model.obj, sampleRate, 1),
+
+  'createRecognizerWithGrm': (model, sampleRate, grammar) =>
+    Recognizer.mk(model.obj, sampleRate, 3, grammar, null),
+
+  'createRecognizerWithSpkModel': (model, sampleRate, spkModel) =>
+    Recognizer.mk(model.obj, sampleRate, 2, null, spkModel.obj)
+}
