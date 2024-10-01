@@ -3,8 +3,11 @@
  * @suppress {undefinedVars|checkTypes}
  */
 
-let objs = [];
-let events = ['status', 'partialResult', 'result'];
+if(ENVIRONMENT_IS_WEB) {
+
+// "var" to expose this outside the if
+var objs = [];
+var events = ['status', 'partialResult', 'result'];
 let storageWorkerURL = URL.createObjectURL(new Blob(['(', (async () => {
   let txtDecoder = new TextDecoder();
   let txtEncoder = new TextEncoder();
@@ -49,7 +52,7 @@ let processorURL = URL.createObjectURL(new Blob(['(', (() => {
     constructor(opts) {
       super();
       this.filledSize = 0;
-      this.bufferSize = opts.processorOptions;
+      this.bufferSize = opts.processorOptions.bufferSize;
       this.buffer = new Float32Array(this.bufferSize);
     }
     process(inputs) {
@@ -162,7 +165,7 @@ Module = {
       numberOfInputs: 1,
       numberOfOutputs: 0,
       channelCount: 1,
-      processorOptions: bufferSize
+      processorOptions: { bufferSize: bufferSize }
     });
   },
 
@@ -180,4 +183,6 @@ Module = {
 
   'createRecognizerWithSpkModel': (model, sampleRate, spkModel) =>
     Recognizer.mk(model.obj, sampleRate, 2, null, spkModel.obj)
+}
+
 }
