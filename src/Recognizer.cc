@@ -1,20 +1,20 @@
 #include "Recognizer.h"
 #include <atomic>
 
-static const char* recognizerInitErr{"Unable to initialize recognizer"};
+const char* recognizerInitErr{"Unable to initialize recognizer"};
 Recognizer::Recognizer(int index, float sampleRate, CommonModel* model) :
   rec{vosk_recognizer_new(std::get<VoskModel*>(model->mdl), sampleRate)} {
-  if(rec == nullptr) mtFireEv(index, Event::status, reinterpret_cast<int>(recognizerInitErr));
+  if(rec == nullptr) fireEv(index, Event::status, recognizerInitErr);
   else globalPool.exec([this, index]{main(index);});
 }
 Recognizer::Recognizer(int index, float sampleRate, CommonModel* model, CommonModel* spkModel) :
   rec{vosk_recognizer_new_spk(std::get<VoskModel*>(model->mdl), sampleRate, std::get<VoskSpkModel*>(spkModel->mdl))} {
-  if(rec == nullptr) mtFireEv(index, Event::status, reinterpret_cast<int>(recognizerInitErr));
+  if(rec == nullptr) fireEv(index, Event::status, recognizerInitErr);
   else globalPool.exec([this, index]{main(index);});
 }
 Recognizer::Recognizer(int index, float sampleRate, CommonModel* model, const std::string& grm, int) :
   rec{vosk_recognizer_new_grm(std::get<VoskModel*>(model->mdl), sampleRate, grm.c_str())} {
-  if(rec == nullptr) mtFireEv(index, Event::status, reinterpret_cast<int>(recognizerInitErr));
+  if(rec == nullptr) fireEv(index, Event::status, recognizerInitErr);
   else globalPool.exec([this, index]{main(index);});
 }
 void Recognizer::safeDelete(bool _processCurrent) {

@@ -3,12 +3,12 @@
 #include "emscripten/wasm_worker.h"
 #include "emscripten/em_js.h"
 
-EM_JS(void, mtFireEv, (int index, int typeIdx, int content), {
-  objs[index].dispatchEvent(new CustomEvent(events[typeIdx], { "detail" : content == 0 ? null : UTF8ToString(content) }));
+EM_JS(void, fireEv, (int idx, int typeIdx, const char* content), {
+  if(ENVIRONMENT_IS_WEB) objs[idx].dispatchEvent(new CustomEvent(events[typeIdx], {
+      "detail": content == 0 ? null : UTF8ToString(content)
+    }));
+  else self.postMessage([idx, typeIdx, content]);
 });
-void fireEv(int index, int typeIdx, const char* content) {
-  emscripten_wasm_worker_post_function_viii(0, mtFireEv, index, typeIdx, reinterpret_cast<int>(content));
-}
 int untar(unsigned char* tar, int tarSize, const std::string& storepath) {
   if(std::memcmp(tar + 257, "ustar", 5)) return IncorrectFormat;
   size_t size{};
@@ -49,7 +49,7 @@ int untar(unsigned char* tar, int tarSize, const std::string& storepath) {
   }
   return Successful;
 }
-static void workerStartup(int _pool) {
+void workerStartup(int _pool) {
   WorkerPool& pool{*reinterpret_cast<WorkerPool*>(_pool)};
   std::function<void()> fn;
   while(!pool.done) {
@@ -73,15 +73,16 @@ static void workerStartup(int _pool) {
 }
 using _startupFn = void(*)(int);
 EM_JS(void, startupWorkers, (_startupFn startupFn, WorkerPool* pool), {
-  Object.values(_wasmWorkers).forEach(worker => {
+  for(let worker of Object.values(_wasmWorkers)) {
     worker.postMessage({
       "_wsc": startupFn,
       "x": [ pool ]
     });
-  })
+    worker.onmessage = msg => fireEv(...msg.data);
+  }
 })
-static constexpr int workerStack{32768};
-static std::array<std::byte, MAX_WORKERS * workerStack> stacks;
+constexpr int workerStack{32768};
+std::array<std::byte, MAX_WORKERS * workerStack> stacks;
 WorkerPool::WorkerPool() {
   for(int i{}; i < MAX_WORKERS; ++i) {
     emscripten_create_wasm_worker(&stacks[i * workerStack], workerStack);
@@ -90,10 +91,14 @@ WorkerPool::WorkerPool() {
 }
 #undef MAX_WORKERS
 WorkerPool::~WorkerPool() {
+  // LTO will remove the EM_JS definition for some reason if it isn't called in the same translation unit (I get undefined symbols), even though it is annotated with EMSCRIPTEN_KEEPALIVE. "Call" it here (this destructor is never called) to workaround that. I'm going to file an issue on Emscripten
+  fireEv(0, 0);
+  /*
   done = true;
   emscripten_atomic_store_u32(&qLock, false);
   emscripten_atomic_notify(&qLock, -1);
   emscripten_terminate_all_wasm_workers();
+  */
 }
 void WorkerPool::exec(std::function<void()> fn) {
   taskQ.emplace(fn);

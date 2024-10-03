@@ -5,7 +5,7 @@
 using namespace emscripten;
 
 EMSCRIPTEN_BINDINGS() {
-  function("setLogLevel", &vosk_set_log_level, allow_raw_pointers());
+  function("setLogLevel", &vosk_set_log_level);
 
   enum_<VoskEndpointerMode>("EpMode")
   .value("ANSWER_DEFAULT", VOSK_EP_ANSWER_DEFAULT)
@@ -14,22 +14,22 @@ EMSCRIPTEN_BINDINGS() {
   .value("ANSWER_VERY_LONG", VOSK_EP_ANSWER_VERY_LONG);
 
   class_<CommonModel>("CommonModel")
-  .constructor<int, bool, std::string, std::string, int, int>(allow_raw_pointers())
-  .function("findWord", &CommonModel::findWord, allow_raw_pointers());
+  .constructor<int, bool, std::string, std::string, int, int>(return_value_policy::take_ownership())
+  .function("findWord", &CommonModel::findWord);
 
   class_<Recognizer>("Recognizer")
-  .constructor<int, float, CommonModel*>(allow_raw_pointers())
-  .constructor<int, float, CommonModel*, CommonModel*>(allow_raw_pointers())
-  .constructor<int, float, CommonModel*, std::string, int>(allow_raw_pointers())
-  .function("safeDelete", &Recognizer::safeDelete, allow_raw_pointers())
-  .function("acceptWaveform", &Recognizer::acceptWaveform, allow_raw_pointers())
-  .function("reset", &Recognizer::reset, allow_raw_pointers())
-  .function("setEndpointerMode", &Recognizer::setEndpointerMode, allow_raw_pointers())
-  .function("setEndpointerDelays", &Recognizer::setEndpointerDelays, allow_raw_pointers())
-  .function("setWords", &Recognizer::setWords, allow_raw_pointers())
-  .function("setPartialWords", &Recognizer::setPartialWords, allow_raw_pointers())
-  .function("setGrm", &Recognizer::setGrm, allow_raw_pointers())
-  .function("setNLSML", &Recognizer::setNLSML, allow_raw_pointers())
+  .constructor<int, float, CommonModel*>(return_value_policy::take_ownership())
+  .constructor<int, float, CommonModel*, CommonModel*>(return_value_policy::take_ownership())
+  .constructor<int, float, CommonModel*, std::string, int>(return_value_policy::take_ownership())
+  .function("safeDelete", &Recognizer::safeDelete)
+  .function("acceptWaveform", &Recognizer::acceptWaveform)
+  .function("reset", &Recognizer::reset)
+  .function("setEndpointerMode", &Recognizer::setEndpointerMode)
+  .function("setEndpointerDelays", &Recognizer::setEndpointerDelays)
+  .function("setWords", &Recognizer::setWords)
+  .function("setPartialWords", &Recognizer::setPartialWords)
+  .function("setGrm", &Recognizer::setGrm)
+  .function("setNLSML", &Recognizer::setNLSML)
   .function("setSpkModel", &Recognizer::setSpkModel, allow_raw_pointers())
-  .function("setMaxAlternatives", &Recognizer::setMaxAlternatives, allow_raw_pointers());
+  .function("setMaxAlternatives", &Recognizer::setMaxAlternatives);
 };

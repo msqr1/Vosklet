@@ -51,17 +51,18 @@ let processorURL = URL.createObjectURL(new Blob(['(', (() => {
   registerProcessor('VoskletTransferer', class extends AudioWorkletProcessor {
     constructor(opts) {
       super();
-      this.filledSize = 0;
-      this.bufferSize = opts.processorOptions.bufferSize;
-      this.buffer = new Float32Array(this.bufferSize);
+      this.filled = 0;
+      this.bufSize = opts.processorOptions[0];
+      this.buf = new Float32Array(this.bufSize);
     }
     process(inputs) {
       if(inputs[0][0]) {
-        this.buffer.set(inputs[0][0], this.filledSize += 128);
-        if(this.filledSize >= this.bufferSize) {
-          this.filledSize = 0;
-          this.port.postMessage(this.buffer, [this.buffer.buffer]);
-          this.buffer = new Float32Array(this.bufferSize);
+        this.buf.set(inputs[0][0], this.filled);
+        this.filled += 128;
+        if(this.filled >= this.bufSize) {
+          this.filled = 0;
+          this.port.postMessage(this.buf, [this.buf.buffer]);
+          this.buf = new Float32Array(this.bufSize);
         }
       }
       return true;
@@ -158,14 +159,14 @@ Module = {
     storageWorker.terminate();
   },
 
-  'createTransferer': async (ctx, bufferSize) => {
+  'createTransferer': async (ctx, bufSize) => {
     await ctx.audioWorklet.addModule(processorURL);
     return new AudioWorkletNode(ctx, 'VoskletTransferer', {
       channelCountMode: 'explicit',
       numberOfInputs: 1,
       numberOfOutputs: 0,
       channelCount: 1,
-      processorOptions: { bufferSize: bufferSize }
+      processorOptions: [bufSize]
     });
   },
 

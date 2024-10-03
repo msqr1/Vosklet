@@ -41,11 +41,7 @@ struct WorkerPool {
   ~WorkerPool();
   void exec(std::function<void()> fn);
 };
-// Must be called from the main thread
-extern "C" void mtFireEv(int index, int typeIdx, int content);
-
-// Must be called from a wasm worker
-void fireEv(int index, int typeIdx, const char* content = nullptr);
+extern "C" void fireEv(int idx, int typeIdx, const char* content = nullptr);
 
 int untar(unsigned char* tar, int tarSize, const std::string& storepath);
 
