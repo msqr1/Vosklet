@@ -8,12 +8,6 @@
 #include "emscripten/console.h"
 
 namespace fs = std::filesystem;
-
-struct AudioData {
-  float* data;
-  int len;
-  AudioData(int start, int len) : data{reinterpret_cast<float*>(start)}, len{len} {}
-};
 enum Event {
   // Shared
   status,
@@ -30,6 +24,12 @@ enum UntarStatus {
   FailedWrite,
   FailedClose
 };
+struct AudioData {
+  float* data;
+  int len;
+  AudioData(int start, int len) : data{reinterpret_cast<float*>(start)}, len{len} {}
+};
+
 #ifndef MAX_WORKERS
 #define MAX_WORKERS 1
 #endif
@@ -43,6 +43,6 @@ struct WorkerPool {
 };
 extern "C" void fireEv(int idx, int typeIdx, const char* content = nullptr);
 
-int untar(unsigned char* tar, int tarSize, const std::string& storepath);
+int untar(unsigned char* tar, int tarSize, const char* storepath);
 
 extern WorkerPool globalPool;

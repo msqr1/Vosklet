@@ -92,7 +92,7 @@ class CommonModel extends EventTarget {
       tar = tar.data;
       let tarStart = _malloc(tar.byteLength);
       HEAPU8.set(new Uint8Array(tar), tarStart);
-      mdl.obj = new Module['CommonModel'](objs.length - 1, normalMdl, '/' + storepath, id, tarStart, tar.byteLength);
+      mdl.obj = new Module['CommonModel'](objs.length - 1, normalMdl, tarStart, tar.byteLength);
     }, { once: true });
     storageWorker.postMessage({
       url: url,

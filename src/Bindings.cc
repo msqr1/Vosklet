@@ -14,13 +14,13 @@ EMSCRIPTEN_BINDINGS() {
   .value("ANSWER_VERY_LONG", VOSK_EP_ANSWER_VERY_LONG);
 
   class_<CommonModel>("CommonModel")
-  .constructor<int, bool, std::string, std::string, int, int>(return_value_policy::take_ownership())
+  .constructor<int, bool, int, int>(return_value_policy::take_ownership())
   .function("findWord", &CommonModel::findWord);
 
   class_<Recognizer>("Recognizer")
   .constructor<int, float, CommonModel*>(return_value_policy::take_ownership())
   .constructor<int, float, CommonModel*, CommonModel*>(return_value_policy::take_ownership())
-  .constructor<int, float, CommonModel*, std::string, int>(return_value_policy::take_ownership())
+  .constructor<int, float, CommonModel*, const std::string&, int>(return_value_policy::take_ownership())
   .function("safeDelete", &Recognizer::safeDelete)
   .function("acceptWaveform", &Recognizer::acceptWaveform)
   .function("reset", &Recognizer::reset)

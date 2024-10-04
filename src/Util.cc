@@ -9,7 +9,7 @@ EM_JS(void, fireEv, (int idx, int typeIdx, const char* content), {
     }));
   else self.postMessage([idx, typeIdx, content]);
 });
-int untar(unsigned char* tar, int tarSize, const std::string& storepath) {
+int untar(unsigned char* tar, int tarSize, const char* storepath) {
   if(std::memcmp(tar + 257, "ustar", 5)) return IncorrectFormat;
   size_t size{};
   std::string path;

@@ -1,16 +1,15 @@
 #include "CommonModel.h"
 
-CommonModel::CommonModel(int index, bool normalMdl, std::string storepath, std::string id, int tarStart, int tarSize) :
-  normalMdl{normalMdl}, index{index},
-  storepath{std::move(storepath)},
-  id{std::move(id)}
+CommonModel::CommonModel(int index, bool normalMdl, int tarStart, int tarSize) :
+  normalMdl{normalMdl}, index{index}
 {
   globalPool.exec([this, tarStart, tarSize]{
     extractAndLoad(reinterpret_cast<unsigned char*>(tarStart), tarSize);
   });
 }
 void CommonModel::extractAndLoad(unsigned char* tar, int tarSize) {
-  int res{untar(tar, tarSize, storepath)};
+  std::string storepath{'/' + std::to_string(index)};
+  int res{untar(tar, tarSize, storepath.c_str())};
   free(tar);
   switch(res) {
   case IncorrectFormat:
