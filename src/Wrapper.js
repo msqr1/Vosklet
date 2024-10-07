@@ -8,6 +8,7 @@ if(ENVIRONMENT_IS_WEB) {
 // 'var' to expose this outside the if
 var objs = [];
 var events = ['status', 'partialResult', 'result'];
+let _cache = caches.open('Vosklet');
 let processorURL = URL.createObjectURL(new Blob(['(', (() => {
   registerProcessor('VoskletTransferer', class extends AudioWorkletProcessor {
     constructor(opts) {
@@ -50,18 +51,18 @@ class CommonModel extends EventTarget {
       }, { once: true })
     });
     let cache = await caches.open('Vosklet');
-    let res = await cache.match(storepath);
-    let tar;
-    if(typeof res == 'undefined' || res.headers.get('id') != id) {
+    let req = (await cache.keys(storepath, { ignoreSearch: true }))[0]
+    let tar, res;
+    if (typeof req == 'undefined' || req.url.split('?')[1] != id) {
       // Caching already handled explicitly 
       res = await fetch(url, { cache: 'no-store' });
       if (!res.ok) throw 'Unable to fetch model, status: ' + res.status;
-      await cache.put(storepath, new Response(
-        res.clone().body.pipeThrough(new CompressionStream('gzip')), 
-        { headers: { 'id': id } }
-      ));
-      
+      await cache.put(
+        storepath + '?' + id, 
+        new Response(res.clone().body.pipeThrough(new CompressionStream('gzip')))
+      );
     }
+    else res = await cache.match(req);
     tar = await new Response(res.body.pipeThrough(new DecompressionStream('gzip'))).arrayBuffer();
     let tarStart = _malloc(tar.byteLength);
     HEAPU8.set(new Uint8Array(tar), tarStart);
@@ -119,6 +120,8 @@ class Recognizer extends EventTarget {
   }
 }
 Module = {
+  'getModelCache': () => _cache,
+
   'cleanUp': async () => {
     for(let obj of objs) await obj.delete();
     URL.revokeObjectURL(processorURL);
