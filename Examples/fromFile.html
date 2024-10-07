@@ -5,19 +5,19 @@
     <script>
        async function start() {
         // All data is collected and transfered to the main thread so the AudioContext won't output anything. Set sinkId type to none to save power
-        let ctx = new AudioContext({sinkId: {type: "none"}})
-        let module = await loadVosklet()
+        let ctx = new AudioContext({sinkId: {type: "none"}});
+        let module = await loadVosklet();
         let model = await module.createModel("https://ccoreilly.github.io/vosk-browser/models/vosk-model-small-en-us-0.15.tar.gz", "English", "vosk-model-small-en-us-0.15")
-        let recognizer = await module.createRecognizer(model, ctx.sampleRate)
+        let recognizer = await module.createRecognizer(model, ctx.sampleRate);
         
         // Listen for result and partial result
         recognizer.addEventListener("result", ev => console.log("Result: ", ev.detail))
-        recognizer.addEventListener("partialResult", ev => console.log("Partial result: ", ev.detail))
+        recognizer.addEventListener("partialResult", ev => console.log("Partial result: ", ev.detail));
 
         // Fetch, decode, and recognize the .wav
-        let wav = await fetch("https://cdn.jsdelivr.net/gh/msqr1/Vosklet/examples/1to10-en.wav")
-        let audioBuf = await ctx.decodeAudioData(await wav.arrayBuffer())
-        recognizer.acceptWaveform(audioBuf.getChannelData(0))
+        let wav = await fetch("https://cdn.jsdelivr.net/gh/msqr1/Vosklet/examples/1to10-en.wav");
+        let audioBuf = await ctx.decodeAudioData(await wav.arrayBuffer());
+        recognizer.acceptWaveform(audioBuf.getChannelData(0));
       }
     </script>
   </head>

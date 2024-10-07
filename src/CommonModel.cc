@@ -8,28 +8,33 @@ CommonModel::CommonModel(int index, bool normalMdl, int tarStart, int tarSize) :
   });
 }
 void CommonModel::extractAndLoad(unsigned char* tar, int tarSize) {
-  std::string storepath{'/' + std::to_string(index)};
-  int res{untar(tar, tarSize, storepath.c_str())};
+  // Map index onto [A-Z]
+  const char storepath[3]{'/', static_cast<char>(index % 26 + 'A')};
+  int res{untar(tar, tarSize, storepath)};
   free(tar);
+  const char* untarErr{};
   switch(res) {
   case IncorrectFormat:
-    fireEv(index, Event::status, "Untar: Incorrect tar format, must be USTAR");
-    return;
+    untarErr = "Untar: Incorrect tar format, must be USTAR";
+    break;
   case IncorrectFiletype:
-    fireEv(index, Event::status, "Untar: Not a directory or regular file");
-    return;
+    untarErr = "Untar: Not a directory or regular file";
+    break;
   case FailedOpen:
-    fireEv(index, Event::status, "Untar: Unable to open file for write");
-    return;
+    untarErr = "Untar: Unable to open file for write";
+    break;
   case FailedWrite:
-    fireEv(index, Event::status, "Untar: Unable to write file");
-    return;
+    untarErr = "Untar: Unable to write file";
+    break;
   case FailedClose:
-    fireEv(index, Event::status, "Untar: Unable to close file after write");
-    return;
+    untarErr = "Untar: Unable to close file after write";
   };
-  if(normalMdl) mdl = vosk_model_new(storepath.c_str());
-  else mdl = vosk_spk_model_new(storepath.c_str());
+  if(untarErr != nullptr) {
+    fireEv(index, Event::status, untarErr);
+    return;
+  }
+  if(normalMdl) mdl = vosk_model_new(storepath);
+  else mdl = vosk_spk_model_new(storepath);
   if(normalMdl ? std::get<VoskModel*>(mdl) != nullptr : std::get<VoskSpkModel*>(mdl) != nullptr) fireEv(index, status);
   else fireEv(index, status, "Unable to load model for recognition");
   fs::remove_all(storepath);

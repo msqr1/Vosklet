@@ -57,10 +57,8 @@ class CommonModel extends EventTarget {
       res = await fetch(url, { cache: 'no-store' });
       if (!res.ok) throw 'Unable to fetch model, status: ' + res.status;
       await cache.put(storepath, new Response(
-        res.clone().body.pipeThrough(new CompressionStream('gzip')), 
-        { headers: { 'id': id } }
+        res.clone().body, { headers: { 'id': id } }
       ));
-      
     }
     tar = await new Response(res.body.pipeThrough(new DecompressionStream('gzip'))).arrayBuffer();
     let tarStart = _malloc(tar.byteLength);

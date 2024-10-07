@@ -26,7 +26,7 @@
     <script>
       async function start() {
         // All data is collected and transfered to the main thread so the AudioContext won't output anything. Set sinkId type to none to save power
-        let ctx = new AudioContext({sinkId: {type: "none"}})
+        let ctx = new AudioContext({sinkId: {type: "none"}});
 
         // Setup microphone   
         let micNode = ctx.createMediaStreamSource(await navigator.mediaDevices.getUserMedia({
@@ -36,25 +36,25 @@
             noiseSuppression: true,
             channelCount: 1
           },
-        }))
+        }));
 
         // Load Vosklet module, model and recognizer
-        let module = await loadVosklet()
+        let module = await loadVosklet();
         let model = await module.createModel("https://ccoreilly.github.io/vosk-browser/models/vosk-model-small-en-us-0.15.tar.gz","English","vosk-model-small-en-us-0.15")
-        let recognizer = await module.createRecognizer(model, ctx.sampleRate)
+        let recognizer = await module.createRecognizer(model, ctx.sampleRate);
 
         // Listen for result and partial result
         recognizer.addEventListener("result", ev => console.log("Result: ", ev.detail))
-        recognizer.addEventListener("partialResult", ev => console.log("Partial result: ", ev.detail))
+        recognizer.addEventListener("partialResult", ev => console.log("Partial result: ", ev.detail));
 
         // Create a transferer node to get audio data on the main thread
-        let transferer = await module.createTransferer(ctx, 128 * 150)
+        let transferer = await module.createTransferer(ctx, 128 * 150);
 
         // Recognize data on arrival
-        transferer.port.onmessage = ev => recognizer.acceptWaveform(ev.data)
+        transferer.port.onmessage = ev => recognizer.acceptWaveform(ev.data);
 
         // Connect transferer to microphone
-        micNode.connect(transferer)
+        micNode.connect(transferer);
       }
     </script>
     <!-- Start and create audio context only as a result of user's action -->
