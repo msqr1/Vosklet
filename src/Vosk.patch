@@ -99,7 +99,7 @@ index 55d9991..c111038 100644
 +const v128_t _32768fx4{wasm_f32x4_const_splat(32768.0f)};
  bool Recognizer::AcceptWaveform(const float *fdata, int len)
 -{
-+{   
++{
      Vector<BaseFloat> wave;
      wave.Resize(len, kUndefined);
 -    for (int i = 0; i < len; i++)
