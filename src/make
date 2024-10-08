@@ -59,7 +59,7 @@ if [ ! -d "$KALDI" ]; then
   git clone -b vosk --depth=1 https://github.com/alphacep/kaldi "$KALDI" &&
   cd "$KALDI"/src &&
   git apply "$SRC"/Kaldi.patch &&
-  CXXFLAGS="-O3 -UHAVE_EXECINFO_H -DEMSCRIPTEN_HAS_UNBOUND_TYPE_NAMES=0 -flto -msimd128 -matomics -mbulk-memory -mreference-types -mnontrapping-fptoint -mextended-const -msign-ext -mmutable-globals -Wno-unused-variable -Wno-unused-but-set-variable -g0" LDFLAGS="-lembind" emconfigure ./configure --use-cuda=no --with-cudadecoder=no --static --static-math=yes --static-fst=yes --debug-level=0 --fst-root="$OPENFST" --clapack-root="$CLAPACK_WASM" --host=WASM &&
+  CXXFLAGS="-O3 -UHAVE_EXECINFO_H -DEMSCRIPTEN_HAS_UNBOUND_TYPE_NAMES=0 -fwasm-exceptions -flto -msimd128 -matomics -mbulk-memory -mreference-types -mnontrapping-fptoint -mextended-const -msign-ext -mmutable-globals -Wno-unused-variable -Wno-unused-but-set-variable -g0" LDFLAGS="-lembind" emconfigure ./configure --use-cuda=no --with-cudadecoder=no --static --static-math=yes --static-fst=yes --debug-level=0 --fst-root="$OPENFST" --clapack-root="$CLAPACK_WASM" --host=WASM &&
   emmake make -j"$JOBS" online2 rnnlm
 fi
 
@@ -68,7 +68,7 @@ if [ ! -d "$VOSK" ]; then
   cd "$VOSK"/src &&
   git apply "$SRC"/Vosk.patch &&
   VOSK_FILES="recognizer.o language_model.o model.o spk_model.o vosk_api.o" &&
-  em++ -O3 -flto -msimd128 -matomics -mbulk-memory -mreference-types -mnontrapping-fptoint -mextended-const -msign-ext -mmutable-globals -Wno-deprecated -I. -I"$KALDI"/src -I"$OPENFST"/include ${VOSK_FILES//.o/.cc} -c &&
+  em++ -O3 -fwasm-exceptions -flto -msimd128 -matomics -mbulk-memory -mreference-types -mnontrapping-fptoint -mextended-const -msign-ext -mmutable-globals -Wno-deprecated -I. -I"$KALDI"/src -I"$OPENFST"/include ${VOSK_FILES//.o/.cc} -c &&
   emar -rcs vosk.a $VOSK_FILES
   rm -f $VOSK_FILES
 fi
