@@ -1,0 +1,48 @@
+diff --git a/Makefile.prebuild b/Makefile.prebuild
+index b7d695a..4069032 100644
+--- a/Makefile.prebuild
++++ b/Makefile.prebuild
+@@ -72,7 +72,7 @@ TARGET_FLAGS = -march=rv64imafdcv -mabi=lp64d
+ endif
+ 
+ ifeq ($(TARGET), RISCV64_GENERIC)
+-TARGET_FLAGS = -march=rv64imafdc -mabi=lp64d
++#TARGET_FLAGS = -march=rv64imafdc -mabi=lp64d
+ endif
+ 
+ all: getarch_2nd
+diff --git a/Makefile.riscv64 b/Makefile.riscv64
+index 9f6e48b..a6b1a3f 100644
+--- a/Makefile.riscv64
++++ b/Makefile.riscv64
+@@ -15,6 +15,6 @@ CCOMMON_OPT += -march=rv64imafdcv -mabi=lp64d
+ FCOMMON_OPT += -march=rv64imafdcv -mabi=lp64d
+ endif
+ ifeq ($(CORE), RISCV64_GENERIC)
+-CCOMMON_OPT += -march=rv64imafdc -mabi=lp64d
+-FCOMMON_OPT += -march=rv64imafdc -mabi=lp64d
++#CCOMMON_OPT += -march=rv64imafdc -mabi=lp64d
++#FCOMMON_OPT += -march=rv64imafdc -mabi=lp64d
+ endif
+diff --git a/Makefile.system b/Makefile.system
+index b065f9a..60dbd2d 100644
+--- a/Makefile.system
++++ b/Makefile.system
+@@ -202,7 +202,7 @@ endif
+ # On x86_64 build getarch with march=native unless the compiler is PGI. This is required to detect AVX512 support in getarch.
+ ifeq ($(HOSTARCH), x86_64)
+ ifeq ($(findstring pgcc,$(HOSTCC))$(findstring nvc,$(HOSTCC)),)
+-GETARCH_FLAGS += -march=native
++#GETARCH_FLAGS += -march=native
+ endif
+ endif
+ 
+@@ -1683,7 +1683,7 @@ FCOMMON_OPT += -g
+ endif
+ 
+ ifndef COMMON_OPT
+-COMMON_OPT = -O2
++COMMON_OPT = -O3
+ endif
+ 
+ ifndef FCOMMON_OPT

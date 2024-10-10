@@ -35,31 +35,36 @@ SRC=$(realpath src)
 KALDI=$(realpath kaldi)
 VOSK=$(realpath vosk)
 OPENFST=$(realpath openfst)
-CLAPACK_WASM=$(realpath clapack-wasm)
+OPENBLAS=$(realpath openblas)
 
 if [ ! -d "$OPENFST" ]; then
   rm -rf /tmp/openfst &&
   git clone --depth=1 https://github.com/alphacep/openfst /tmp/openfst &&
   cd /tmp/openfst &&
   autoreconf -is &&
-  CXXFLAGS="-r -O3 -fno-rtti -flto -msimd128 -matomics -mbulk-memory -mreference-types -mnontrapping-fptoint -mextended-const -msign-ext -mmutable-globals -flto" emconfigure ./configure --prefix="$OPENFST" --enable-static --disable-shared --enable-lookahead-fsts --enable-ngram-fsts --disable-bin &&
+  CXXFLAGS="-r -O3 -fno-rtti -flto -msimd128 -matomics -mbulk-memory -mreference-types -mnontrapping-fptoint -mextended-const -msign-ext -mmutable-globals" emconfigure ./configure --prefix="$OPENFST" --enable-static --disable-shared --enable-lookahead-fsts --enable-ngram-fsts --disable-bin &&
   emmake make -j"$JOBS" install &&
   echo "PACKAGE_VERSION = 1.8.0" >> "$OPENFST"/Makefile
   rm -rf /tmp/openfst
 fi
-
-if [ ! -d "$CLAPACK_WASM" ]; then
-  git clone --depth=1 https://gitlab.inria.fr/multispeech/kaldi.web/clapack-wasm.git "$CLAPACK_WASM" &&
-  cd "$CLAPACK_WASM" &&
-  git apply "$SRC"/Clapack-wasm.patch &&
-  bash install_repo.sh emcc
+if [ ! -d "$OPENBLAS" ]; then
+  rm -rf /tmp/openblas &&
+  git clone -b v0.3.28 https://github.com/OpenMathLib/OpenBLAS --depth=1 /tmp/openblas &&
+  cd /tmp/openblas &&
+  git apply "$SRC"/OpenBLAS.patch &&
+  # Change HOSTCC to the default C compiler on your machine
+  COMMON_FLAGS="CC=emcc HOSTCC=clang-20 TARGET=RISCV64_GENERIC USE_THREAD=0 NO_SHARED=1 BINARY=32 BUILD_SINGLE=1 BUILD_DOUBLE=1 BUILD_BFLOAT16=0 BUILD_COMPLEX16=0 BUILD_COMPLEX=0"
+  CFLAGS="-fno-exceptions -fno-rtti -flto -msimd128 -matomics -mbulk-memory -mreference-types -mnontrapping-fptoint -mextended-const -msign-ext -mmutable-globals -Wno-implicit-function-declaration -Wno-unused-function"
+  make $COMMON_FLAGS CFLAGS="$CFLAGS" PREFIX="$OPENBLAS" -j"$JOBS" &&
+  make $COMMON_FLAGS CFLAGS="$CFLAGS" PREFIX="$OPENBLAS" -j"$JOBS" install &&
+  rm -rf /tmp/openblas
 fi
 
 if [ ! -d "$KALDI" ]; then
   git clone -b vosk --depth=1 https://github.com/alphacep/kaldi "$KALDI" &&
   cd "$KALDI"/src &&
   git apply "$SRC"/Kaldi.patch &&
-  CXXFLAGS="-O3 -UHAVE_EXECINFO_H -DEMSCRIPTEN_HAS_UNBOUND_TYPE_NAMES=0 -fwasm-exceptions -flto -msimd128 -matomics -mbulk-memory -mreference-types -mnontrapping-fptoint -mextended-const -msign-ext -mmutable-globals -Wno-unused-variable -Wno-unused-but-set-variable -g0" LDFLAGS="-lembind" emconfigure ./configure --use-cuda=no --with-cudadecoder=no --static --static-math=yes --static-fst=yes --debug-level=0 --fst-root="$OPENFST" --clapack-root="$CLAPACK_WASM" --host=WASM &&
+  CXXFLAGS="-O3 -UHAVE_EXECINFO_H -DEMSCRIPTEN_HAS_UNBOUND_TYPE_NAMES=0 -fwasm-exceptions -flto -msimd128 -matomics -mbulk-memory -mreference-types -mnontrapping-fptoint -mextended-const -msign-ext -mmutable-globals -Wno-unused-variable -Wno-unused-but-set-variable -g0" LDFLAGS="-lembind" emconfigure ./configure --use-cuda=no --with-cudadecoder=no --static --static-math=yes --static-fst=yes --debug-level=0 --fst-root="$OPENFST" --openblas-root="$OPENBLAS" --host=WASM &&
   emmake make -j"$JOBS" online2 rnnlm
 fi
 
@@ -69,14 +74,14 @@ if [ ! -d "$VOSK" ]; then
   git apply "$SRC"/Vosk.patch &&
   VOSK_FILES="recognizer.o language_model.o model.o spk_model.o vosk_api.o" &&
   em++ -O3 -fwasm-exceptions -flto -msimd128 -matomics -mbulk-memory -mreference-types -mnontrapping-fptoint -mextended-const -msign-ext -mmutable-globals -Wno-deprecated -I. -I"$KALDI"/src -I"$OPENFST"/include ${VOSK_FILES//.o/.cc} -c &&
-  emar -rcs vosk.a $VOSK_FILES
+  emar -rcs vosk.a $VOSK_FILES &&
   rm -f $VOSK_FILES
 fi
 
 cd "$SRC" &&
 FILES="Util.o CommonModel.o Recognizer.o Bindings.o"
 COMMON_FLAGS="-O3 -flto -fno-rtti -msimd128 -matomics -mbulk-memory -mreference-types -mnontrapping-fptoint -mextended-const -msign-ext -mmutable-globals"
-COMMON_LD_FLAGS="-sWASMFS -sWASM_BIGINT -sMODULARIZE -sTEXTDECODER=2 -sWASM_WORKERS=2 -sEVAL_CTORS=2 -sINITIAL_MEMORY="$INITIAL_MEMORY" -sALLOW_MEMORY_GROWTH -sPOLYFILL=0 -sEXIT_RUNTIME=0 -sINVOKE_RUN=0 -sSUPPORT_LONGJMP=0 -sINCOMING_MODULE_JS_API=wasmMemory,instantiateWasm,wasm -sEXPORT_NAME=loadVosklet -sMALLOC=emmalloc -sENVIRONMENT=web,worker -L"$KALDI"/src -l:online2/kaldi-online2.a -l:decoder/kaldi-decoder.a -l:ivector/kaldi-ivector.a -l:gmm/kaldi-gmm.a -l:tree/kaldi-tree.a -l:feat/kaldi-feat.a -l:cudamatrix/kaldi-cudamatrix.a -l:lat/kaldi-lat.a -l:lm/kaldi-lm.a -l:rnnlm/kaldi-rnnlm.a -l:hmm/kaldi-hmm.a -l:nnet3/kaldi-nnet3.a -l:transform/kaldi-transform.a -l:matrix/kaldi-matrix.a -l:fstext/kaldi-fstext.a -l:util/kaldi-util.a -l:base/kaldi-base.a -L"$OPENFST"/lib -l:libfst.a -l:libfstngram.a -L"$CLAPACK_WASM" -l:CBLAS/lib/cblas.a -l:CLAPACK-3.2.1/lapack.a -l:CLAPACK-3.2.1/libcblaswr.a -l:f2c_BLAS-3.8.0/blas.a -l:libf2c/libf2c.a -L"$VOSK"/src -l:vosk.a -lembind --closure 1 --pre-js"
+COMMON_LD_FLAGS="-sWASMFS -sWASM_BIGINT -sMODULARIZE -sTEXTDECODER=2 -sWASM_WORKERS=2 -sEVAL_CTORS=2 -sINITIAL_MEMORY=$INITIAL_MEMORY -sALLOW_MEMORY_GROWTH -sPOLYFILL=0 -sEXIT_RUNTIME=0 -sINVOKE_RUN=0 -sSUPPORT_LONGJMP=0 -sINCOMING_MODULE_JS_API=wasmMemory,instantiateWasm,wasm -sEXPORT_NAME=loadVosklet -sMALLOC=emmalloc -sENVIRONMENT=web,worker -L$KALDI/src -l:online2/kaldi-online2.a -l:decoder/kaldi-decoder.a -l:ivector/kaldi-ivector.a -l:gmm/kaldi-gmm.a -l:tree/kaldi-tree.a -l:feat/kaldi-feat.a -l:cudamatrix/kaldi-cudamatrix.a -l:lat/kaldi-lat.a -l:lm/kaldi-lm.a -l:rnnlm/kaldi-rnnlm.a -l:hmm/kaldi-hmm.a -l:nnet3/kaldi-nnet3.a -l:transform/kaldi-transform.a -l:matrix/kaldi-matrix.a -l:fstext/kaldi-fstext.a -l:util/kaldi-util.a -l:base/kaldi-base.a -L$OPENFST/lib -l:libfst.a -l:libfstngram.a -L$OPENBLAS -l:lib/libopenblas.a -L$VOSK/src -l:vosk.a -lembind --closure 1 --pre-js"
 em++ ${FILES//.o/.cc} $COMMON_FLAGS -DEMSCRIPTEN_HAS_UNBOUND_TYPE_NAMES=0 -DMAX_WORKERS="$MAX_THREADS" -fno-exceptions -std=c++23 -c -I. -I"$VOSK"/src &&
 
 em++ $FILES $COMMON_FLAGS $COMMON_LD_FLAGS Wrapper.js -o ../Vosklet.js
