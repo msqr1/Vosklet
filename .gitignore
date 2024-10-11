@@ -2,7 +2,7 @@ vosk
 kaldi
 .vscode
 index.html
-OpenBLAS
+openblas
 openfst
 emsdk
 test.js

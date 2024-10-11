@@ -25,7 +25,7 @@ index 9f6e48b..a6b1a3f 100644
 +#FCOMMON_OPT += -march=rv64imafdc -mabi=lp64d
  endif
 diff --git a/Makefile.system b/Makefile.system
-index b065f9a..60dbd2d 100644
+index b065f9a..b4abaff 100644
 --- a/Makefile.system
 +++ b/Makefile.system
 @@ -202,7 +202,7 @@ endif
@@ -37,6 +37,15 @@ index b065f9a..60dbd2d 100644
  endif
  endif
  
+@@ -1416,7 +1416,7 @@ ifeq ($(NEED_PIC), 1)
+ ifeq ($(C_COMPILER), IBM)
+ CCOMMON_OPT += -qpic=large
+ else
+-CCOMMON_OPT += -fPIC
++#CCOMMON_OPT += -fPIC
+ endif
+ ifeq ($(F_COMPILER), SUN)
+ FCOMMON_OPT  += -pic
 @@ -1683,7 +1683,7 @@ FCOMMON_OPT += -g
  endif
  
