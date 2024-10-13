@@ -37,14 +37,14 @@ VOSK=$(realpath vosk)
 OPENFST=$(realpath openfst)
 OPENBLAS=$(realpath openblas)
 
-WASM_EXT="-msimd128 -matomics -mbulk-memory -mreference-types -mnontrapping-fptoint -mextended-const -msign-ext -mmutable-globals"
+SHARED_FLAGS="-O3 -flto -msimd128 -matomics -mbulk-memory -mreference-types -mnontrapping-fptoint -mextended-const -msign-ext -mmutable-globals"
 
 if [ ! -d "$OPENFST" ]; then
   rm -rf /tmp/openfst &&
   git clone --depth=1 https://github.com/alphacep/openfst /tmp/openfst &&
   cd /tmp/openfst &&
   autoreconf -is &&
-  CXXFLAGS="-O3 -fno-rtti -flto $WASM_EXT" emconfigure ./configure --prefix="$OPENFST" --enable-static --disable-shared --enable-ngram-fsts --disable-bin &&
+  CXXFLAGS="$SHARED_FLAGS -O3 -fno-rtti" emconfigure ./configure --prefix="$OPENFST" --enable-static --disable-shared --enable-ngram-fsts --disable-bin &&
   emmake make -j"$JOBS" install > /dev/null &&
   echo "PACKAGE_VERSION = 1.8.0" > "$OPENFST"/Makefile
   rm -rf /tmp/openfst
@@ -55,10 +55,10 @@ if [ ! -d "$OPENBLAS" ]; then
   cd /tmp/openblas &&
   git apply "$SRC"/OpenBLAS.patch &&
   # Change HOSTCC to the default C compiler on your machine
-  COMMON_FLAGS="CC=emcc HOSTCC=clang-20 TARGET=RISCV64_GENERIC USE_THREAD=0 NO_SHARED=1 BINARY=32 BUILD_SINGLE=1 BUILD_DOUBLE=1 BUILD_BFLOAT16=0 BUILD_COMPLEX16=0 BUILD_COMPLEX=0"
-  CFLAGS="-fno-exceptions -fno-rtti -flto $WASM_EXT -Wno-implicit-function-declaration -Wno-unused-function -Wno-unused-but-set-variable"
-  make $COMMON_FLAGS CFLAGS="$CFLAGS" PREFIX="$OPENBLAS" -j"$JOBS" > /dev/null &&
-  make $COMMON_FLAGS CFLAGS="$CFLAGS" PREFIX="$OPENBLAS" -j"$JOBS" install &&
+  openblasFlags="CC=emcc HOSTCC=clang-20 TARGET=RISCV64_GENERIC USE_THREAD=0 NO_SHARED=1 BINARY=32 BUILD_SINGLE=1 BUILD_DOUBLE=1 BUILD_BFLOAT16=0 BUILD_COMPLEX16=0 BUILD_COMPLEX=0"
+  openblasCFlags="$SHARED_FLAGS -fno-exceptions -fno-rtti -Wno-implicit-function-declaration -Wno-unused-function -Wno-unused-but-set-variable"
+  make $openblasFlags CFLAGS="$openblasCFlags" PREFIX="$OPENBLAS" -j"$JOBS" > /dev/null &&
+  make $openblasFlags CFLAGS="$openblasCFlags" PREFIX="$OPENBLAS" -j"$JOBS" install &&
   rm -rf /tmp/openblas
 fi
 
@@ -66,7 +66,7 @@ if [ ! -d "$KALDI" ]; then
   git clone -b vosk --depth=1 https://github.com/alphacep/kaldi "$KALDI" &&
   cd "$KALDI"/src &&
   git apply "$SRC"/Kaldi.patch &&
-  CXXFLAGS="-O3 -UHAVE_EXECINFO_H -DEMSCRIPTEN_HAS_UNBOUND_TYPE_NAMES=0 -fwasm-exceptions -flto $WASM_EXT -Wno-unused-variable -Wno-unused-but-set-variable -g0" LDFLAGS="-lembind" emconfigure ./configure --use-cuda=no --with-cudadecoder=no --static --static-math=yes --static-fst=yes --debug-level=0 --fst-root="$OPENFST" --openblas-root="$OPENBLAS" --host=WASM &&
+  CXXFLAGS="$SHARED_FLAGS -UHAVE_EXECINFO_H -DEMSCRIPTEN_HAS_UNBOUND_TYPE_NAMES=0 -fwasm-exceptions -Wno-unused-variable -Wno-unused-but-set-variable -g0" LDFLAGS="-lembind" emconfigure ./configure --use-cuda=no --with-cudadecoder=no --static --static-math=yes --static-fst=yes --debug-level=0 --fst-root="$OPENFST" --openblas-root="$OPENBLAS" --host=WASM &&
   emmake make -j"$JOBS" online2 rnnlm > /dev/null
 fi
 
@@ -74,25 +74,25 @@ if [ ! -d "$VOSK" ]; then
   git clone -b v0.3.50 --depth=1 https://github.com/alphacep/vosk-api "$VOSK" &&
   cd "$VOSK"/src &&
   git apply "$SRC"/Vosk.patch &&
-  VOSK_FILES="recognizer.o language_model.o model.o spk_model.o vosk_api.o" &&
+  voskFiles="recognizer.o language_model.o model.o spk_model.o vosk_api.o" &&
   # shellcheck disable=SC2086
-  em++ -O3 -fwasm-exceptions -flto $WASM_EXT -Wno-deprecated -I. -I"$KALDI"/src -I"$OPENFST"/include ${VOSK_FILES//.o/.cc} -c &&
-  emar -rcs vosk.a $VOSK_FILES &&
-  rm -f $VOSK_FILES
+  em++ $SHARED_FLAGS -fwasm-exceptions -Wno-deprecated -I. -I"$KALDI"/src -I"$OPENFST"/include ${voskFiles//.o/.cc} -c &&
+  emar -rcs vosk.a $voskFiles &&
+  rm -f $voskFiles
 fi
 
 cd "$SRC" &&
-FILES="Util.o CommonModel.o Recognizer.o Bindings.o"
-COMMON_FLAGS="-O3 -flto -fno-rtti $WASM_EXT -sSTRICT -sWASM_WORKERS=2"
-COMMON_LD_FLAGS="-sWASMFS -sWASM_BIGINT -sMODULARIZE -sTEXTDECODER=2 -sEVAL_CTORS=2 -sALLOW_UNIMPLEMENTED_SYSCALLS -sINITIAL_MEMORY=$INITIAL_MEMORY -sALLOW_MEMORY_GROWTH -sPOLYFILL=0 -sEXIT_RUNTIME=0 -sINVOKE_RUN=0 -sSUPPORT_LONGJMP=0 -sINCOMING_MODULE_JS_API=wasmMemory,instantiateWasm,wasm -sEXPORT_NAME=loadVosklet -sMALLOC=emmalloc -sENVIRONMENT=web,worker -L$KALDI/src -l:online2/kaldi-online2.a -l:decoder/kaldi-decoder.a -l:ivector/kaldi-ivector.a -l:gmm/kaldi-gmm.a -l:tree/kaldi-tree.a -l:feat/kaldi-feat.a -l:cudamatrix/kaldi-cudamatrix.a -l:lat/kaldi-lat.a -l:lm/kaldi-lm.a -l:rnnlm/kaldi-rnnlm.a -l:hmm/kaldi-hmm.a -l:nnet3/kaldi-nnet3.a -l:transform/kaldi-transform.a -l:matrix/kaldi-matrix.a -l:fstext/kaldi-fstext.a -l:util/kaldi-util.a -l:base/kaldi-base.a -L$OPENFST/lib -l:libfst.a -l:libfstngram.a -L$OPENBLAS -l:lib/libopenblas.a -L$VOSK/src -l:vosk.a -lembind --no-entry --closure 1 --pre-js"
+voskletFiles="Util.o CommonModel.o Recognizer.o Bindings.o"
+voskletFlags="$SHARED_FLAGS -fno-rtti -sSTRICT -sWASM_WORKERS=2"
+voskletLDFlags="-sWASMFS -sWASM_BIGINT -sMODULARIZE -sTEXTDECODER=2 -sEVAL_CTORS=2 -sALLOW_UNIMPLEMENTED_SYSCALLS -sINITIAL_MEMORY=$INITIAL_MEMORY -sALLOW_MEMORY_GROWTH -sPOLYFILL=0 -sEXIT_RUNTIME=0 -sINVOKE_RUN=0 -sSUPPORT_LONGJMP=0 -sINCOMING_MODULE_JS_API=wasmMemory,instantiateWasm,wasm -sEXPORT_NAME=loadVosklet -sMALLOC=emmalloc -sENVIRONMENT=web,worker -L$KALDI/src -l:online2/kaldi-online2.a -l:decoder/kaldi-decoder.a -l:ivector/kaldi-ivector.a -l:gmm/kaldi-gmm.a -l:tree/kaldi-tree.a -l:feat/kaldi-feat.a -l:cudamatrix/kaldi-cudamatrix.a -l:lat/kaldi-lat.a -l:lm/kaldi-lm.a -l:rnnlm/kaldi-rnnlm.a -l:hmm/kaldi-hmm.a -l:nnet3/kaldi-nnet3.a -l:transform/kaldi-transform.a -l:matrix/kaldi-matrix.a -l:fstext/kaldi-fstext.a -l:util/kaldi-util.a -l:base/kaldi-base.a -L$OPENFST/lib -l:libfst.a -l:libfstngram.a -L$OPENBLAS -l:lib/libopenblas.a -L$VOSK/src -l:vosk.a -lembind --no-entry --closure 1 --pre-js"
 # shellcheck disable=SC2086
-em++ ${FILES//.o/.cc} $COMMON_FLAGS -DEMSCRIPTEN_HAS_UNBOUND_TYPE_NAMES=0 -DMAX_WORKERS="$MAX_THREADS" -fno-exceptions -std=c++23 -c -I. -I"$VOSK"/src &&
+em++ ${voskletFiles//.o/.cc} $voskletFlags -DEMSCRIPTEN_HAS_UNBOUND_TYPE_NAMES=0 -DMAX_WORKERS="$MAX_THREADS" -fno-exceptions -std=c++23 -c -I. -I"$VOSK"/src &&
 
-em++ $FILES $COMMON_FLAGS $COMMON_LD_FLAGS Wrapper.js -o ../Vosklet.js
+em++ $voskletFiles $voskletFlags $voskletLDFlags Wrapper.js -o ../Vosklet.js
 # shellcheck disable=SC2086
-em++ $FILES $COMMON_FLAGS $COMMON_LD_FLAGS ../Examples/Wrapper.js -o ../Examples/Vosklet.js
+em++ $voskletFiles $voskletFlags $voskletLDFlags ../Examples/Wrapper.js -o ../Examples/Vosklet.js
 
-rm -f $FILES
+rm -f $voskletFiles
 cd .. &&
 
 tr -d '\n' < Vosklet.js | tr -s ' ' > /tmp/hehe && mv /tmp/hehe Vosklet.js &&
