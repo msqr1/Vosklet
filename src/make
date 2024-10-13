@@ -37,14 +37,16 @@ VOSK=$(realpath vosk)
 OPENFST=$(realpath openfst)
 OPENBLAS=$(realpath openblas)
 
+WASM_EXT="-msimd128 -matomics -mbulk-memory -mreference-types -mnontrapping-fptoint -mextended-const -msign-ext -mmutable-globals"
+
 if [ ! -d "$OPENFST" ]; then
   rm -rf /tmp/openfst &&
   git clone --depth=1 https://github.com/alphacep/openfst /tmp/openfst &&
   cd /tmp/openfst &&
   autoreconf -is &&
-  CXXFLAGS="-r -O3 -fno-rtti -flto -msimd128 -matomics -mbulk-memory -mreference-types -mnontrapping-fptoint -mextended-const -msign-ext -mmutable-globals" emconfigure ./configure --prefix="$OPENFST" --enable-static --disable-shared --enable-ngram-fsts --disable-bin &&
-  emmake make -j"$JOBS" install &&
-  echo "PACKAGE_VERSION = 1.8.0" >> "$OPENFST"/Makefile
+  CXXFLAGS="-O3 -fno-rtti -flto $WASM_EXT" emconfigure ./configure --prefix="$OPENFST" --enable-static --disable-shared --enable-ngram-fsts --disable-bin &&
+  emmake make -j"$JOBS" install > /dev/null &&
+  echo "PACKAGE_VERSION = 1.8.0" > "$OPENFST"/Makefile
   rm -rf /tmp/openfst
 fi
 if [ ! -d "$OPENBLAS" ]; then
@@ -54,8 +56,8 @@ if [ ! -d "$OPENBLAS" ]; then
   git apply "$SRC"/OpenBLAS.patch &&
   # Change HOSTCC to the default C compiler on your machine
   COMMON_FLAGS="CC=emcc HOSTCC=clang-20 TARGET=RISCV64_GENERIC USE_THREAD=0 NO_SHARED=1 BINARY=32 BUILD_SINGLE=1 BUILD_DOUBLE=1 BUILD_BFLOAT16=0 BUILD_COMPLEX16=0 BUILD_COMPLEX=0"
-  CFLAGS="-fno-exceptions -fno-rtti -flto -msimd128 -matomics -mbulk-memory -mreference-types -mnontrapping-fptoint -mextended-const -msign-ext -mmutable-globals -Wno-implicit-function-declaration -Wno-unused-function"
-  make $COMMON_FLAGS CFLAGS="$CFLAGS" PREFIX="$OPENBLAS" -j"$JOBS" &&
+  CFLAGS="-fno-exceptions -fno-rtti -flto $WASM_EXT -Wno-implicit-function-declaration -Wno-unused-function -Wno-unused-but-set-variable"
+  make $COMMON_FLAGS CFLAGS="$CFLAGS" PREFIX="$OPENBLAS" -j"$JOBS" > /dev/null &&
   make $COMMON_FLAGS CFLAGS="$CFLAGS" PREFIX="$OPENBLAS" -j"$JOBS" install &&
   rm -rf /tmp/openblas
 fi
@@ -64,8 +66,8 @@ if [ ! -d "$KALDI" ]; then
   git clone -b vosk --depth=1 https://github.com/alphacep/kaldi "$KALDI" &&
   cd "$KALDI"/src &&
   git apply "$SRC"/Kaldi.patch &&
-  CXXFLAGS="-O3 -UHAVE_EXECINFO_H -DEMSCRIPTEN_HAS_UNBOUND_TYPE_NAMES=0 -fwasm-exceptions -flto -msimd128 -matomics -mbulk-memory -mreference-types -mnontrapping-fptoint -mextended-const -msign-ext -mmutable-globals -Wno-unused-variable -Wno-unused-but-set-variable -g0" LDFLAGS="-lembind" emconfigure ./configure --use-cuda=no --with-cudadecoder=no --static --static-math=yes --static-fst=yes --debug-level=0 --fst-root="$OPENFST" --openblas-root="$OPENBLAS" --host=WASM &&
-  emmake make -j"$JOBS" online2 rnnlm
+  CXXFLAGS="-O3 -UHAVE_EXECINFO_H -DEMSCRIPTEN_HAS_UNBOUND_TYPE_NAMES=0 -fwasm-exceptions -flto $WASM_EXT -Wno-unused-variable -Wno-unused-but-set-variable -g0" LDFLAGS="-lembind" emconfigure ./configure --use-cuda=no --with-cudadecoder=no --static --static-math=yes --static-fst=yes --debug-level=0 --fst-root="$OPENFST" --openblas-root="$OPENBLAS" --host=WASM &&
+  emmake make -j"$JOBS" online2 rnnlm > /dev/null
 fi
 
 if [ ! -d "$VOSK" ]; then
@@ -73,15 +75,16 @@ if [ ! -d "$VOSK" ]; then
   cd "$VOSK"/src &&
   git apply "$SRC"/Vosk.patch &&
   VOSK_FILES="recognizer.o language_model.o model.o spk_model.o vosk_api.o" &&
-  em++ -O3 -fwasm-exceptions -flto -msimd128 -matomics -mbulk-memory -mreference-types -mnontrapping-fptoint -mextended-const -msign-ext -mmutable-globals -Wno-deprecated -I. -I"$KALDI"/src -I"$OPENFST"/include ${VOSK_FILES//.o/.cc} -c &&
+  # shellcheck disable=SC2086
+  em++ -O3 -fwasm-exceptions -flto $WASM_EXT -Wno-deprecated -I. -I"$KALDI"/src -I"$OPENFST"/include ${VOSK_FILES//.o/.cc} -c &&
   emar -rcs vosk.a $VOSK_FILES &&
   rm -f $VOSK_FILES
 fi
 
 cd "$SRC" &&
 FILES="Util.o CommonModel.o Recognizer.o Bindings.o"
-COMMON_FLAGS="-O3 -flto -fno-rtti -msimd128 -matomics -mbulk-memory -mreference-types -mnontrapping-fptoint -mextended-const -msign-ext -mmutable-globals -sSTRICT"
-COMMON_LD_FLAGS="-sWASMFS -sWASM_BIGINT -sMODULARIZE -sTEXTDECODER=2 -sWASM_WORKERS=2 -sEVAL_CTORS=2 -sALLOW_UNIMPLEMENTED_SYSCALLS -sINITIAL_MEMORY=$INITIAL_MEMORY -sALLOW_MEMORY_GROWTH -sPOLYFILL=0 -sEXIT_RUNTIME=0 -sINVOKE_RUN=0 -sSUPPORT_LONGJMP=0 -sINCOMING_MODULE_JS_API=wasmMemory,instantiateWasm,wasm -sEXPORT_NAME=loadVosklet -sMALLOC=emmalloc -sENVIRONMENT=web,worker -L$KALDI/src -l:online2/kaldi-online2.a -l:decoder/kaldi-decoder.a -l:ivector/kaldi-ivector.a -l:gmm/kaldi-gmm.a -l:tree/kaldi-tree.a -l:feat/kaldi-feat.a -l:cudamatrix/kaldi-cudamatrix.a -l:lat/kaldi-lat.a -l:lm/kaldi-lm.a -l:rnnlm/kaldi-rnnlm.a -l:hmm/kaldi-hmm.a -l:nnet3/kaldi-nnet3.a -l:transform/kaldi-transform.a -l:matrix/kaldi-matrix.a -l:fstext/kaldi-fstext.a -l:util/kaldi-util.a -l:base/kaldi-base.a -L$OPENFST/lib -l:libfst.a -l:libfstngram.a -L$OPENBLAS -l:lib/libopenblas.a -L$VOSK/src -l:vosk.a -lembind --no-entry --closure 1 --pre-js"
+COMMON_FLAGS="-O3 -flto -fno-rtti $WASM_EXT -sSTRICT -sWASM_WORKERS=2"
+COMMON_LD_FLAGS="-sWASMFS -sWASM_BIGINT -sMODULARIZE -sTEXTDECODER=2 -sEVAL_CTORS=2 -sALLOW_UNIMPLEMENTED_SYSCALLS -sINITIAL_MEMORY=$INITIAL_MEMORY -sALLOW_MEMORY_GROWTH -sPOLYFILL=0 -sEXIT_RUNTIME=0 -sINVOKE_RUN=0 -sSUPPORT_LONGJMP=0 -sINCOMING_MODULE_JS_API=wasmMemory,instantiateWasm,wasm -sEXPORT_NAME=loadVosklet -sMALLOC=emmalloc -sENVIRONMENT=web,worker -L$KALDI/src -l:online2/kaldi-online2.a -l:decoder/kaldi-decoder.a -l:ivector/kaldi-ivector.a -l:gmm/kaldi-gmm.a -l:tree/kaldi-tree.a -l:feat/kaldi-feat.a -l:cudamatrix/kaldi-cudamatrix.a -l:lat/kaldi-lat.a -l:lm/kaldi-lm.a -l:rnnlm/kaldi-rnnlm.a -l:hmm/kaldi-hmm.a -l:nnet3/kaldi-nnet3.a -l:transform/kaldi-transform.a -l:matrix/kaldi-matrix.a -l:fstext/kaldi-fstext.a -l:util/kaldi-util.a -l:base/kaldi-base.a -L$OPENFST/lib -l:libfst.a -l:libfstngram.a -L$OPENBLAS -l:lib/libopenblas.a -L$VOSK/src -l:vosk.a -lembind --no-entry --closure 1 --pre-js"
 # shellcheck disable=SC2086
 em++ ${FILES//.o/.cc} $COMMON_FLAGS -DEMSCRIPTEN_HAS_UNBOUND_TYPE_NAMES=0 -DMAX_WORKERS="$MAX_THREADS" -fno-exceptions -std=c++23 -c -I. -I"$VOSK"/src &&
 
