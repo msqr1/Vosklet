@@ -1,5 +1,5 @@
 # Overview
-- A lightweight, up to date speech recognizer in the browser with total brotlied (used by JSDelivr) size of **under a megabyte** (616 KB)
+- A fast, lightweight, actively maintained speech recognizer in the browser with total brotlied (used by JSDelivr) size of **under a megabyte** (614 KB)
 - Live Demo (ASR in 20 languages): https://msqr1-github-io.pages.dev/Vosklet
 - Inspired by [vosk-browser](https://github.com/ccoreilly/vosk-browser)
 
@@ -12,7 +12,7 @@
 - Include model cache path management
 - Include model cache ID management (for updates)
 - Wraps all Vosk's functionaly
-- Faster than vosk-browser
+- Faster and lighter than vosk-browser
 
 # Basic usage (microphone recognition in English)
 - Using JsDelivr CDN
@@ -23,7 +23,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <script src="https://cdn.jsdelivr.net/gh/msqr1/Vosklet@1.2.0/Examples/Vosklet.js" async defer></script>
+    <script src="https://cdn.jsdelivr.net/gh/msqr1/Vosklet@1.2.1/Examples/Vosklet.js" async defer></script>
     <script>
       async function start() {
         // All data is collected and transfered to the main thread so the AudioContext won't output anything. Set sinkId type to none to save power
@@ -41,11 +41,11 @@
 
         // Load Vosklet module, model and recognizer
         let module = await loadVosklet();
-        let model = await module.createModel("https://ccoreilly.github.io/vosk-browser/models/vosk-model-small-en-us-0.15.tar.gz","English","vosk-model-small-en-us-0.15")
+        let model = await module.createModel("https://ccoreilly.github.io/vosk-browser/models/vosk-model-small-en-us-0.15.tar.gz","English","vosk-model-small-en-us-0.15");
         let recognizer = await module.createRecognizer(model, ctx.sampleRate);
 
         // Listen for result and partial result
-        recognizer.addEventListener("result", ev => console.log("Result: ", ev.detail))
+        recognizer.addEventListener("result", ev => console.log("Result: ", ev.detail));
         recognizer.addEventListener("partialResult", ev => console.log("Partial result: ", ev.detail));
 
         // Create a transferer node to get audio data on the main thread
