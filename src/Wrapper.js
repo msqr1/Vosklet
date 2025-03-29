@@ -50,20 +50,19 @@ class CommonModel extends EventTarget {
         else reject(ev.detail)
       }, { once: true })
     });
-    let cache = await caches.open('Vosklet');
-    let req = (await cache.keys(storepath, { ignoreSearch: true }))[0]
-    let tar, res;
-    if (typeof req == 'undefined' || req.url.split('?')[1] != id) {
-      // Caching already handled explicitly 
+    const cache = await caches.open('Vosklet');
+    const modelCacheKey = (await cache.keys()).find(key => key.url.split('?')[1] === id);
+
+    let res;
+    if (!modelCacheKey) {
+      // Caching already handled explicitly
       res = await fetch(url, { cache: 'no-store' });
       if (!res.ok) throw 'Unable to fetch model, status: ' + res.status;
-      await cache.put(
-        storepath + '?' + id, 
-        new Response(res.clone().body.pipeThrough(new CompressionStream('gzip')))
-      );
+      await cache.put(`${storepath}?${id}`, res.clone());
+    } else {
+      res = await cache.match(modelCacheKey);
     }
-    else res = await cache.match(req);
-    tar = await new Response(res.body.pipeThrough(new DecompressionStream('gzip'))).arrayBuffer();
+    const tar = await new Response(res.body.pipeThrough(new DecompressionStream('gzip'))).arrayBuffer();
     let tarStart = _malloc(tar.byteLength);
     HEAPU8.set(new Uint8Array(tar), tarStart);
     mdl.obj = new Module['CommonModel'](objs.length - 1, normalMdl, tarStart, tar.byteLength);
