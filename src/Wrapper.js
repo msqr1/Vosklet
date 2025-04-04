@@ -44,26 +44,24 @@ class CommonModel extends EventTarget {
     let result = new Promise((resolve, reject) => {
       mdl.addEventListener('status', ev => {
         if(!ev.detail) {
-          if(normalMdl) mdl['findWord'] = word => mdl.obj['findWord'](word)
-          resolve(mdl)
+          if(normalMdl) mdl['findWord'] = word => mdl.obj['findWord'](word);
+          resolve(mdl);
         }
-        else reject(ev.detail)
-      }, { once: true })
+        else reject(ev.detail);
+      }, { once: true });
     });
     let cache = await caches.open('Vosklet');
-    let req = (await cache.keys(storepath, { ignoreSearch: true }))[0]
-    let tar, res;
+    let req = (await cache.keys(storepath, { ignoreSearch: true }))[0];
+    let res;
     if (typeof req == 'undefined' || req.url.split('?')[1] != id) {
+
       // Caching already handled explicitly 
       res = await fetch(url, { cache: 'no-store' });
       if (!res.ok) throw 'Unable to fetch model, status: ' + res.status;
-      await cache.put(
-        storepath + '?' + id, 
-        new Response(res.clone().body.pipeThrough(new CompressionStream('gzip')))
-      );
+      await cache.put(storepath + '?' + id, res.clone());
     }
     else res = await cache.match(req);
-    tar = await new Response(res.body.pipeThrough(new DecompressionStream('gzip'))).arrayBuffer();
+    let tar = await res.arrayBuffer();
     let tarStart = _malloc(tar.byteLength);
     HEAPU8.set(new Uint8Array(tar), tarStart);
     mdl.obj = new Module['CommonModel'](objs.length - 1, normalMdl, tarStart, tar.byteLength);
@@ -73,6 +71,7 @@ class CommonModel extends EventTarget {
 class Recognizer extends EventTarget {
   constructor() {
     super();
+
     // Closure workaround to prevent acceptWaveform from getting removed
     this['acceptWaveform'] = audioData => {
       let start = _malloc(audioData.length * 4);

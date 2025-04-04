@@ -1,5 +1,6 @@
 #pragma once
 #include "CommonModel.h"
+#include <queue>
 
 // Prevent naming conflicts with Vosk's Recognizer class
 #define Recognizer Recognizer_
