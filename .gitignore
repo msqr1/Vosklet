@@ -7,3 +7,4 @@ openfst
 emsdk
 test.js
 test.wasm
+src/*.o

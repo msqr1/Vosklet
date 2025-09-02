@@ -24,8 +24,8 @@ if [ "$EMSDK" = ../emsdk ] && [ ! -f "$EMSDK" ]; then
   echo "Installing emsdk + Emscripten..."
   git clone --depth=1 https://github.com/emscripten-core/emsdk.git ../emsdk &&
   cd ../emsdk &&
-  ./emsdk install 4.0.6 &&
-  ./emsdk activate 4.0.6
+  ./emsdk install 4.0.13 &&
+  ./emsdk activate 4.0.13
 fi
 . $(realpath "$EMSDK")/emsdk_env.sh &&
 export PATH=:$PATH:$(realpath "$EMSDK")/upstream/bin &&
@@ -48,11 +48,10 @@ if [ ! -f "$OPENFST/lib/libfst.a" ]; then
   autoreconf -is &&
   CXXFLAGS="$SHARED_FLAGS -O3 -fno-rtti" emconfigure ./configure --prefix="$OPENFST" --enable-static --disable-shared --enable-ngram-fsts --disable-bin &&
   emmake make -j"$JOBS" install > /dev/null &&
-  rm -rf /tmp/openfst
 fi
 if [ ! -f "$OPENBLAS/lib/libopenblas.a" ]; then
   rm -rf /tmp/openblas &&
-  git clone -b v0.3.29 https://github.com/OpenMathLib/OpenBLAS --depth=1 /tmp/openblas &&
+  git clone -b v0.3.30 https://github.com/OpenMathLib/OpenBLAS --depth=1 /tmp/openblas &&
   cd /tmp/openblas &&
   git apply "$SRC"/OpenBLAS.patch &&
 
@@ -61,7 +60,6 @@ if [ ! -f "$OPENBLAS/lib/libopenblas.a" ]; then
   openblasCFlags="$SHARED_FLAGS -fno-exceptions -fno-rtti -Wno-implicit-function-declaration -Wno-unused-function -Wno-unused-but-set-variable"
   make $openblasFlags CFLAGS="$openblasCFlags" PREFIX="$OPENBLAS" -j"$JOBS" > /dev/null &&
   make $openblasFlags CFLAGS="$openblasCFlags" PREFIX="$OPENBLAS" -j"$JOBS" install &&
-  rm -rf /tmp/openblas
 fi
 
 if [ ! -f "$KALDI/src/kaldi.mk" ]; then
@@ -85,7 +83,7 @@ fi
 
 cd "$SRC" &&
 voskletFiles="Util.o CommonModel.o Recognizer.o Bindings.o"
-voskletFlags="$SHARED_FLAGS -fno-rtti -sSTRICT -sWASM_WORKERS=2"
+voskletFlags="$SHARED_FLAGS -fno-rtti -sSTRICT -sWASM_WORKERS"
 voskletLDFlags="-sWASMFS -sMODULARIZE -sTEXTDECODER=2 -sEVAL_CTORS=2 -sALLOW_UNIMPLEMENTED_SYSCALLS -sINITIAL_MEMORY=$INITIAL_MEMORY -sALLOW_MEMORY_GROWTH -sPOLYFILL=0 -sEXIT_RUNTIME=0 -sINVOKE_RUN=0 -sSUPPORT_LONGJMP=0 -sINCOMING_MODULE_JS_API=wasmMemory,instantiateWasm,wasm -sEXPORT_NAME=loadVosklet -sMALLOC=emmalloc -sENVIRONMENT=web,worker -L$KALDI/src -l:online2/kaldi-online2.a -l:decoder/kaldi-decoder.a -l:ivector/kaldi-ivector.a -l:gmm/kaldi-gmm.a -l:tree/kaldi-tree.a -l:feat/kaldi-feat.a -l:cudamatrix/kaldi-cudamatrix.a -l:lat/kaldi-lat.a -l:lm/kaldi-lm.a -l:rnnlm/kaldi-rnnlm.a -l:hmm/kaldi-hmm.a -l:nnet3/kaldi-nnet3.a -l:transform/kaldi-transform.a -l:matrix/kaldi-matrix.a -l:fstext/kaldi-fstext.a -l:util/kaldi-util.a -l:base/kaldi-base.a -L$OPENFST/lib -l:libfst.a -l:libfstngram.a -L$OPENBLAS -l:lib/libopenblas.a -L$VOSK/src -l:vosk.a -lembind --no-entry --closure 1 --pre-js Wrapper.js"
 
 # shellcheck disable=SC2086
@@ -93,4 +91,6 @@ em++ ${voskletFiles//.o/.cc} $voskletFlags -DEMSCRIPTEN_HAS_UNBOUND_TYPE_NAMES=0
 em++ $voskletFiles $voskletFlags $voskletLDFlags -o ../Vosklet.js
 
 rm -f $voskletFiles
+rm -rf /tmp/openblas
+rm -rf /tmp/openfst
 cd ..
