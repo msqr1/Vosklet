@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script src="https://cdn.jsdelivr.net/gh/msqr1/Vosklet@1.2.1/Examples/Vosklet.js" async defer></script>
+    <script>
+        async function start() {
+            console.log("Starting speech recognition...");
+
+            let ctx = new AudioContext({sinkId: {type: "none"}});
+
+            let micNode = ctx.createMediaStreamSource(await navigator.mediaDevices.getUserMedia({
+                video: false,
+                audio: {
+                    echoCancellation: true,
+                    noiseSuppression: true,
+                    channelCount: 1
+                },
+            }));
+
+            console.log("Microphone connected.");
+
+            let module;
+            try {
+                module = await loadVosklet();
+                console.log("Vosklet module loaded.");
+            } catch (error) {
+                console.error("Error loading Vosklet module:", error);
+                return;
+            }
+
+            let model;
+            try {
+                model = await module.createModel(
+                    "https://ccoreilly.github.io/vosk-browser/models/vosk-model-small-en-us-0.15.tar.gz",
+                    "English",
+                    "vosk-model-small-en-us-0.15"
+                );
+                console.log("Speech recognition model loaded.");
+            } catch (error) {
+                console.error("Error loading speech recognition model:", error);
+                return;
+            }
+
+            let spkModel;
+            try {
+                spkModel = await module.createSpkModel(
+                    "https://arbdevml.github.io/x-vector/vosk-model-spk-0.4.tar.gz",
+                    "vosk-model-spk-0.4",
+                    "vosk-model-spk-0.4"
+                );
+                console.log("Speaker identification model loaded.");
+            } catch (error) {
+                console.error("Error loading speaker identification model:", error);
+                return;
+            }
+
+            let recognizer;
+            try {
+                recognizer = await module.createRecognizerWithSpkModel(model, ctx.sampleRate, spkModel);
+                console.log("Recognizer with speaker model created.");
+            } catch (error) {
+                console.error("Error creating recognizer with speaker model:", error);
+                return;
+            }
+
+            recognizer.addEventListener("result", ev => {
+                const result = JSON.parse(ev.detail);
+                console.log("typeof ev.detail:", typeof ev.detail);
+                console.log("typeof result:", typeof result);
+          	    console.log("Speech recognized:", result);
+		        console.log("spk:", result.spk);
+		        console.log("ev:", ev);
+            });
+            recognizer.addEventListener("partialResult", ev => {
+                console.log("Partial result:", ev.detail);
+            });
+            let transferer;
+            try {
+                transferer = await module.createTransferer(ctx, 128 * 150);
+                console.log("Transferer created.");
+            } catch (error) {
+                console.error("Error creating transferer:", error);
+                return;
+            }
+            transferer.port.onmessage = ev => recognizer.acceptWaveform(ev.data);
+            micNode.connect(transferer);
+            console.log("Microphone data connected to Vosklet.");
+        }
+    </script>
+</head>
+<body>
+    <button onclick="start()">Start</button>
+</body>
+</html>
