@@ -1,7 +1,7 @@
 # Overview
 - A fast, lightweight, actively maintained speech recognizer in the browser with total brotlied (used by JSDelivr) size of **under a megabyte** (614 KB)
 - Live Demo (ASR in 20 languages): https://msqr1-github-io.pages.dev/Vosklet
-- Inspired by [vosk-browser](https://github.com/ccoreilly/vosk-browser)
+- Inspired by vosk-browser by [ccoreilly](https://github.com/ccoreilly)
 
 # Documentation
 - See [Documentation.md](Documentation.md)
